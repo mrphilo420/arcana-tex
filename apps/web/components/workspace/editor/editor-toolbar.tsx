@@ -10,6 +10,7 @@ import {
   Heading2Icon,
   CheckIcon,
   CodeIcon,
+  CodeXmlIcon,
   EyeIcon,
   FileCodeIcon,
   FunctionSquareIcon,
@@ -40,10 +41,61 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TERMINAL_THEMES } from "@/lib/editor-theme";
+import { MONO_FONTS } from "@/lib/mono-fonts";
 import { TEXT_SCALES } from "@/lib/text-scale";
 import { cn } from "@/lib/utils";
 import { useDocumentStore } from "@/stores/document-store";
 import { useEditorPreferencesStore } from "@/stores/editor-preferences-store";
+
+function WorkspaceFontMenu({ className }: { className?: string }) {
+  const monoFontId = useEditorPreferencesStore((s) => s.monoFontId);
+  const setMonoFontId = useEditorPreferencesStore((s) => s.setMonoFontId);
+  const active =
+    MONO_FONTS.find((font) => font.id === monoFontId) ?? MONO_FONTS[0];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "size-7 text-[#a09d96] hover:bg-white/10 hover:text-[#faf9f5]",
+            className,
+          )}
+          title={`Code font (monospace): ${active.label}`}
+          aria-label="Code font"
+        >
+          <CodeXmlIcon className="size-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel className="text-[0.625rem] text-muted-foreground uppercase tracking-[0.14em]">
+          Code font · monospace only
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {MONO_FONTS.map((font) => (
+          <DropdownMenuItem
+            key={font.id}
+            onClick={() => setMonoFontId(font.id)}
+            className="gap-2"
+          >
+            <CodeXmlIcon className="size-3.5 shrink-0 text-muted-foreground" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[0.875rem]">{font.label}</div>
+              <div className="truncate text-[0.625rem] text-muted-foreground">
+                {font.description}
+              </div>
+            </div>
+            {font.id === monoFontId && (
+              <CheckIcon className="size-3.5 shrink-0 text-primary" />
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 function TextScaleButton({ className }: { className?: string }) {
   const textScaleId = useEditorPreferencesStore((s) => s.textScaleId);
@@ -273,6 +325,7 @@ export function EditorToolbar({
               {markdownPreview ? "Edit" : "Preview"}
             </Button>
           )}
+          <WorkspaceFontMenu />
           <TextScaleButton />
           <TerminalThemeMenu />
         </div>
@@ -291,6 +344,7 @@ export function EditorToolbar({
           Lean 4
         </span>
         <div className="ml-auto flex items-center gap-1">
+          <WorkspaceFontMenu />
           <TextScaleButton />
           <TerminalThemeMenu />
         </div>
@@ -367,6 +421,7 @@ export function EditorToolbar({
         <KeyboardIcon className="size-4" />
       </TooltipIconButton>
       <div className="ml-auto flex items-center gap-1">
+        <WorkspaceFontMenu />
         <TextScaleButton />
         <TerminalThemeMenu />
       </div>

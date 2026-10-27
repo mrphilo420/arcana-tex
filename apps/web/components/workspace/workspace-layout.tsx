@@ -23,6 +23,7 @@ import { useProjectSync } from "@/hooks/use-project-sync";
 import { useDocumentStore } from "@/stores/document-store";
 import { isLeanFile } from "@/lib/lean";
 import { useDevFeatureFlag } from "@/stores/dev-panel-store";
+import { useEditorPreferencesStore } from "@/stores/editor-preferences-store";
 
 export function WorkspaceLayout() {
   useProjectInit();
@@ -37,6 +38,7 @@ export function WorkspaceLayout() {
   const setLeanInfoviewOpen = useDocumentStore((s) => s.setLeanInfoviewOpen);
   const isSyncOpen = useDocumentStore((s) => s.isSyncOpen);
   const setSyncOpen = useDocumentStore((s) => s.setSyncOpen);
+  const monoFontId = useEditorPreferencesStore((s) => s.monoFontId);
 
   useProjectSync(projectId ?? "");
 
@@ -47,6 +49,16 @@ export function WorkspaceLayout() {
   useEffect(() => {
     if (isLeanActive) setLeanInfoviewOpen(true);
   }, [activeFileId, isLeanActive, setLeanInfoviewOpen]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.workspace = "true";
+    root.dataset.workspaceMono = monoFontId;
+    return () => {
+      delete root.dataset.workspace;
+      delete root.dataset.workspaceMono;
+    };
+  }, [monoFontId]);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">

@@ -161,21 +161,50 @@
  * Compact and Large scale the same ramp through the root font size.
  */
 html {
-  font-size: 17px;
+  --text-scale: 1;
+  --workspace-scale: 1;
+  font-size: calc(17px * var(--text-scale) * var(--workspace-scale));
 }
 
 html[data-text-scale="compact"] {
-  font-size: 15px;
+  --text-scale: 0.8824;
 }
 
 html[data-text-scale="large"] {
-  font-size: 19px;
+  --text-scale: 1.1176;
+}
+
+html[data-workspace="true"] {
+  /* The workspace reads denser than the library; text size controls still
+     scale the same ratio ramp on top of this. */
+  --workspace-scale: 0.9;
 }
 
 body {
   --ui-serif: "New York", "Iowan Old Style", ui-serif, Georgia, serif;
   --ui-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
   --ui-mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --workspace-mono: var(--font-jetbrains);
+}
+
+html[data-workspace-mono="ibm-plex"] body {
+  --workspace-mono: var(--font-ibm-plex-mono);
+}
+
+html[data-workspace-mono="fira"] body {
+  --workspace-mono: var(--font-fira-code);
+}
+
+html[data-workspace-mono="source-code-pro"] body {
+  --workspace-mono: var(--font-source-code-pro);
+}
+
+html[data-workspace-mono="cupertino"] body {
+  --workspace-mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html[data-workspace="true"] body {
+  --ui-mono: var(--workspace-mono);
 }
 
 [data-font-pairing="editorial"] body {

@@ -9,6 +9,7 @@ import {
   JetBrains_Mono,
   Manrope,
   Newsreader,
+  Source_Code_Pro,
   Source_Serif_4,
 } from "next/font/google";
 import "@/styles/globals.css";
@@ -32,6 +33,13 @@ const newsreader = Newsreader({
 const jetbrains = JetBrains_Mono({
   variable: "--font-jetbrains",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const sourceCodePro = Source_Code_Pro({
+  variable: "--font-source-code-pro",
+  subsets: ["latin"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -123,6 +131,7 @@ export default function RootLayout({
           inter.variable,
           newsreader.variable,
           jetbrains.variable,
+          sourceCodePro.variable,
           sourceSerif.variable,
           dmSans.variable,
           ibmPlexMono.variable,

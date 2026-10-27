@@ -6,6 +6,7 @@ import {
   BotIcon,
   CheckCircle2Icon,
   ClipboardCopyIcon,
+  CodeXmlIcon,
   DownloadIcon,
   FlaskConicalIcon,
   FolderGit2Icon,
@@ -34,6 +35,7 @@ import {
 import { GROQ_CHAT_MODELS, getGroqModel } from "@/lib/chat-models";
 import { TERMINAL_THEMES } from "@/lib/editor-theme";
 import { FONT_PAIRINGS } from "@/lib/font-pairings";
+import { MONO_FONTS } from "@/lib/mono-fonts";
 import { TEXT_SCALES } from "@/lib/text-scale";
 import { LEAN_PROJECT_STORAGE_KEY } from "@/lib/lean";
 import { cn } from "@/lib/utils";
@@ -127,6 +129,8 @@ export function DevPanel() {
   );
   const fontPairingId = useEditorPreferencesStore((s) => s.fontPairingId);
   const setFontPairingId = useEditorPreferencesStore((s) => s.setFontPairingId);
+  const monoFontId = useEditorPreferencesStore((s) => s.monoFontId);
+  const setMonoFontId = useEditorPreferencesStore((s) => s.setMonoFontId);
   const textScaleId = useEditorPreferencesStore((s) => s.textScaleId);
   const setTextScaleId = useEditorPreferencesStore((s) => s.setTextScaleId);
   const selectedModelId = useChatModelStore((s) => s.selectedModelId);
@@ -434,10 +438,11 @@ export function DevPanel() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-medium text-[0.875rem]">
-                      Font pairing
+                      Interface font pairing
                     </div>
                     <p className="mt-0.5 text-[0.75rem] text-muted-foreground">
-                      Four pairings across serif, sans, and monospace.
+                      Library and interface pairings. Workspace code uses the
+                      monospace code font below.
                     </p>
                   </div>
                   <Select
@@ -541,6 +546,47 @@ export function DevPanel() {
                       </div>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-hairline bg-card/25 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-1.5 font-medium text-[0.875rem]">
+                      <CodeXmlIcon className="size-3.5 text-primary" />
+                      Code font · monospace
+                    </div>
+                    <p className="mt-0.5 text-[0.75rem] text-muted-foreground">
+                      Used by the LaTeX editor, chat code blocks, and code
+                      surfaces in the workspace.
+                    </p>
+                  </div>
+                  <Select
+                    value={monoFontId}
+                    onValueChange={(value) =>
+                      setMonoFontId(value as (typeof MONO_FONTS)[number]["id"])
+                    }
+                  >
+                    <SelectTrigger
+                      className="h-7 w-[190px] text-[0.75rem]"
+                      aria-label="Code font"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MONO_FONTS.map((font) => (
+                        <SelectItem key={font.id} value={font.id}>
+                          {font.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="mt-2 rounded border border-hairline/70 bg-background/40 px-2 py-1.5 text-[0.6875rem] text-muted-foreground">
+                  {
+                    MONO_FONTS.find((font) => font.id === monoFontId)
+                      ?.description
+                  }
                 </div>
               </div>
 
