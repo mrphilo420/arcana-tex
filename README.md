@@ -77,6 +77,7 @@ you configure.
 - **Language-aware workspace** - LaTeX files use compile diagnostics and LaTeX repair, Lean files use the Lean/Lake tools, and Python/R files use their own runners without invoking the LaTeX compiler. The editor toolbar and LaTeX keyboard follow the active file type; `.bib`, `.sty`, `.cls`, `.tikz`, and `.pgf` files remain part of the LaTeX family.
 - **RAG proof golf and approval patches** - Local BM25 retrieval finds relevant Lean declarations, LaTeX proofs, and references. The assistant can propose exact line patches, which open side-by-side before/after previews with **Keep** and **Undo**; a project version is saved before applying. See [docs/rag-proof-golf.md](./docs/rag-proof-golf.md).
 - **Mathematical prover** - `/prove` (alias `/mathematical-prover`) ports the mathematical-prover workflow: mathlib search against the pinned dependency, 3-5 candidate strategies, isolated Lean elaboration as ground truth, and an approval-gated final patch. See [docs/mathematical-prover.md](./docs/mathematical-prover.md).
+- **Any OpenAI-compatible LLM provider** - Add Meta AI Muse Spark, OpenAI, Groq, OpenRouter, Ollama, or a custom endpoint in the developer panel's **Models** tab. Keys stay in a git-ignored local file; the model picker groups models by provider. See [docs/llm-providers.md](./docs/llm-providers.md).
 - **Selection chat** - Select text in the editor to reveal **Ask AI**. A small
   pop-up chat sends the file path, line range, selected source, and your
   question to the main assistant thread.
@@ -583,13 +584,15 @@ Development builds expose a local-only control panel through the flask icon or
 - Local-storage inspection and workspace snapshot export.
 - An interface/editor theme selector for the ccthemes palettes.
 - A font-pairing selector (serif, sans, monospace).
-- An AI model selector that controls which Groq model the assistant calls.
+- An AI model selector that controls which provider model the assistant calls.
+- A **Models** tab for importing OpenAI-compatible providers and discovering their models.
 
 Feature flags are persisted to `apps/web/.dev-panel.local.json` and mirrored in
-local storage. The configuration file and the `.dev-panel/` scratch directory
-are gitignored. Production builds ignore the panel and use the shipped defaults;
-set `NEXT_PUBLIC_DEV_PANEL=1` and `DEV_PANEL_ENABLED=1` only for a local
-production-mode preview.
+local storage. LLM provider settings and keys are persisted to
+`apps/web/.llm-providers.local.json` with mode `0600`. Both configuration files
+and the `.dev-panel/` scratch directory are gitignored. Production builds ignore
+the panel and use the shipped defaults; set `NEXT_PUBLIC_DEV_PANEL=1` and
+`DEV_PANEL_ENABLED=1` only for a local production-mode preview.
 
 The panel is deliberately a development tool, not an authorization boundary:
 it controls the local UI and does not disable server-side APIs by itself.

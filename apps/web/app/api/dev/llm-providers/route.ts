@@ -4,7 +4,7 @@ import {
   publicLlmProviders,
   upsertLlmProvider,
 } from "@/lib/ai/llm-providers";
-import { DEV_PANEL_ENABLED } from "@/lib/dev-panel";
+import { isDevPanelRouteEnabled } from "@/lib/dev-panel-server";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +13,12 @@ function unavailable() {
 }
 
 export async function GET() {
-  if (!DEV_PANEL_ENABLED) return unavailable();
+  if (!isDevPanelRouteEnabled()) return unavailable();
   return NextResponse.json({ providers: await publicLlmProviders() });
 }
 
 export async function POST(request: Request) {
-  if (!DEV_PANEL_ENABLED) return unavailable();
+  if (!isDevPanelRouteEnabled()) return unavailable();
 
   try {
     const body = (await request.json()) as {
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  if (!DEV_PANEL_ENABLED) return unavailable();
+  if (!isDevPanelRouteEnabled()) return unavailable();
 
   const id = new URL(request.url).searchParams.get("id")?.trim();
   if (!id) {

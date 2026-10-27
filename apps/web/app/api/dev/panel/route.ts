@@ -5,24 +5,18 @@ import {
   DEFAULT_DEV_FEATURE_FLAGS,
   normalizeDevFeatureFlags,
 } from "@/lib/dev-panel";
+import { isDevPanelRouteEnabled } from "@/lib/dev-panel-server";
 
 export const dynamic = "force-dynamic";
 
 const CONFIG_PATH = join(process.cwd(), ".dev-panel.local.json");
-
-function enabled(): boolean {
-  return (
-    process.env.NODE_ENV !== "production" ||
-    process.env.DEV_PANEL_ENABLED === "1"
-  );
-}
 
 function unavailable() {
   return NextResponse.json({ error: "Not found" }, { status: 404 });
 }
 
 export async function GET() {
-  if (!enabled()) return unavailable();
+  if (!isDevPanelRouteEnabled()) return unavailable();
 
   try {
     const raw = await readFile(CONFIG_PATH, "utf-8");
@@ -35,7 +29,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!enabled()) return unavailable();
+  if (!isDevPanelRouteEnabled()) return unavailable();
 
   try {
     const body = await request.json();

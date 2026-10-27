@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { discoverLlmModels } from "@/lib/ai/llm-providers";
-import { DEV_PANEL_ENABLED } from "@/lib/dev-panel";
+import { isDevPanelRouteEnabled } from "@/lib/dev-panel-server";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  if (!DEV_PANEL_ENABLED) {
+  if (!isDevPanelRouteEnabled()) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
