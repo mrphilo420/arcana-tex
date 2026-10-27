@@ -205,7 +205,7 @@ export function LatexEditor() {
   const isLatex = activeKind === "latex";
   const activeFileContent = activeFile?.content;
   const activeFileMarks = useMemo(() => {
-    if (!activeFile) return [];
+    if (!activeFile || !isLatex) return [];
     const path = activeFile.path.replace(/\\/g, "/");
     const basename = path.split("/").pop();
     const relevant = compileDiagnostics.filter((diagnostic) => {
@@ -241,7 +241,7 @@ export function LatexEditor() {
     }
 
     return marks;
-  }, [activeFile, compileDiagnostics]);
+  }, [activeFile, compileDiagnostics, isLatex]);
 
   const [imageScale, setImageScale] = useState(0.5);
   const [currentLine, setCurrentLine] = useState(1);

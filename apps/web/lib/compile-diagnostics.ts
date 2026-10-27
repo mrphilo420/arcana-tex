@@ -1,3 +1,4 @@
+import { isLatexPatchableFile } from "@/lib/file-kind";
 import type { ProjectFile } from "@/lib/project-files";
 
 export type DiagnosticSeverity = "error" | "warning";
@@ -399,7 +400,9 @@ export function resolveDiagnosticFiles(
   files: ProjectFile[],
   mainFileId: string | null,
 ): CompileDiagnostic[] {
-  const texFiles = files.filter((file) => file.type === "tex");
+  const texFiles = files.filter(
+    (file) => file.type === "tex" && isLatexPatchableFile(file.path),
+  );
   const mainFile =
     texFiles.find((file) => file.id === mainFileId) ?? texFiles[0] ?? null;
 
@@ -454,7 +457,7 @@ export function resolveDiagnosticFiles(
       return {
         ...diagnostic,
         fileId: mainFile.id,
-        filePath: diagnostic.filePath ?? mainFile.path,
+        filePath: mainFile.path,
       };
     }
 
