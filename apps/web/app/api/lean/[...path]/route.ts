@@ -31,7 +31,7 @@ async function proxy(request: Request, path: string[]) {
           ? undefined
           : await request.arrayBuffer(),
       cache: "no-store",
-      signal: AbortSignal.timeout(200_000),
+      signal: AbortSignal.timeout(320_000),
     });
 
     return new Response(await response.arrayBuffer(), {
