@@ -807,9 +807,16 @@ async function checkLeanCandidate(
       .slice(0, 40);
     const codeHasSorry = /\b(?:sorry|admit)\b/.test(candidate);
     const hasDeclaration =
-      /^\s*(?:theorem|lemma|example|def|instance|abbrev|structure|class|inductive|opaque|axiom)\b/m.test(
+      /^\s*(?:@\[[^\]]*\]\s*)?(?:(?:private|protected|noncomputable|partial|unsafe|scoped)\s+)*(?:theorem|lemma|example|def|instance|abbrev|structure|class|inductive|opaque|axiom)\b/m.test(
         candidate,
       );
+    const hasProofDeclaration =
+      /^\s*(?:@\[[^\]]*\]\s*)?(?:(?:private|protected|noncomputable|scoped)\s+)*(?:theorem|lemma|example)\b/m.test(
+        candidate,
+      );
+    const hasUnsafe = /^\s*(?:@\[[^\]]*\]\s*)?(?:unsafe|partial)\b/m.test(
+      candidate,
+    );
     const sorries = lines
       .filter((line) =>
         /(?:declaration uses 'sorry'|uses "sorry"|\bsorry\b|\badmit\b)/i.test(
@@ -827,7 +834,8 @@ async function checkLeanCandidate(
       .slice(0, 5);
     const proved =
       elaborated &&
-      hasDeclaration &&
+      hasProofDeclaration &&
+      !hasUnsafe &&
       !codeHasSorry &&
       sorries.length === 0 &&
       !hasSorryAx;
@@ -844,6 +852,8 @@ async function checkLeanCandidate(
       elaborated,
       proved,
       hasDeclaration,
+      hasProofDeclaration,
+      hasUnsafe,
       hasSorry: codeHasSorry || sorries.length > 0,
       hasSorryAx,
       axioms,
@@ -858,9 +868,13 @@ async function checkLeanCandidate(
         : elaborated
           ? hasSorryAx
             ? "Candidate elaborated, but #print axioms reports sorryAx. It is not a proof."
-            : hasDeclaration
-              ? "Candidate elaborates but still contains sorry/admit."
-              : "Candidate elaborates, but it contains no theorem, lemma, example, def, or instance to count as a proof. Use #check for queries and a declaration for proof evidence."
+            : hasUnsafe
+              ? "Candidate uses unsafe or partial code. It is not kernel-checked proof evidence."
+              : hasProofDeclaration
+                ? "Candidate elaborates but still contains sorry/admit."
+                : hasDeclaration
+                  ? "Candidate elaborates, but it declares an axiom, def, instance, or other non-proof declaration. Only a theorem, lemma, or example is proof evidence."
+                  : "Candidate elaborates, but it contains no theorem, lemma, example, def, or instance to count as a proof. Use #check for queries and a declaration for proof evidence."
           : "Candidate did not elaborate. Read the errors before revising.",
     };
   } finally {

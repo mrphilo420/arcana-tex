@@ -225,7 +225,7 @@ export const ProofTools: FC = () => {
   useAssistantTool({
     toolName: "check_lean_candidate",
     description:
-      "Elaborate a complete Lean 4 candidate in an isolated temporary file inside the configured Lake project and return elaborated, proved, errors, warnings, sorries, and axioms. Pass declarationName to run #print axioms and reject sorryAx. Use this as the only ground truth for a proof candidate before proposing a patch. proved=true means the candidate elaborated, contains a declaration, has no sorry/admit, and does not depend on sorryAx. This tool does not modify project files.",
+      "Elaborate a complete Lean 4 candidate in an isolated temporary file inside the configured Lake project and return elaborated, proved, errors, warnings, sorries, and axioms. Pass declarationName to run #print axioms and reject sorryAx. Use this as the only ground truth for a proof candidate before proposing a patch. proved=true means the candidate elaborated, contains a theorem/lemma/example, has no sorry/admit, does not depend on sorryAx, and does not use unsafe/partial code. This tool does not modify project files.",
     parameters: candidateParameters,
     execute: async (input: z.infer<typeof candidateParameters>) => {
       if (DEV_PANEL_ENABLED && !useDevPanelStore.getState().flags.leanLake) {
@@ -286,6 +286,7 @@ export const ProofTools: FC = () => {
       const proved = result?.proved === true;
       const elaborated = result?.elaborated === true;
       const hasSorryAx = result?.hasSorryAx === true;
+      const hasUnsafe = result?.hasUnsafe === true;
       const success = result?.success !== false;
       const error = typeof result?.error === "string" ? result.error : null;
       return (
@@ -293,7 +294,7 @@ export const ProofTools: FC = () => {
           {isComplete ? (
             proved ? (
               <CheckIcon className="size-4 text-green-600" />
-            ) : elaborated && !hasSorryAx ? (
+            ) : elaborated && !hasSorryAx && !hasUnsafe ? (
               <CheckIcon className="size-4 text-amber-600" />
             ) : (
               <HammerIcon className="size-4 text-destructive" />
@@ -308,11 +309,13 @@ export const ProofTools: FC = () => {
                 ? "Candidate proved: elaborated, sorry-free, and axiom-checked"
                 : hasSorryAx
                   ? "Candidate uses sorryAx; not a proof"
-                  : elaborated
-                    ? "Candidate elaborates but is still partial"
-                    : success
-                      ? "Candidate failed elaboration"
-                      : error || "Lean candidate check failed"
+                  : hasUnsafe
+                    ? "Candidate uses unsafe/partial code; not proof evidence"
+                    : elaborated
+                      ? "Candidate elaborates but is still partial"
+                      : success
+                        ? "Candidate failed elaboration"
+                        : error || "Lean candidate check failed"
               : "Elaborating Lean candidate..."}
           </span>
         </div>

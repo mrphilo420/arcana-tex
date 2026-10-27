@@ -48,8 +48,8 @@ The app adapts the original phases to its local tools:
    fully qualified `declarationName` to run `#print axioms`; `sorryAx`
    invalidates the candidate. It returns:
    - `elaborated: true` - no errors;
-   - `proved: true` - elaborated, contains a declaration, no `sorry`/`admit`,
-     and no `sorryAx`;
+   - `proved: true` - elaborated, contains a theorem/lemma/example, no
+     `sorry`/`admit`, no `sorryAx`, and no `unsafe`/`partial` code;
    - `axioms` - the `#print axioms` report when a declaration name was given.
 
    `proved: true` is the only outcome that may be reported as PROVED.
