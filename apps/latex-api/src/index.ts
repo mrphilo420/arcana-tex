@@ -86,6 +86,25 @@ function resolveCompilerCommand(name: CompilerName): string {
   return name;
 }
 
+function resolveToolCommand(name: "biber"): string {
+  const home = process.env.HOME;
+  // Prefer Homebrew's biber. Older ~/.local/bin copies can be present and
+  // incompatible with the installed biblatex version.
+  const candidates = [
+    join("/opt/homebrew/bin", name),
+    join("/usr/local/bin", name),
+    home ? join(home, "Library/TeX/texbin", name) : "",
+    home ? join(home, ".local/bin", name) : "",
+    name,
+  ].filter(Boolean);
+
+  return (
+    candidates.find((candidate) =>
+      candidate === name ? isOnPath(candidate) : existsSync(candidate),
+    ) ?? name
+  );
+}
+
 function sanitizePath(workDir: string, filePath: string): string | null {
   if (filePath.includes("..")) return null;
   const normalized = resolve(workDir, filePath);
@@ -151,6 +170,15 @@ app.post("/builds/sync", async (c) => {
   activeCompilations++;
   try {
     const hasBib = resources.some((r) => r.path?.endsWith(".bib"));
+    let toolLog = "";
+    const usesBiblatex = resources.some(
+      (resource) =>
+        typeof resource.content === "string" &&
+        (/\\usepackage(?:\[[^\]]*\])?\{[^}]*\bbiblatex\b/.test(
+          resource.content,
+        ) ||
+          /\\addbibresource\b/.test(resource.content)),
+    );
 
     for (const resource of resources) {
       const filePath =
@@ -183,7 +211,12 @@ app.post("/builds/sync", async (c) => {
 
     const runWithTimeout = (
       cmd: string[],
-    ): Promise<{ exitCode: number; timedOut: boolean }> => {
+    ): Promise<{
+      exitCode: number;
+      timedOut: boolean;
+      stdout: string;
+      stderr: string;
+    }> => {
       return new Promise((resolve) => {
         const [command, ...args] = cmd;
         const proc = spawn(command, args, {
@@ -191,17 +224,25 @@ app.post("/builds/sync", async (c) => {
           stdio: ["ignore", "pipe", "pipe"],
         });
         let timedOut = false;
+        let stdout = "";
+        let stderr = "";
         const timeout = setTimeout(() => {
           timedOut = true;
           proc.kill();
         }, COMPILE_TIMEOUT_MS);
+        proc.stdout.on("data", (chunk: Buffer) => {
+          stdout += chunk.toString();
+        });
+        proc.stderr.on("data", (chunk: Buffer) => {
+          stderr += chunk.toString();
+        });
         proc.on("close", (code) => {
           clearTimeout(timeout);
-          resolve({ exitCode: code ?? 1, timedOut });
+          resolve({ exitCode: code ?? 1, timedOut, stdout, stderr });
         });
         proc.on("error", () => {
           clearTimeout(timeout);
-          resolve({ exitCode: 1, timedOut: false });
+          resolve({ exitCode: 1, timedOut: false, stdout, stderr });
         });
       });
     };
@@ -226,13 +267,18 @@ app.post("/builds/sync", async (c) => {
         .then(() => true)
         .catch(() => false);
       if (auxExists) {
-        result = await runWithTimeout([
-          resolveCompilerCommand("bibtex"),
-          mainFileName,
-        ]);
+        result = usesBiblatex
+          ? await runWithTimeout([resolveToolCommand("biber"), mainFileName])
+          : await runWithTimeout([
+              resolveCompilerCommand("bibtex"),
+              mainFileName,
+            ]);
+        toolLog += `\n--- ${usesBiblatex ? "biber" : "bibtex"} ---\n${result.stdout}${result.stderr}`;
         if (result.timedOut) {
           return c.json(
-            { error: "BibTeX timed out" } satisfies CompileError,
+            {
+              error: usesBiblatex ? "Biber timed out" : "BibTeX timed out",
+            } satisfies CompileError,
             500,
           );
         }
@@ -262,9 +308,9 @@ app.post("/builds/sync", async (c) => {
     const pdfPath = join(workDir, `${mainFileName}.pdf`);
     const logPath = join(workDir, `${mainFileName}.log`);
 
-    let logContent = "";
+    let logContent = toolLog;
     try {
-      logContent = await readFile(logPath, "utf-8");
+      logContent += await readFile(logPath, "utf-8");
     } catch {}
 
     try {

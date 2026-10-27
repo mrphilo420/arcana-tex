@@ -48,6 +48,11 @@ curl -X POST http://localhost:3001/builds/sync \
 
 Requires a TeX distribution installed locally (TeX Live, or MiKTeX on macOS). On macOS the API will automatically use the MiKTeX binaries bundled with `/Applications/MiKTeX Console.app` when `pdflatex` is not on `PATH`.
 
+When a `.bib` file is present, the API runs **Biber** for documents using
+`biblatex`/`\addbibresource`, and **BibTeX** otherwise. Biber output is included
+in the returned log. The API prefers Homebrew's compatible `biber` over older
+copies on `PATH`.
+
 ## Lean Lake bridge
 
 The same server exposes a local, read-only Lean project bridge. It discovers
