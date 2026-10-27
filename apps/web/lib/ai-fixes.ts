@@ -3,6 +3,7 @@ import type { ProjectFile } from "@/lib/project-files";
 
 export interface AiFixDiagnosticInput {
   id: string;
+  severity?: "error" | "warning";
   kind: CompileDiagnostic["kind"];
   message: string;
   details: string[];
@@ -23,6 +24,7 @@ export interface AiFixFileInput {
 export interface AiFixInput {
   model?: string;
   mode: "single" | "all";
+  includeWarnings?: boolean;
   mainFileId: string | null;
   files: AiFixFileInput[];
   diagnostics: AiFixDiagnosticInput[];

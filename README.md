@@ -94,8 +94,10 @@ you configure.
 - **Deterministic + AI repair** - Local repair rules cover missing figures and
   packages, undefined theorem environments, unbalanced environments,
   package-provided commands, and duplicate definitions. **Fix all** runs those
-  rules first, then asks the selected AI model about remaining errors. Every
-  applied repair saves a version snapshot; when a PDF already builds despite
+  rules first, then asks the selected AI model about remaining errors. Each
+  warning also has a **Fix with AI** action, and **Fix warnings with AI** asks
+  the model to repair them together; conservative warnings may be declined.
+  Every applied repair saves a version snapshot; when a PDF already builds with
   errors, automatic source changes pause and the affected lines are highlighted.
 - **Beamer companion + wizard** - Appears only when a Beamer document is
   detected. Includes a slide navigator, frame snippets, theme and aspect-ratio

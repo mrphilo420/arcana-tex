@@ -266,6 +266,7 @@ export function ProjectInspector() {
     diagnostic: CompileDiagnostic,
   ): AiFixDiagnosticInput => ({
     id: diagnostic.id,
+    severity: diagnostic.severity,
     kind: diagnostic.kind,
     message: diagnostic.message,
     details: diagnostic.details,
@@ -348,7 +349,10 @@ export function ProjectInspector() {
     }
   };
 
-  const handleAiFix = async (diagnosticId?: string) => {
+  const handleAiFix = async (
+    diagnosticId?: string,
+    options: { warningsOnly?: boolean } = {},
+  ) => {
     if (!projectId || fixBusy) return;
     if (compiledWithErrors) {
       toast.info("PDF compiled; source left unchanged", {
@@ -358,18 +362,36 @@ export function ProjectInspector() {
       return;
     }
 
-    const targets = compileDiagnostics.filter(
-      (diagnostic) =>
-        diagnostic.severity === "error" &&
-        (!diagnosticId || diagnostic.id === diagnosticId),
-    );
+    const targets = compileDiagnostics.filter((diagnostic) => {
+      if (diagnosticId) return diagnostic.id === diagnosticId;
+      return options.warningsOnly
+        ? diagnostic.severity === "warning"
+        : diagnostic.severity === "error";
+    });
     if (targets.length === 0) return;
 
-    setAiFixingId(diagnosticId ?? "all");
+    const includesWarnings = targets.some(
+      (diagnostic) => diagnostic.severity === "warning",
+    );
+    const scopeId = diagnosticId
+      ? diagnosticId
+      : options.warningsOnly
+        ? "all-warnings"
+        : "all";
+    const versionLabel = diagnosticId
+      ? targets[0]?.severity === "warning"
+        ? "Before AI warning fix"
+        : "Before AI fix"
+      : options.warningsOnly
+        ? "Before AI warnings fix"
+        : "Before AI fix all";
+
+    setAiFixingId(scopeId);
     try {
       const response = await requestAiFixes({
         model: selectedModelId,
         mode: diagnosticId ? "single" : "all",
+        includeWarnings: includesWarnings,
         mainFileId,
         files: files
           .filter((file) => file.type === "tex")
@@ -402,7 +424,7 @@ export function ProjectInspector() {
       await commitFixPlan({
         baseFiles: files,
         finalFiles: applied.files,
-        label: diagnosticId ? "Before AI fix" : "Before AI fix all",
+        label: versionLabel,
         messages: applied.applied.map((patch) => `AI: ${patch.explanation}`),
         warning: response.rejected.length
           ? `${response.rejected.length} patch${response.rejected.length === 1 ? "" : "es"} rejected: ${response.rejected[0]?.reason}`
@@ -1180,9 +1202,10 @@ export function ProjectInspector() {
                   <p className="mt-1 text-[0.75rem] text-muted-foreground leading-relaxed">
                     Detected from the latest compile. Click an issue to jump to
                     its line and inspect the suggested fix. Fix all runs local
-                    deterministic rules, then AI for remaining errors; a version
-                    snapshot is saved first. If the PDF builds, source changes
-                    are paused.
+                    deterministic rules, then AI for remaining errors; warnings
+                    can be repaired with AI individually or together. A version
+                    snapshot is saved first. If the PDF builds with errors,
+                    source changes are paused.
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-0.5">
@@ -1252,6 +1275,37 @@ export function ProjectInspector() {
                 </div>
               )}
 
+              {warningCount > 0 && (
+                <div className="space-y-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() =>
+                      void handleAiFix(undefined, { warningsOnly: true })
+                    }
+                    disabled={fixBusy || compiledWithErrors}
+                    title={
+                      compiledWithErrors
+                        ? "PDF builds with errors; automatic fixes are paused."
+                        : "Ask the selected AI model to fix compile warnings"
+                    }
+                  >
+                    {aiFixingId === "all-warnings" ? (
+                      <Loader2Icon className="size-3.5 animate-spin" />
+                    ) : (
+                      <SparklesIcon className="size-3.5" />
+                    )}
+                    Fix warnings with AI ({warningCount})
+                  </Button>
+                  <p className="text-[0.6875rem] text-muted-foreground leading-relaxed">
+                    {compiledWithErrors
+                      ? "Warning fixes are paused while the PDF builds with errors."
+                      : "AI may decline warnings that are intentional or need a manual decision. Saves a version first."}
+                  </p>
+                </div>
+              )}
+
               {compileDiagnostics.length === 0 ? (
                 compileLogs.length === 0 ? (
                   <div className="rounded-lg border border-dashed p-6 text-center">
@@ -1278,6 +1332,7 @@ export function ProjectInspector() {
                   {compileDiagnostics.map((diagnostic) => {
                     const fix = describeAutoFix(diagnostic);
                     const isError = diagnostic.severity === "error";
+                    const isWarning = diagnostic.severity === "warning";
                     const expanded = expandedDiagnostics.has(diagnostic.id);
                     const isFixing = fixingId === diagnostic.id;
 
@@ -1396,7 +1451,32 @@ export function ProjectInspector() {
                                 ) : (
                                   <SparklesIcon className="size-3" />
                                 )}
-                                AI
+                                Fix with AI
+                              </Button>
+                            </div>
+                          ) : isWarning ? (
+                            <div className="flex shrink-0 items-center gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 gap-1 px-2 text-[0.75rem]"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void handleAiFix(diagnostic.id);
+                                }}
+                                disabled={fixBusy || compiledWithErrors}
+                                title={
+                                  compiledWithErrors
+                                    ? "PDF builds; AI fixes are paused."
+                                    : "Ask the selected AI model to fix this warning"
+                                }
+                              >
+                                {aiFixingId === diagnostic.id ? (
+                                  <Loader2Icon className="size-3 animate-spin" />
+                                ) : (
+                                  <SparklesIcon className="size-3" />
+                                )}
+                                Fix with AI
                               </Button>
                             </div>
                           ) : (
@@ -1459,7 +1539,7 @@ export function ProjectInspector() {
                                   issue. The affected line is highlighted in the
                                   editor.
                                 </p>
-                                {isError && (
+                                {(isError || isWarning) && (
                                   <Button
                                     variant="outline"
                                     size="sm"
@@ -1474,7 +1554,7 @@ export function ProjectInspector() {
                                     ) : (
                                       <SparklesIcon className="size-3" />
                                     )}
-                                    Ask AI to fix
+                                    Fix with AI
                                   </Button>
                                 )}
                               </div>
