@@ -148,6 +148,18 @@
   --sidebar-ring: #cc785c;
 }
 
+html {
+  font-size: 17px;
+}
+
+html[data-text-scale="compact"] {
+  font-size: 15px;
+}
+
+html[data-text-scale="large"] {
+  font-size: 19px;
+}
+
 body {
   --ui-serif: var(--font-cormorant);
   --ui-sans: var(--font-inter);
@@ -243,7 +255,7 @@ body {
 
 .aui-md {
   color: var(--foreground);
-  font-size: 13px;
+  font-size: 0.9375rem;
   line-height: 1.65;
 }
 

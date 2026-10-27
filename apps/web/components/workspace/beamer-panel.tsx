@@ -331,11 +331,11 @@ function SettingSelect({
 }) {
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
-      <span className="text-[11px] text-muted-foreground">{label}</span>
+      <span className="text-[0.8125rem] text-muted-foreground">{label}</span>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger
           size="sm"
-          className="h-7 w-[170px] text-[10px]"
+          className="h-7 w-[170px] text-[0.75rem]"
           aria-label={label}
         >
           <SelectValue />
@@ -622,7 +622,7 @@ export function BeamerPanel() {
                 key={item.id}
                 type="button"
                 className={cn(
-                  "relative flex h-10 shrink-0 items-center gap-1.5 px-2.5 text-[11px] transition-colors",
+                  "relative flex h-10 shrink-0 items-center gap-1.5 px-2.5 text-[0.8125rem] transition-colors",
                   tab === item.id
                     ? "font-medium text-foreground"
                     : "text-muted-foreground hover:text-foreground",
@@ -632,7 +632,7 @@ export function BeamerPanel() {
                 <Icon className="size-3.5" />
                 {item.label}
                 {item.id === "slides" && (
-                  <span className="font-mono text-[9px] text-muted-foreground">
+                  <span className="font-mono text-[0.6875rem] text-muted-foreground">
                     {info.frames.length}
                   </span>
                 )}
@@ -650,7 +650,7 @@ export function BeamerPanel() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="font-medium text-sm">Slide navigator</div>
-                  <div className="mt-0.5 text-[10px] text-muted-foreground">
+                  <div className="mt-0.5 text-[0.75rem] text-muted-foreground">
                     {info.frames.length} frame
                     {info.frames.length === 1 ? "" : "s"} detected
                   </div>
@@ -699,19 +699,19 @@ export function BeamerPanel() {
                       }
                     >
                       <div className="flex items-start gap-2.5">
-                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-hairline bg-background font-mono text-[9px] text-muted-foreground">
+                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-hairline bg-background font-mono text-[0.6875rem] text-muted-foreground">
                           {frame.index}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate font-medium text-[12px]">
+                          <div className="truncate font-medium text-[0.875rem]">
                             {frame.title}
                           </div>
                           {frame.subtitle && (
-                            <div className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                            <div className="mt-0.5 truncate text-[0.75rem] text-muted-foreground">
                               {frame.subtitle}
                             </div>
                           )}
-                          <div className="mt-1 truncate font-mono text-[9px] text-muted-foreground">
+                          <div className="mt-1 truncate font-mono text-[0.6875rem] text-muted-foreground">
                             {frame.filePath}:{frame.line}
                             {frame.options ? ` · [${frame.options}]` : ""}
                           </div>
@@ -722,7 +722,7 @@ export function BeamerPanel() {
                 </div>
               )}
 
-              <div className="rounded-lg border border-hairline bg-background/60 p-3 text-[10px] text-muted-foreground leading-relaxed">
+              <div className="rounded-lg border border-hairline bg-background/60 p-3 text-[0.75rem] text-muted-foreground leading-relaxed">
                 Frame titles, section pages, and Beamer navigation are read
                 directly from the source. Click a slide to jump to it.
               </div>
@@ -737,12 +737,12 @@ export function BeamerPanel() {
                     <WandSparklesIcon className="size-4 text-primary" />
                     Beamer wizard
                   </div>
-                  <p className="mt-1 text-[10px] text-muted-foreground leading-relaxed">
+                  <p className="mt-1 text-[0.75rem] text-muted-foreground leading-relaxed">
                     Build a presentation outline from metadata, sections, and a
                     starter slide style.
                   </p>
                 </div>
-                <span className="font-mono text-[9px] text-muted-foreground">
+                <span className="font-mono text-[0.6875rem] text-muted-foreground">
                   {wizardStep + 1}/3
                 </span>
               </div>
@@ -752,7 +752,7 @@ export function BeamerPanel() {
                   <div key={label} className="flex flex-1 items-center gap-1">
                     <span
                       className={cn(
-                        "flex size-5 items-center justify-center rounded-full border text-[9px]",
+                        "flex size-5 items-center justify-center rounded-full border text-[0.6875rem]",
                         index < wizardStep
                           ? "border-primary bg-primary text-primary-foreground"
                           : index === wizardStep
@@ -768,7 +768,7 @@ export function BeamerPanel() {
                     </span>
                     <span
                       className={cn(
-                        "text-[9px] uppercase tracking-[0.12em]",
+                        "text-[0.6875rem] uppercase tracking-[0.12em]",
                         index === wizardStep
                           ? "text-foreground"
                           : "text-muted-foreground",
@@ -784,7 +784,7 @@ export function BeamerPanel() {
               {wizardStep === 0 && (
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+                    <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
                       Title
                     </span>
                     <Input
@@ -796,7 +796,7 @@ export function BeamerPanel() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+                    <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
                       Subtitle
                     </span>
                     <Input
@@ -809,7 +809,7 @@ export function BeamerPanel() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+                      <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
                         Author
                       </span>
                       <Input
@@ -821,7 +821,7 @@ export function BeamerPanel() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+                      <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
                         Institute
                       </span>
                       <Input
@@ -836,7 +836,7 @@ export function BeamerPanel() {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+                    <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
                       Date
                     </span>
                     <Input
@@ -872,7 +872,7 @@ export function BeamerPanel() {
               {wizardStep === 1 && (
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+                    <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
                       Sections · one per line
                     </span>
                     <Textarea
@@ -903,7 +903,7 @@ export function BeamerPanel() {
                     ].map((item) => (
                       <label
                         key={item.label}
-                        className="flex cursor-pointer items-center gap-2 text-[11px]"
+                        className="flex cursor-pointer items-center gap-2 text-[0.8125rem]"
                       >
                         <input
                           type="checkbox"
@@ -918,7 +918,7 @@ export function BeamerPanel() {
                     ))}
                   </div>
                   <div>
-                    <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+                    <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
                       Starter frame style
                     </span>
                     <div className="mt-1.5 grid grid-cols-3 gap-1.5">
@@ -931,7 +931,7 @@ export function BeamerPanel() {
                           key={value}
                           type="button"
                           className={cn(
-                            "rounded border px-2 py-1.5 text-[10px] transition-colors",
+                            "rounded border px-2 py-1.5 text-[0.75rem] transition-colors",
                             starterStyle === value
                               ? "border-primary bg-primary/10 text-primary"
                               : "border-hairline text-muted-foreground hover:bg-background",
@@ -956,7 +956,7 @@ export function BeamerPanel() {
                     <div className="font-medium text-xs">
                       {deckTitle || "Untitled presentation"}
                     </div>
-                    <div className="mt-1 text-[10px] text-muted-foreground">
+                    <div className="mt-1 text-[0.75rem] text-muted-foreground">
                       {
                         deckSections
                           .split("\n")
@@ -969,16 +969,16 @@ export function BeamerPanel() {
                     </div>
                   </div>
                   <div>
-                    <div className="mb-1.5 font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+                    <div className="mb-1.5 font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
                       Preview · appended before \end{"{document}"}
                     </div>
-                    <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-dark p-3 font-mono text-[9px] text-on-dark-soft leading-relaxed">
+                    <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-dark p-3 font-mono text-[0.6875rem] text-on-dark-soft leading-relaxed">
                       {wizardPreamble}
                       {"\n\n... existing slides ...\n\n"}
                       {wizardBody}
                     </pre>
                   </div>
-                  <p className="text-[9px] text-muted-foreground leading-relaxed">
+                  <p className="text-[0.6875rem] text-muted-foreground leading-relaxed">
                     This updates the title metadata, theme, and aspect ratio,
                     then appends the new frames. Existing slides are preserved.
                   </p>
@@ -1018,7 +1018,7 @@ export function BeamerPanel() {
           {tab === "insert" && (
             <div className="space-y-4 p-4">
               <div>
-                <h3 className="font-medium text-[10px] text-muted-foreground uppercase tracking-[0.16em]">
+                <h3 className="font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.16em]">
                   Slide templates
                 </h3>
                 <div className="mt-2 grid grid-cols-2 gap-2">
@@ -1032,10 +1032,10 @@ export function BeamerPanel() {
                         onClick={() => insertSnippet(item.snippet)}
                       >
                         <Icon className="mb-1.5 size-3.5 text-primary" />
-                        <div className="font-medium text-[11px]">
+                        <div className="font-medium text-[0.8125rem]">
                           {item.name}
                         </div>
-                        <div className="mt-0.5 line-clamp-2 text-[9px] text-muted-foreground leading-relaxed">
+                        <div className="mt-0.5 line-clamp-2 text-[0.6875rem] text-muted-foreground leading-relaxed">
                           {item.description}
                         </div>
                       </button>
@@ -1045,7 +1045,7 @@ export function BeamerPanel() {
               </div>
 
               <div>
-                <h3 className="font-medium text-[10px] text-muted-foreground uppercase tracking-[0.16em]">
+                <h3 className="font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.16em]">
                   Structure
                 </h3>
                 <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1063,7 +1063,7 @@ export function BeamerPanel() {
                     <button
                       key={label}
                       type="button"
-                      className="rounded border border-hairline bg-background px-2 py-1 font-mono text-[9px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                      className="rounded border border-hairline bg-background px-2 py-1 font-mono text-[0.6875rem] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
                       onClick={() => insertSnippet(snippet)}
                     >
                       {label}
@@ -1072,7 +1072,7 @@ export function BeamerPanel() {
                 </div>
               </div>
 
-              <div className="rounded-lg border border-hairline bg-card/30 p-3 text-[10px] text-muted-foreground leading-relaxed">
+              <div className="rounded-lg border border-hairline bg-card/30 p-3 text-[0.75rem] text-muted-foreground leading-relaxed">
                 Snippets are inserted at the cursor. If the cursor is in the
                 preamble, they are placed after{" "}
                 <code className="font-mono">\begin{"{document}"}</code>.
@@ -1083,7 +1083,7 @@ export function BeamerPanel() {
           {tab === "theme" && (
             <div className="space-y-5 p-4">
               <div>
-                <h3 className="mb-2 font-medium text-[10px] text-muted-foreground uppercase tracking-[0.16em]">
+                <h3 className="mb-2 font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.16em]">
                   Theme family
                 </h3>
                 <div className="divide-y divide-hairline rounded-lg border border-hairline bg-card/30 px-3">
@@ -1160,13 +1160,13 @@ export function BeamerPanel() {
                     }}
                   />
                 </div>
-                <p className="mt-1.5 text-[9px] text-muted-foreground">
+                <p className="mt-1.5 text-[0.6875rem] text-muted-foreground">
                   Changes are written to the main Beamer file and recompiled.
                 </p>
               </div>
 
               <div>
-                <h3 className="mb-2 font-medium text-[10px] text-muted-foreground uppercase tracking-[0.16em]">
+                <h3 className="mb-2 font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.16em]">
                   Presentation defaults
                 </h3>
                 <div className="space-y-1.5 rounded-lg border border-hairline bg-card/30 p-3">
@@ -1224,7 +1224,7 @@ export function BeamerPanel() {
                   ].map((item) => (
                     <label
                       key={item.label}
-                      className="flex cursor-pointer items-center gap-2 py-0.5 text-[11px]"
+                      className="flex cursor-pointer items-center gap-2 py-0.5 text-[0.8125rem]"
                     >
                       <input
                         type="checkbox"
@@ -1241,7 +1241,7 @@ export function BeamerPanel() {
               </div>
 
               <div className="flex items-center justify-between rounded-lg border border-hairline bg-background/60 p-3">
-                <div className="text-[10px] text-muted-foreground">
+                <div className="text-[0.75rem] text-muted-foreground">
                   Beamer documentation and examples
                 </div>
                 <Button variant="outline" size="sm" asChild>
@@ -1261,7 +1261,7 @@ export function BeamerPanel() {
           {tab === "overlays" && (
             <div className="space-y-5 p-4">
               <div>
-                <h3 className="font-medium text-[10px] text-muted-foreground uppercase tracking-[0.16em]">
+                <h3 className="font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.16em]">
                   Overlay commands
                 </h3>
                 <div className="mt-2 grid grid-cols-2 gap-2">
@@ -1278,8 +1278,10 @@ export function BeamerPanel() {
                         }
                       }}
                     >
-                      <div className="font-mono text-[10px]">{item.label}</div>
-                      <div className="mt-0.5 text-[9px] text-muted-foreground">
+                      <div className="font-mono text-[0.75rem]">
+                        {item.label}
+                      </div>
+                      <div className="mt-0.5 text-[0.6875rem] text-muted-foreground">
                         {item.title}
                       </div>
                     </button>
@@ -1288,10 +1290,10 @@ export function BeamerPanel() {
               </div>
 
               <div>
-                <h3 className="font-medium text-[10px] text-muted-foreground uppercase tracking-[0.16em]">
+                <h3 className="font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.16em]">
                   Reveal helpers
                 </h3>
-                <div className="mt-2 space-y-1.5 rounded-lg border border-hairline bg-card/30 p-3 text-[10px] text-muted-foreground leading-relaxed">
+                <div className="mt-2 space-y-1.5 rounded-lg border border-hairline bg-card/30 p-3 text-[0.75rem] text-muted-foreground leading-relaxed">
                   <p>
                     Select text first, then click <code>\only</code>,{" "}
                     <code>\uncover</code>, or <code>\alert</code> to wrap it.
@@ -1304,7 +1306,7 @@ export function BeamerPanel() {
               </div>
 
               <div>
-                <h3 className="font-medium text-[10px] text-muted-foreground uppercase tracking-[0.16em]">
+                <h3 className="font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.16em]">
                   Notes and transitions
                 </h3>
                 <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1318,7 +1320,7 @@ export function BeamerPanel() {
                     <button
                       key={label}
                       type="button"
-                      className="rounded border border-hairline bg-background px-2 py-1 font-mono text-[9px] text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                      className="rounded border border-hairline bg-background px-2 py-1 font-mono text-[0.6875rem] text-muted-foreground hover:border-primary/40 hover:text-foreground"
                       onClick={() => insertSnippet(snippet)}
                     >
                       {label}
@@ -1330,7 +1332,7 @@ export function BeamerPanel() {
           )}
         </div>
 
-        <div className="flex shrink-0 items-center justify-between border-hairline border-t px-4 py-2 text-[10px] text-muted-foreground">
+        <div className="flex shrink-0 items-center justify-between border-hairline border-t px-4 py-2 text-[0.75rem] text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <PresentationIcon className="size-3" />
             {info.mainFile?.path ?? "No Beamer file"}

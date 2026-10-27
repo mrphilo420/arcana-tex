@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useChat } from "@ai-sdk/react";
+import { toast } from "sonner";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import {
   AssistantChatTransport,
@@ -38,8 +39,20 @@ export function ChatRuntimeProvider({
   const loadedProjectRef = useRef<string | null>(null);
   const loadRequestRef = useRef(0);
   const latestMessagesRef = useRef(chat.messages);
+  const lastErrorRef = useRef<unknown>(null);
 
   latestMessagesRef.current = chat.messages;
+
+  useEffect(() => {
+    if (!chat.error || chat.error === lastErrorRef.current) return;
+    lastErrorRef.current = chat.error;
+    toast.error("Chat could not complete", {
+      description:
+        chat.error instanceof Error
+          ? chat.error.message.slice(0, 240)
+          : "Check the model configuration and try again.",
+    });
+  }, [chat.error]);
 
   useEffect(() => {
     useChatModelStore.getState().hydrate();

@@ -76,24 +76,58 @@ export function LiteraturePanel() {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showZoteroSettings, setShowZoteroSettings] = useState(false);
+  const [serverZoteroKey, setServerZoteroKey] = useState(false);
+  const [zoteroLoaded, setZoteroLoaded] = useState(false);
   const [zotero, setZotero] = useState<ZoteroSettings>(DEFAULT_ZOTERO_SETTINGS);
   const [added, setAdded] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    let cancelled = false;
     const raw = localStorage.getItem(ZOTERO_STORAGE_KEY);
-    if (!raw) return;
+    let stored: Partial<ZoteroSettings> | null = null;
+    if (raw) {
+      try {
+        stored = JSON.parse(raw) as Partial<ZoteroSettings>;
+      } catch {}
+    }
 
-    try {
-      setZotero({
-        ...DEFAULT_ZOTERO_SETTINGS,
-        ...(JSON.parse(raw) as Partial<ZoteroSettings>),
+    void fetch("/api/literature/zotero")
+      .then((response) => response.json())
+      .then((config: { configured?: boolean; libraryId?: string }) => {
+        if (cancelled) return;
+        setServerZoteroKey(Boolean(config.configured));
+        setZotero((current) =>
+          stored
+            ? { ...DEFAULT_ZOTERO_SETTINGS, ...stored }
+            : config.configured
+              ? {
+                  ...current,
+                  mode: "web",
+                  library: "users",
+                  libraryId: config.libraryId || current.libraryId,
+                }
+              : current,
+        );
+        setZoteroLoaded(true);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          if (stored) {
+            setZotero({ ...DEFAULT_ZOTERO_SETTINGS, ...stored });
+          }
+          setZoteroLoaded(true);
+        }
       });
-    } catch {}
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
+    if (!zoteroLoaded) return;
     localStorage.setItem(ZOTERO_STORAGE_KEY, JSON.stringify(zotero));
-  }, [zotero]);
+  }, [zotero, zoteroLoaded]);
 
   const runSearch = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -446,7 +480,7 @@ export function LiteraturePanel() {
                     className="h-8 text-xs"
                   />
 
-                  {zotero.mode === "web" && (
+                  {zotero.mode === "web" && !serverZoteroKey && (
                     <Input
                       type="password"
                       value={zotero.apiKey}
@@ -461,10 +495,12 @@ export function LiteraturePanel() {
                     />
                   )}
 
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[0.8125rem] text-muted-foreground">
                     {zotero.mode === "local"
                       ? "Zotero must be running with its local API enabled. Credentials are stored in this browser."
-                      : "Use a Zotero API key with read access. It is stored in this browser and forwarded through the local server."}
+                      : serverZoteroKey
+                        ? "Using the server-side Zotero key. Search requests are sent through the local server."
+                        : "Use a Zotero API key with read access. It is stored in this browser and forwarded through the local server."}
                   </p>
                 </div>
               )}
@@ -537,7 +573,7 @@ export function LiteraturePanel() {
                 {[result.year, result.venue].filter(Boolean).join(" · ")}
                 {result.doi ? ` · DOI ${result.doi}` : ""}
                 {result.openAccess && (
-                  <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-[10px] text-green-800 dark:bg-green-950 dark:text-green-300">
+                  <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-[0.75rem] text-green-800 dark:bg-green-950 dark:text-green-300">
                     Open access
                   </span>
                 )}

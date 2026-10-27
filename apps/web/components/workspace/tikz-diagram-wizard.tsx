@@ -305,10 +305,10 @@ export function TikzDiagramWizard({
             <SparklesIcon className="size-4" />
           </span>
           <div className="min-w-0">
-            <h2 className="font-medium font-serif text-[22px] leading-none">
+            <h2 className="font-medium font-serif text-[1.375rem] leading-none">
               Research diagram wizard
             </h2>
-            <p className="mt-1 text-[10px] text-muted-foreground uppercase tracking-[0.15em]">
+            <p className="mt-1 text-[0.75rem] text-muted-foreground uppercase tracking-[0.15em]">
               Choose a starting point · edit every shape afterwards
             </p>
           </div>
@@ -333,7 +333,7 @@ export function TikzDiagramWizard({
                     key={item.id}
                     type="button"
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[11px] transition-colors",
+                      "flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[0.8125rem] transition-colors",
                       category === item.id
                         ? "bg-background font-medium text-foreground shadow-sm"
                         : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
@@ -348,10 +348,10 @@ export function TikzDiagramWizard({
             </div>
 
             <div className="mt-5 border-hairline border-t pt-4">
-              <div className="px-2 font-medium text-[9px] text-muted-foreground uppercase tracking-[0.16em]">
+              <div className="px-2 font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.16em]">
                 Good for
               </div>
-              <ul className="mt-2 space-y-1.5 px-2 text-[10px] text-muted-foreground leading-relaxed">
+              <ul className="mt-2 space-y-1.5 px-2 text-[0.75rem] text-muted-foreground leading-relaxed">
                 <li>Research design</li>
                 <li>Model architecture</li>
                 <li>Conceptual frameworks</li>
@@ -407,18 +407,18 @@ export function TikzDiagramWizard({
                         )}
                       </div>
                       <div className="p-2.5">
-                        <div className="font-medium text-[12px] leading-snug">
+                        <div className="font-medium text-[0.875rem] leading-snug">
                           {template.name}
                         </div>
                         <div className="mt-1 flex items-center gap-1.5">
-                          <span className="rounded-full border border-hairline px-1.5 py-0.5 font-medium text-[8px] text-muted-foreground uppercase tracking-[0.12em]">
+                          <span className="rounded-full border border-hairline px-1.5 py-0.5 font-medium text-[0.625rem] text-muted-foreground uppercase tracking-[0.12em]">
                             {template.category}
                           </span>
-                          <span className="text-[9px] text-muted-foreground">
+                          <span className="text-[0.6875rem] text-muted-foreground">
                             Editable shapes
                           </span>
                         </div>
-                        <p className="mt-1.5 line-clamp-2 text-[10px] text-muted-foreground leading-relaxed">
+                        <p className="mt-1.5 line-clamp-2 text-[0.75rem] text-muted-foreground leading-relaxed">
                           {template.description}
                         </p>
                       </div>
@@ -430,19 +430,19 @@ export function TikzDiagramWizard({
           </main>
 
           <aside className="hidden w-[280px] shrink-0 border-hairline border-l bg-card/25 p-4 lg:block">
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-[0.15em]">
+            <div className="flex items-center gap-2 text-[0.75rem] text-muted-foreground uppercase tracking-[0.15em]">
               <PresentationIcon className="size-3.5 text-primary" />
               Selected diagram
             </div>
-            <h3 className="mt-2 font-serif text-[26px] leading-tight tracking-[-0.02em]">
+            <h3 className="mt-2 font-serif text-[1.625rem] leading-tight tracking-[-0.02em]">
               {selected.name}
             </h3>
-            <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
+            <p className="mt-2 text-[0.8125rem] text-muted-foreground leading-relaxed">
               {selected.description}
             </p>
 
             <div className="mt-5 border-hairline border-t pt-4">
-              <div className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.16em]">
+              <div className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.16em]">
                 Insert as
               </div>
               <div className="mt-2 space-y-1.5">
@@ -467,10 +467,10 @@ export function TikzDiagramWizard({
                     {mode === "replace" && <CheckIcon className="size-2.5" />}
                   </span>
                   <span>
-                    <span className="block font-medium text-[11px]">
+                    <span className="block font-medium text-[0.8125rem]">
                       Replace canvas
                     </span>
-                    <span className="mt-0.5 block text-[9px] text-muted-foreground">
+                    <span className="mt-0.5 block text-[0.6875rem] text-muted-foreground">
                       {hasShapes
                         ? "Clears the current shapes (undoable)."
                         : "Start this figure from the template."}
@@ -499,10 +499,10 @@ export function TikzDiagramWizard({
                     {mode === "append" && <CheckIcon className="size-2.5" />}
                   </span>
                   <span>
-                    <span className="block font-medium text-[11px]">
+                    <span className="block font-medium text-[0.8125rem]">
                       Add to canvas
                     </span>
-                    <span className="mt-0.5 block text-[9px] text-muted-foreground">
+                    <span className="mt-0.5 block text-[0.6875rem] text-muted-foreground">
                       Keeps existing shapes; drag to rearrange.
                     </span>
                   </span>
@@ -510,7 +510,7 @@ export function TikzDiagramWizard({
               </div>
             </div>
 
-            <div className="mt-5 rounded-md border border-hairline bg-background/60 p-3 text-[10px] text-muted-foreground leading-relaxed">
+            <div className="mt-5 rounded-md border border-hairline bg-background/60 p-3 text-[0.75rem] text-muted-foreground leading-relaxed">
               Every box, label, arrow, and color is a normal studio shape.
               Adjust it with the Design panel, the LaTeX ribbon, or the resize
               handles.
@@ -519,7 +519,7 @@ export function TikzDiagramWizard({
         </div>
 
         <div className="flex h-14 shrink-0 items-center justify-between border-hairline border-t bg-card/25 px-4">
-          <span className="hidden text-[10px] text-muted-foreground sm:block">
+          <span className="hidden text-[0.75rem] text-muted-foreground sm:block">
             {filtered.length} templates · {selected.category}
           </span>
           <div className="ml-auto flex items-center gap-2">

@@ -153,7 +153,7 @@ function NavItem({
       type="button"
       title={collapsed ? label : undefined}
       className={cn(
-        "group flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[12px] transition-colors",
+        "group flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[0.875rem] transition-colors",
         active
           ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
           : "text-muted-foreground hover:bg-sidebar-accent/55 hover:text-foreground",
@@ -166,7 +166,7 @@ function NavItem({
         <>
           <span className="min-w-0 flex-1 truncate">{label}</span>
           {count !== undefined && (
-            <span className="font-mono text-[9px] text-muted-foreground">
+            <span className="font-mono text-[0.6875rem] text-muted-foreground">
               {count}
             </span>
           )}
@@ -753,17 +753,17 @@ export function HomePage() {
         </span>
         <span className="min-w-0">
           <span className="flex items-center gap-2">
-            <span className="truncate font-medium text-[13px]">
+            <span className="truncate font-medium text-[0.875rem]">
               {project.name}
             </span>
             {sharedProjectIds.has(project.id) && (
-              <span className="flex shrink-0 items-center gap-1 rounded-full border border-hairline px-1.5 py-0.5 text-[8px] text-muted-foreground uppercase tracking-[0.12em]">
+              <span className="flex shrink-0 items-center gap-1 rounded-full border border-hairline px-1.5 py-0.5 text-[0.625rem] text-muted-foreground uppercase tracking-[0.12em]">
                 <CloudIcon className="size-2.5" />
                 Shared
               </span>
             )}
           </span>
-          <span className="mt-0.5 flex items-center gap-1.5 truncate text-[10px] text-muted-foreground">
+          <span className="mt-0.5 flex items-center gap-1.5 truncate text-[0.75rem] text-muted-foreground">
             <span className="font-mono">
               {project.mainFilePath ?? "untitled.tex"}
             </span>
@@ -775,7 +775,7 @@ export function HomePage() {
         </span>
       </button>
       <span
-        className="text-[11px] text-muted-foreground"
+        className="text-[0.8125rem] text-muted-foreground"
         title={new Date(project.createdAt).toLocaleString()}
       >
         {compactDate(project.createdAt)}
@@ -816,11 +816,11 @@ export function HomePage() {
               >
                 <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                 <FolderIcon className="size-4 shrink-0 text-primary/80" />
-                <span className="truncate font-medium text-[12px]">
+                <span className="truncate font-medium text-[0.875rem]">
                   {group.folder.name}
                 </span>
               </button>
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[0.75rem] text-muted-foreground">
                 {group.projects.length} project
                 {group.projects.length === 1 ? "" : "s"}
               </span>
@@ -830,11 +830,11 @@ export function HomePage() {
             </div>
           ) : (
             <div className="grid grid-cols-[minmax(0,1fr)_120px_46px] items-center border-hairline border-b bg-muted/20">
-              <div className="flex items-center gap-2.5 py-2 pr-3 pl-4 text-[10px] text-muted-foreground uppercase tracking-[0.14em]">
+              <div className="flex items-center gap-2.5 py-2 pr-3 pl-4 text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em]">
                 <FolderKanbanIcon className="size-3.5" />
                 Unfiled
               </div>
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[0.75rem] text-muted-foreground">
                 {group.projects.length} project
                 {group.projects.length === 1 ? "" : "s"}
               </span>
@@ -991,14 +991,14 @@ export function HomePage() {
             {!sidebarCollapsed && (
               <span className="min-w-0">
                 <span className="flex items-center gap-1.5">
-                  <span className="font-semibold text-[14px] tracking-[-0.015em]">
+                  <span className="font-semibold text-[0.9375rem] tracking-[-0.015em]">
                     arcanaTeX
                   </span>
-                  <span className="rounded border border-hairline px-1 py-0.5 font-mono text-[7px] text-muted-foreground">
+                  <span className="rounded border border-hairline px-1 py-0.5 font-mono text-[0.4375rem] text-muted-foreground">
                     BETA
                   </span>
                 </span>
-                <span className="mt-0.5 block font-medium text-[8px] text-muted-foreground uppercase tracking-[0.16em]">
+                <span className="mt-0.5 block font-medium text-[0.625rem] text-muted-foreground uppercase tracking-[0.16em]">
                   Local workspace
                 </span>
               </span>
@@ -1064,7 +1064,7 @@ export function HomePage() {
             )}
           >
             {!sidebarCollapsed && (
-              <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.18em]">
+              <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.18em]">
                 Folders
               </span>
             )}
@@ -1088,7 +1088,7 @@ export function HomePage() {
                     type="button"
                     title={sidebarCollapsed ? folder.name : undefined}
                     className={cn(
-                      "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[11px] transition-colors",
+                      "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[0.8125rem] transition-colors",
                       active
                         ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
                         : "text-muted-foreground hover:bg-sidebar-accent/55 hover:text-foreground",
@@ -1107,7 +1107,7 @@ export function HomePage() {
                         <span className="min-w-0 flex-1 truncate">
                           {folder.name}
                         </span>
-                        <span className="font-mono text-[9px] text-muted-foreground">
+                        <span className="font-mono text-[0.6875rem] text-muted-foreground">
                           {folderProjectCounts.get(folder.id) ?? 0}
                         </span>
                       </>
@@ -1160,7 +1160,7 @@ export function HomePage() {
             {folders.length === 0 && !sidebarCollapsed && (
               <button
                 type="button"
-                className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[10px] text-muted-foreground hover:bg-sidebar-accent/50"
+                className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[0.75rem] text-muted-foreground hover:bg-sidebar-accent/50"
                 onClick={openCreateFolder}
               >
                 <FolderPlusIcon className="size-3.5" />
@@ -1177,7 +1177,7 @@ export function HomePage() {
           )}
         >
           <span
-            className="flex size-7 shrink-0 items-center justify-center rounded-full bg-foreground font-medium text-[10px] text-background"
+            className="flex size-7 shrink-0 items-center justify-center rounded-full bg-foreground font-medium text-[0.75rem] text-background"
             title={userName}
           >
             {initials(userName)}
@@ -1185,10 +1185,10 @@ export function HomePage() {
           {!sidebarCollapsed && (
             <>
               <div className="min-w-0 flex-1">
-                <div className="truncate font-medium text-[11px]">
+                <div className="truncate font-medium text-[0.8125rem]">
                   {userName}
                 </div>
-                <div className="flex items-center gap-1 text-[8px] text-muted-foreground uppercase tracking-[0.12em]">
+                <div className="flex items-center gap-1 text-[0.625rem] text-muted-foreground uppercase tracking-[0.12em]">
                   <HardDriveIcon className="size-2.5" />
                   In this browser
                 </div>
@@ -1233,10 +1233,10 @@ export function HomePage() {
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="flex h-[68px] shrink-0 items-center gap-3 border-hairline border-b bg-background px-4 lg:px-6">
           <div className="min-w-0">
-            <h1 className="truncate font-serif text-[26px] leading-none tracking-[-0.025em]">
+            <h1 className="truncate font-serif text-[1.625rem] leading-none tracking-[-0.025em]">
               {pageTitle}
             </h1>
-            <p className="mt-1 hidden truncate text-[10px] text-muted-foreground sm:block">
+            <p className="mt-1 hidden truncate text-[0.75rem] text-muted-foreground sm:block">
               {pageDescription}
             </p>
           </div>
@@ -1271,7 +1271,7 @@ export function HomePage() {
                   <XIcon className="size-3.5" />
                 </button>
               ) : (
-                <kbd className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 rounded border border-hairline bg-background px-1 py-0.5 font-sans text-[9px] text-muted-foreground">
+                <kbd className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 rounded border border-hairline bg-background px-1 py-0.5 font-sans text-[0.6875rem] text-muted-foreground">
                   /
                 </kbd>
               )}
@@ -1292,7 +1292,7 @@ export function HomePage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-[0.14em]">
+                <DropdownMenuLabel className="text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em]">
                   Show
                 </DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => setView("all")}>
@@ -1459,7 +1459,7 @@ export function HomePage() {
               <div className="grid grid-cols-[minmax(0,1fr)_120px_46px] items-center border-hairline border-b bg-muted/25 px-4">
                 <button
                   type="button"
-                  className="flex h-9 items-center gap-1.5 text-left font-medium text-[9px] text-muted-foreground uppercase tracking-[0.16em] hover:text-foreground"
+                  className="flex h-9 items-center gap-1.5 text-left font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.16em] hover:text-foreground"
                   onClick={() => setSort("name")}
                 >
                   Name
@@ -1475,7 +1475,7 @@ export function HomePage() {
                 </button>
                 <button
                   type="button"
-                  className="flex h-9 items-center gap-1.5 text-left font-medium text-[9px] text-muted-foreground uppercase tracking-[0.16em] hover:text-foreground"
+                  className="flex h-9 items-center gap-1.5 text-left font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.16em] hover:text-foreground"
                   onClick={() => setSort("created")}
                 >
                   Created
@@ -1495,7 +1495,7 @@ export function HomePage() {
             </div>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-[10px] text-muted-foreground">
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-[0.75rem] text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className="size-1.5 rounded-full bg-[#5db8a6]" />
               Local-first · projects stay in this browser

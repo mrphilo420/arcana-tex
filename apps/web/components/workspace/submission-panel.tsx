@@ -184,7 +184,7 @@ export function SubmissionPanel() {
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-[0.14em]">
+              <span className="text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em]">
                 Target
               </span>
               <Select
@@ -193,7 +193,7 @@ export function SubmissionPanel() {
               >
                 <SelectTrigger
                   size="sm"
-                  className="h-8 w-[190px] text-[10px]"
+                  className="h-8 w-[190px] text-[0.75rem]"
                   aria-label="Submission target"
                 >
                   <SelectValue />
@@ -207,7 +207,7 @@ export function SubmissionPanel() {
                 </SelectContent>
               </Select>
             </div>
-            <label className="flex cursor-pointer items-center gap-2 text-[11px]">
+            <label className="flex cursor-pointer items-center gap-2 text-[0.8125rem]">
               <input
                 type="checkbox"
                 checked={anonymous}
@@ -216,7 +216,7 @@ export function SubmissionPanel() {
               />
               Check for identity markers (double-blind review)
             </label>
-            <label className="flex cursor-pointer items-center gap-2 text-[11px]">
+            <label className="flex cursor-pointer items-center gap-2 text-[0.8125rem]">
               <input
                 type="checkbox"
                 checked={includePdf}
@@ -252,10 +252,10 @@ export function SubmissionPanel() {
                           : "text-[#2a8f83]",
                     )}
                   />
-                  <div className="font-serif text-[20px] leading-none">
+                  <div className="font-serif text-[1.25rem] leading-none">
                     {report.counts[status]}
                   </div>
-                  <div className="mt-1 text-[8px] text-muted-foreground uppercase tracking-[0.1em]">
+                  <div className="mt-1 text-[0.625rem] text-muted-foreground uppercase tracking-[0.1em]">
                     {status}
                   </div>
                 </div>
@@ -295,18 +295,18 @@ export function SubmissionPanel() {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="font-medium text-[11px] leading-snug">
+                      <span className="font-medium text-[0.8125rem] leading-snug">
                         {check.title}
                       </span>
-                      <span className="shrink-0 font-mono text-[8px] text-muted-foreground uppercase">
+                      <span className="shrink-0 font-mono text-[0.625rem] text-muted-foreground uppercase">
                         {check.category}
                       </span>
                     </div>
-                    <p className="mt-1 text-[10px] text-muted-foreground leading-relaxed">
+                    <p className="mt-1 text-[0.75rem] text-muted-foreground leading-relaxed">
                       {check.detail}
                     </p>
                     {check.filePath && (
-                      <p className="mt-1 font-mono text-[9px] text-primary/80">
+                      <p className="mt-1 font-mono text-[0.6875rem] text-primary/80">
                         {check.filePath}
                         {check.line ? `:${check.line}` : ""} · click to jump
                       </p>
@@ -319,17 +319,17 @@ export function SubmissionPanel() {
 
           <div className="rounded-lg border border-hairline bg-card/30 p-3">
             <div className="flex items-center justify-between">
-              <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-[0.14em]">
+              <span className="font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em]">
                 Source bundle
               </span>
-              <span className="font-mono text-[9px] text-muted-foreground">
+              <span className="font-mono text-[0.6875rem] text-muted-foreground">
                 {report.bundle.length} files ·{" "}
                 {report.bundleBytes > 1024 * 1024
                   ? `${(report.bundleBytes / 1024 / 1024).toFixed(1)} MB`
                   : `${Math.max(1, Math.round(report.bundleBytes / 1024))} KB`}
               </span>
             </div>
-            <p className="mt-1 text-[10px] text-muted-foreground leading-relaxed">
+            <p className="mt-1 text-[0.75rem] text-muted-foreground leading-relaxed">
               Build artifacts are excluded. Sources, bibliography, figures, and
               class/style files are included.
             </p>
@@ -349,7 +349,7 @@ export function SubmissionPanel() {
 
           {compileError && (
             <div className="flex items-center justify-between rounded-lg border border-destructive/25 bg-destructive/5 p-3">
-              <div className="text-[10px] text-destructive">
+              <div className="text-[0.75rem] text-destructive">
                 The project has a compile error.
               </div>
               <Button variant="outline" size="sm" onClick={requestCompile}>
@@ -359,7 +359,7 @@ export function SubmissionPanel() {
             </div>
           )}
 
-          <p className="text-[9px] text-muted-foreground leading-relaxed">
+          <p className="text-[0.6875rem] text-muted-foreground leading-relaxed">
             These checks are local heuristics, not a guarantee of acceptance.
             Always verify the current portal requirements and build the bundle
             in a clean TeX environment.

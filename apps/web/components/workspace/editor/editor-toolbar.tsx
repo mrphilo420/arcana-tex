@@ -20,6 +20,7 @@ import {
   PaletteIcon,
   PencilIcon,
   PlusIcon,
+  TypeIcon,
 } from "lucide-react";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { Button } from "@/components/ui/button";
@@ -39,9 +40,34 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TERMINAL_THEMES } from "@/lib/editor-theme";
+import { TEXT_SCALES } from "@/lib/text-scale";
 import { cn } from "@/lib/utils";
 import { useDocumentStore } from "@/stores/document-store";
 import { useEditorPreferencesStore } from "@/stores/editor-preferences-store";
+
+function TextScaleButton({ className }: { className?: string }) {
+  const textScaleId = useEditorPreferencesStore((s) => s.textScaleId);
+  const setTextScaleId = useEditorPreferencesStore((s) => s.setTextScaleId);
+  const index = TEXT_SCALES.findIndex((scale) => scale.id === textScaleId);
+  const current = TEXT_SCALES[index] ?? TEXT_SCALES[1];
+  const next = TEXT_SCALES[(index + 1) % TEXT_SCALES.length] ?? TEXT_SCALES[1];
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className={cn(
+        "size-7 text-[#a09d96] hover:bg-white/10 hover:text-[#faf9f5]",
+        className,
+      )}
+      title={`Text size: ${current.label}. Click for ${next.label}.`}
+      aria-label={`Text size: ${current.label}`}
+      onClick={() => setTextScaleId(next.id)}
+    >
+      <TypeIcon className="size-3.5" />
+    </Button>
+  );
+}
 
 function TerminalThemeMenu({ className }: { className?: string }) {
   const themeId = useEditorPreferencesStore((s) => s.terminalThemeId);
@@ -69,7 +95,7 @@ function TerminalThemeMenu({ className }: { className?: string }) {
         align="end"
         className="max-h-80 w-64 overflow-y-auto"
       >
-        <DropdownMenuLabel className="text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+        <DropdownMenuLabel className="text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
           Theme · editor + interface
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -173,7 +199,7 @@ export function EditorToolbar({
           ) : (
             <FileTextIcon className="size-4 text-muted-foreground" />
           )}
-          <span className="font-medium font-mono text-[#faf9f5] text-[11px]">
+          <span className="font-medium font-mono text-[#faf9f5] text-[0.8125rem]">
             {fileName}
           </span>
         </div>
@@ -225,10 +251,10 @@ export function EditorToolbar({
     return (
       <div className="flex h-9 items-center gap-2 border-white/10 border-b bg-[#252320] px-2 text-[#a09d96]">
         <FileTextIcon className="size-4 text-[#e8a55a]" />
-        <span className="font-medium font-mono text-[#faf9f5] text-[11px]">
+        <span className="font-medium font-mono text-[#faf9f5] text-[0.8125rem]">
           {fileName}
         </span>
-        <span className="rounded border border-[#e8a55a]/30 bg-[#e8a55a]/10 px-1.5 py-0.5 font-mono text-[#e8a55a] text-[9px] uppercase tracking-[0.12em]">
+        <span className="rounded border border-[#e8a55a]/30 bg-[#e8a55a]/10 px-1.5 py-0.5 font-mono text-[#e8a55a] text-[0.6875rem] uppercase tracking-[0.12em]">
           Markdown
         </span>
         <div className="ml-auto flex items-center gap-1">
@@ -236,7 +262,7 @@ export function EditorToolbar({
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 gap-1 text-[#a09d96] text-[10px] hover:bg-white/10 hover:text-[#faf9f5]"
+              className="h-6 gap-1 text-[#a09d96] text-[0.75rem] hover:bg-white/10 hover:text-[#faf9f5]"
               onClick={onToggleMarkdownPreview}
             >
               {markdownPreview ? (
@@ -247,6 +273,7 @@ export function EditorToolbar({
               {markdownPreview ? "Edit" : "Preview"}
             </Button>
           )}
+          <TextScaleButton />
           <TerminalThemeMenu />
         </div>
       </div>
@@ -257,13 +284,16 @@ export function EditorToolbar({
     return (
       <div className="flex h-9 items-center gap-2 border-white/10 border-b bg-[#252320] px-2 text-[#a09d96]">
         <FileCodeIcon className="size-4 text-[#5db8a6]" />
-        <span className="font-medium font-mono text-[#faf9f5] text-[11px]">
+        <span className="font-medium font-mono text-[#faf9f5] text-[0.8125rem]">
           {fileName}
         </span>
-        <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1.5 py-0.5 font-mono text-[#5db8a6] text-[9px] uppercase tracking-[0.12em]">
+        <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1.5 py-0.5 font-mono text-[#5db8a6] text-[0.6875rem] uppercase tracking-[0.12em]">
           Lean 4
         </span>
-        <TerminalThemeMenu className="ml-auto" />
+        <div className="ml-auto flex items-center gap-1">
+          <TextScaleButton />
+          <TerminalThemeMenu />
+        </div>
       </div>
     );
   }
@@ -271,7 +301,7 @@ export function EditorToolbar({
   return (
     <div className="flex h-9 items-center gap-1 border-white/10 border-b bg-[#252320] px-2 text-[#a09d96] [&_button:hover]:bg-white/10 [&_button:hover]:text-[#faf9f5]">
       <FileTextIcon className="size-4 text-muted-foreground" />
-      <span className="mr-2 font-medium font-mono text-[#faf9f5] text-[11px]">
+      <span className="mr-2 font-medium font-mono text-[#faf9f5] text-[0.8125rem]">
         {fileName}
       </span>
       <div className="mx-2 h-4 w-px bg-white/10" />
@@ -336,7 +366,8 @@ export function EditorToolbar({
       >
         <KeyboardIcon className="size-4" />
       </TooltipIconButton>
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-1">
+        <TextScaleButton />
         <TerminalThemeMenu />
       </div>
     </div>

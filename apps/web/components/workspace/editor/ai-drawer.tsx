@@ -212,7 +212,7 @@ const Composer: FC = () => {
     <ComposerPrimitive.Root className="shrink-0 p-3">
       <div className="mb-2 flex items-center justify-between gap-2 px-1">
         <ChatQuickActions />
-        <ModelPicker className="h-6 w-[140px] shrink-0 bg-transparent" />
+        <ModelPicker className="h-6 w-[190px] shrink-0 bg-transparent" />
       </div>
       <div className="flex w-full flex-col rounded-xl border border-input bg-muted/30 transition-colors focus-within:border-ring focus-within:bg-background">
         <ComposerPrimitive.Input

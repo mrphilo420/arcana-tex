@@ -93,6 +93,30 @@ function mapItem(item: ZoteroItem) {
   };
 }
 
+async function resolveUserLibraryId(
+  base: string,
+  headers: Record<string, string>,
+): Promise<string | null> {
+  try {
+    const response = await fetch(`${base}/keys/current`, { headers });
+    if (!response.ok) return null;
+    const data = (await response.json()) as { userID?: number };
+    return data.userID ? String(data.userID) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function GET() {
+  const serverKey = process.env.ZOTERO_API_KEY?.trim();
+  return NextResponse.json({
+    configured: Boolean(serverKey),
+    mode: serverKey ? "web" : "local",
+    library: process.env.ZOTERO_LIBRARY_TYPE === "groups" ? "groups" : "users",
+    libraryId: process.env.ZOTERO_LIBRARY_ID?.trim() || "0",
+  });
+}
+
 export async function POST(request: Request) {
   let body: ZoteroRequest;
 
@@ -104,18 +128,14 @@ export async function POST(request: Request) {
 
   const mode = body.mode === "web" ? "web" : "local";
   const library = body.library === "groups" ? "groups" : "users";
-  const libraryId = (
-    body.libraryId || (library === "users" ? "0" : "")
-  ).replace(/[^\d]/g, "");
+  const serverKey = process.env.ZOTERO_API_KEY?.trim();
+  const apiKey = serverKey || body.apiKey?.trim();
+  let libraryId = (body.libraryId || (library === "users" ? "0" : "")).replace(
+    /[^\d]/g,
+    "",
+  );
 
-  if (!libraryId) {
-    return NextResponse.json(
-      { error: "A Zotero library ID is required" },
-      { status: 400 },
-    );
-  }
-
-  if (mode === "web" && !body.apiKey) {
+  if (mode === "web" && !apiKey) {
     return NextResponse.json(
       { error: "A Zotero API key is required for the web API" },
       { status: 400 },
@@ -128,8 +148,32 @@ export async function POST(request: Request) {
     "Zotero-API-Version": "3",
   };
 
-  if (mode === "web" && body.apiKey) {
-    headers["Zotero-API-Key"] = body.apiKey;
+  if (mode === "web" && apiKey) {
+    headers["Zotero-API-Key"] = apiKey;
+  }
+
+  // Zotero's web API does not accept 0 as a user id. Resolve the authenticated
+  // user's id from the key so the default "My library" setting just works.
+  if (
+    mode === "web" &&
+    library === "users" &&
+    (!libraryId || libraryId === "0")
+  ) {
+    const resolved = await resolveUserLibraryId(base, headers);
+    if (!resolved) {
+      return NextResponse.json(
+        { error: "Could not resolve the Zotero user for this API key." },
+        { status: 502 },
+      );
+    }
+    libraryId = resolved;
+  }
+
+  if (!libraryId) {
+    return NextResponse.json(
+      { error: "A Zotero library ID is required" },
+      { status: 400 },
+    );
   }
 
   const itemPath = `${base}/${library}/${libraryId}/items`;

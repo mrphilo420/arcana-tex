@@ -164,7 +164,7 @@ const AssistantMessage: FC = () => {
 const CodeBlock: FC<SyntaxHighlighterProps> = ({ language, code }) => {
   return (
     <div className="my-2 overflow-hidden rounded-lg border border-border/70 bg-muted/40">
-      <div className="border-border/60 border-b px-3 py-1.5 font-mono text-[9px] text-muted-foreground uppercase tracking-[0.12em]">
+      <div className="border-border/60 border-b px-3 py-1.5 font-mono text-[0.6875rem] text-muted-foreground uppercase tracking-[0.12em]">
         {language || "text"}
       </div>
       <pre className="overflow-x-auto p-3 text-xs leading-relaxed">

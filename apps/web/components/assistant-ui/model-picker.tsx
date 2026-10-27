@@ -26,7 +26,7 @@ export function ModelPicker({ className }: { className?: string }) {
     >
       <SelectTrigger
         className={cn(
-          "h-7 w-[150px] gap-1.5 border-border/70 bg-background/70 px-2 text-[10px] text-muted-foreground",
+          "h-7 w-[190px] gap-1.5 border-border/70 bg-background/70 px-2 text-[0.75rem] text-muted-foreground",
           className,
         )}
         aria-label="AI model"

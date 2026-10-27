@@ -27,7 +27,7 @@ export function ChatQuickActions({ className }: { className?: string }) {
     <AuiIf condition={({ thread }) => !thread.isRunning}>
       <div
         className={cn(
-          "flex flex-wrap items-center gap-1.5 text-[10px]",
+          "flex flex-wrap items-center gap-1.5 text-[0.75rem]",
           className,
         )}
       >
@@ -53,7 +53,7 @@ export function ChatQuickActions({ className }: { className?: string }) {
             Lean audit
           </button>
         )}
-        <span className="hidden px-1 font-mono text-[9px] text-muted-foreground/70 sm:inline">
+        <span className="hidden px-1 font-mono text-[0.6875rem] text-muted-foreground/70 sm:inline">
           /paper-review
         </span>
       </div>

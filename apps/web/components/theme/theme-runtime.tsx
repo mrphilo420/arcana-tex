@@ -51,6 +51,7 @@ const UI_VARIABLES = [
 export function ThemeRuntime() {
   const themeId = useEditorPreferencesStore((s) => s.terminalThemeId);
   const fontPairingId = useEditorPreferencesStore((s) => s.fontPairingId);
+  const textScaleId = useEditorPreferencesStore((s) => s.textScaleId);
   const { resolvedTheme } = useTheme();
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export function ThemeRuntime() {
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.fontPairing = fontPairingId;
+    root.dataset.textScale = textScaleId;
 
     if (themeId === "arcana") {
       for (const property of UI_VARIABLES) {
@@ -123,7 +125,7 @@ export function ThemeRuntime() {
     root.dataset.appTheme = theme.id;
     root.style.colorScheme = theme.dark ? "dark" : "light";
     root.classList.toggle("dark", theme.dark);
-  }, [fontPairingId, resolvedTheme, themeId]);
+  }, [fontPairingId, resolvedTheme, textScaleId, themeId]);
 
   return null;
 }

@@ -39,6 +39,7 @@ import { buildEditorTheme, getTerminalTheme } from "@/lib/editor-theme";
 import { EditorToolbar } from "./editor-toolbar";
 import { type LatexInsertion, TikzLatexRibbon } from "../tikz-latex-ribbon";
 import { AIDrawer } from "./ai-drawer";
+import { SelectionChat, type SelectionChatTarget } from "./selection-chat";
 import { ImagePreview } from "./image-preview";
 import { MarkdownPreview } from "./markdown-preview";
 import { SearchPanel } from "./search-panel";
@@ -199,6 +200,8 @@ export function LatexEditor() {
 
   const [imageScale, setImageScale] = useState(0.5);
   const [currentLine, setCurrentLine] = useState(1);
+  const [selectionChat, setSelectionChat] =
+    useState<SelectionChatTarget | null>(null);
   const [gutterWidth, setGutterWidth] = useState(0);
   const [lineHtmlCache, setLineHtmlCache] = useState<Record<number, string>>(
     {},
@@ -229,6 +232,7 @@ export function LatexEditor() {
 
   useEffect(() => {
     setMarkdownPreview(false);
+    setSelectionChat(null);
   }, [activeFileId]);
 
   useEffect(() => {
@@ -359,14 +363,30 @@ export function LatexEditor() {
         setCursorPosition(head);
         if (from !== to) {
           setSelectionRange({ start: from, end: to });
+          const selected = update.state.sliceDoc(from, to);
+          const coords =
+            update.view.coordsAtPos(to) ?? update.view.coordsAtPos(from);
+          if (selected.trim() && coords) {
+            setSelectionChat({
+              text: selected,
+              startLine: update.state.doc.lineAt(from).number,
+              endLine: update.state.doc.lineAt(Math.max(from, to - 1)).number,
+              top: coords.bottom + 8,
+              left: coords.left,
+            });
+          } else {
+            setSelectionChat(null);
+          }
         } else {
           setSelectionRange(null);
+          setSelectionChat(null);
         }
       }
     });
 
     const scrollListener = EditorView.domEventHandlers({
       scroll: (_, view) => {
+        setSelectionChat(null);
         const scrollTop = view.scrollDOM.scrollTop;
         const lineBlock = view.lineBlockAtHeight(scrollTop);
         const lineNumber = view.state.doc.lineAt(lineBlock.from).number;
@@ -465,7 +485,7 @@ export function LatexEditor() {
         EditorView.theme({
           "&": {
             height: "100%",
-            fontSize: "14px",
+            fontSize: "0.9375rem",
           },
           ".cm-scroller": {
             overflow: "auto",
@@ -603,7 +623,7 @@ export function LatexEditor() {
         >
           {stickyLines.length > 0 && (
             <div
-              className="absolute inset-x-0 top-0 z-10 border-b font-mono text-[14px] leading-[1.4] shadow-md"
+              className="absolute inset-x-0 top-0 z-10 border-b font-mono text-[0.9375rem] leading-[1.4] shadow-md"
               style={{
                 backgroundColor: editorColors.background,
                 borderBottomColor: editorColors.border,
@@ -660,6 +680,12 @@ export function LatexEditor() {
           <MarkdownPreview content={activeFileContent ?? ""} />
         )}
         <AIDrawer />
+        <SelectionChat
+          target={selectionChat}
+          filePath={activeFile?.path ?? "document.tex"}
+          language={isLean ? "lean" : isMarkdown ? "markdown" : "latex"}
+          onClose={() => setSelectionChat(null)}
+        />
       </div>
     </div>
   );

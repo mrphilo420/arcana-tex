@@ -222,7 +222,7 @@ export function FileTreeVisualizer({
               >
                 <ZoomOutIcon className="size-3.5" />
               </Button>
-              <span className="w-9 text-center font-mono text-[10px] text-muted-foreground">
+              <span className="w-9 text-center font-mono text-[0.75rem] text-muted-foreground">
                 {Math.round(zoom * 100)}%
               </span>
               <Button
@@ -238,7 +238,7 @@ export function FileTreeVisualizer({
               </Button>
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground">
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-[0.75rem] text-muted-foreground">
             <span>{files.length} files</span>
             <span>
               {folderCount === 0
@@ -325,10 +325,10 @@ export function FileTreeVisualizer({
                       <FileGlyph file={node.file} />
                     ) : null}
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium text-[11px]">
+                      <div className="truncate font-medium text-[0.8125rem]">
                         {node.name || "Project"}
                       </div>
-                      <div className="truncate font-mono text-[8px] text-muted-foreground">
+                      <div className="truncate font-mono text-[0.625rem] text-muted-foreground">
                         {node.kind === "root"
                           ? `${files.length} files`
                           : node.kind === "folder"

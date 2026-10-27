@@ -115,7 +115,9 @@ function TreeRow({
           ) : (
             <FolderOpenIcon className="size-4 shrink-0" />
           )}
-          <span className="truncate font-medium text-[13px]">{node.name}</span>
+          <span className="truncate font-medium text-[0.875rem]">
+            {node.name}
+          </span>
         </button>
 
         {!isCollapsed && node.children && (

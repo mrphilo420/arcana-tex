@@ -44,23 +44,23 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
               <h4 className="mt-4 mb-2 font-medium text-base">{children}</h4>
             ),
             p: ({ children }) => (
-              <p className="my-3 text-[13px] text-foreground/90 leading-7">
+              <p className="my-3 text-[0.875rem] text-foreground/90 leading-7">
                 {children}
               </p>
             ),
             ul: ({ children }) => (
-              <ul className="my-3 list-disc space-y-1 pl-6 text-[13px] leading-6">
+              <ul className="my-3 list-disc space-y-1 pl-6 text-[0.875rem] leading-6">
                 {children}
               </ul>
             ),
             ol: ({ children }) => (
-              <ol className="my-3 list-decimal space-y-1 pl-6 text-[13px] leading-6">
+              <ol className="my-3 list-decimal space-y-1 pl-6 text-[0.875rem] leading-6">
                 {children}
               </ol>
             ),
             li: ({ children }) => <li className="pl-1">{children}</li>,
             blockquote: ({ children }) => (
-              <blockquote className="my-4 border-primary border-l-2 bg-primary/5 py-2 pr-3 pl-4 text-[13px] text-muted-foreground italic">
+              <blockquote className="my-4 border-primary border-l-2 bg-primary/5 py-2 pr-3 pl-4 text-[0.875rem] text-muted-foreground italic">
                 {children}
               </blockquote>
             ),
@@ -110,7 +110,7 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
             ),
             table: ({ children }) => (
               <div className="my-5 overflow-x-auto">
-                <table className="w-full border-collapse text-[12px]">
+                <table className="w-full border-collapse text-[0.875rem]">
                   {children}
                 </table>
               </div>

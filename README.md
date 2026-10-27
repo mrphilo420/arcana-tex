@@ -63,10 +63,15 @@ you configure.
   `.tex`/`.ltx` file opens it and refreshes the compiled preview when Auto is
   on.
 - **AI-assisted writing** - A project-aware assistant built on assistant-ui and
-  Groq. The model receives the project file list plus active and main
+  Groq. The model receives a compact project context plus active and main
   documents, and can create/read/search files, set the main document, and edit
   the active document. Choose the active model in the assistant or developer
-  panel so only the selected model is called. Keys remain server-side.
+  panel so only the selected model is called. Keys remain server-side; long
+  chats and editor context are automatically compressed to fit the model's
+  token budget.
+- **Selection chat** - Select text in the editor to reveal **Ask AI**. A small
+  pop-up chat sends the file path, line range, selected source, and your
+  question to the main assistant thread.
 - **Paper review skill** - Type `/paper-review` or use the **Review paper**
   action in chat. The skill runs a read-only editorial panel, audits Lean
   formalization when present, and returns a decision and prioritized revision
@@ -120,7 +125,9 @@ you configure.
 - **Themes and typography** - 48 ccthemes palettes plus Arcana, applied to both
   the interface and the code editor from the toolbar or developer panel. Three
   font pairings cover serif, sans, and monospace: Editorial, Modern, and
-  Technical. Theme and font choices persist across sessions.
+  Technical. The interface follows a restrained, Apple-inspired type scale;
+  **Text size** (Compact, Comfortable, Large) scales the UI and editor without
+  changing the layout model. Theme, font, and text-size choices persist.
 - **Lean Infoview** - Opens automatically for `.lean` files with proof health,
   declarations, imports, local messages, and project details. Hide it or dock it
   left/right, then reopen it from the top bar. **Restart File** re-runs local
@@ -157,6 +164,9 @@ cp apps/web/.env.example apps/web/.env.local
 # - GROQ_API_KEY: Groq API key (server-side only; preferred when set)
 # - GROQ_MODEL: Optional Groq model id (defaults to qwen/qwen3.8-27b)
 # - GROQ_BASE_URL: Optional Groq OpenAI-compatible endpoint
+# - ZOTERO_API_KEY: Zotero web API key (server-side only)
+# - ZOTERO_LIBRARY_TYPE: users or groups
+# - ZOTERO_LIBRARY_ID: optional: 0 resolves the key's user automatically
 # - OPENAI_API_KEY: OpenAI-compatible fallback (server-side only)
 # - OPENAI_MODEL: Optional fallback model id (defaults to gpt-4o)
 # - OPENAI_BASE_URL: Optional OpenAI-compatible endpoint
@@ -234,8 +244,9 @@ LiteLLM in front of it.
   - `SPRINGER_META_API_KEY` for all Springer content
   - `SPRINGER_OPENACCESS_API_KEY` for open-access-only search
 - **Zotero** works with either the local Zotero API (Zotero running, local API
-  enabled) or the Zotero Web API with a user/group ID and API key entered in
-  the Literature panel.
+  enabled) or the Zotero Web API. Set `ZOTERO_API_KEY` in `.env.local` to use a
+  server-side key; the web app resolves the key's user automatically when the
+  library id is `0`. A browser-entered key remains available as a fallback.
 
 Adding a reference appends BibTeX to a `.bib` file (creating
 `references.bib` if needed) and inserts `\cite{...}`. When it creates the
@@ -514,6 +525,9 @@ Hono-based service for LaTeX compilation and sync:
    - `LATEX_API_URL`
    - `SPRINGER_META_API_KEY` (optional)
    - `SPRINGER_OPENACCESS_API_KEY` (optional)
+   - `ZOTERO_API_KEY` (optional)
+   - `ZOTERO_LIBRARY_TYPE` (optional)
+   - `ZOTERO_LIBRARY_ID` (optional)
    - `NEXT_PUBLIC_SYNC_URL` (optional; WebSocket base for live sync)
    - `KV_REST_API_URL`
    - `KV_REST_API_TOKEN`

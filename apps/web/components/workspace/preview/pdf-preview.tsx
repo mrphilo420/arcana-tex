@@ -256,7 +256,7 @@ export function PdfPreview() {
           <Button
             variant={autoCompile ? "secondary" : "ghost"}
             size="sm"
-            className="h-6 gap-1 px-1.5 text-[10px]"
+            className="h-6 gap-1 px-1.5 text-[0.75rem]"
             onClick={() => setAutoCompile(!autoCompile)}
             title={
               autoCompile
@@ -277,7 +277,7 @@ export function PdfPreview() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 gap-1 px-1.5 text-[10px]"
+              className="h-6 gap-1 px-1.5 text-[0.75rem]"
               onClick={() => setInspectorTab("logs")}
               title="Open compile diagnostics"
             >

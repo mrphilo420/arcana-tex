@@ -18,6 +18,7 @@ import {
   Settings2Icon,
   ShieldAlertIcon,
   TerminalIcon,
+  TypeIcon,
   WrenchIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ import {
 import { GROQ_CHAT_MODELS, getGroqModel } from "@/lib/chat-models";
 import { TERMINAL_THEMES } from "@/lib/editor-theme";
 import { FONT_PAIRINGS } from "@/lib/font-pairings";
+import { TEXT_SCALES } from "@/lib/text-scale";
 import { LEAN_PROJECT_STORAGE_KEY } from "@/lib/lean";
 import { cn } from "@/lib/utils";
 import { useChatModelStore } from "@/stores/chat-model-store";
@@ -84,8 +86,8 @@ function FeatureToggle({
   return (
     <div className="flex items-start justify-between gap-3 rounded-lg border border-hairline bg-card/25 p-3">
       <div className="min-w-0">
-        <div className="font-medium text-[11px]">{feature.label}</div>
-        <p className="mt-0.5 text-[10px] text-muted-foreground leading-relaxed">
+        <div className="font-medium text-[0.8125rem]">{feature.label}</div>
+        <p className="mt-0.5 text-[0.75rem] text-muted-foreground leading-relaxed">
           {feature.description}
         </p>
       </div>
@@ -125,6 +127,8 @@ export function DevPanel() {
   );
   const fontPairingId = useEditorPreferencesStore((s) => s.fontPairingId);
   const setFontPairingId = useEditorPreferencesStore((s) => s.setFontPairingId);
+  const textScaleId = useEditorPreferencesStore((s) => s.textScaleId);
+  const setTextScaleId = useEditorPreferencesStore((s) => s.setTextScaleId);
   const selectedModelId = useChatModelStore((s) => s.selectedModelId);
   const setSelectedModelId = useChatModelStore((s) => s.setSelectedModelId);
   const selectedModel = getGroqModel(selectedModelId);
@@ -316,7 +320,7 @@ export function DevPanel() {
           <SheetTitle className="flex items-center gap-2 text-base">
             <FlaskConicalIcon className="size-4 text-primary" />
             Developer control panel
-            <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1.5 py-0.5 font-mono text-[#2a8f83] text-[8px] uppercase tracking-[0.12em]">
+            <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1.5 py-0.5 font-mono text-[#2a8f83] text-[0.625rem] uppercase tracking-[0.12em]">
               local only
             </span>
           </SheetTitle>
@@ -335,7 +339,7 @@ export function DevPanel() {
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] transition-colors",
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.75rem] transition-colors",
                   activeTab === tab.id
                     ? "bg-primary/10 font-medium text-primary"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -354,7 +358,7 @@ export function DevPanel() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium text-sm">Feature flags</h3>
-                  <p className="mt-1 text-[10px] text-muted-foreground">
+                  <p className="mt-1 text-[0.75rem] text-muted-foreground">
                     Toggle features in this development session. Production
                     builds always use the shipped defaults.
                   </p>
@@ -363,7 +367,7 @@ export function DevPanel() {
                   variant="outline"
                   size="sm"
                   onClick={saveDefaults}
-                  className="shrink-0 text-[10px]"
+                  className="shrink-0 text-[0.75rem]"
                 >
                   <RotateCcwIcon className="size-3.5" />
                   Reset
@@ -382,11 +386,11 @@ export function DevPanel() {
               <div className="rounded-lg border border-hairline bg-card/25 p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-1.5 font-medium text-[11px]">
+                    <div className="flex items-center gap-1.5 font-medium text-[0.8125rem]">
                       <PaletteIcon className="size-3.5 text-primary" />
                       Interface + editor theme
                     </div>
-                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                    <p className="mt-0.5 text-[0.75rem] text-muted-foreground">
                       Apply a ccthemes palette to the workspace and code editor.
                       Arcana restores the cream interface.
                     </p>
@@ -400,7 +404,7 @@ export function DevPanel() {
                     }
                   >
                     <SelectTrigger
-                      className="h-7 w-[150px] text-[10px]"
+                      className="h-7 w-[150px] text-[0.75rem]"
                       aria-label="Interface and editor theme"
                     >
                       <SelectValue />
@@ -429,8 +433,10 @@ export function DevPanel() {
               <div className="rounded-lg border border-hairline bg-card/25 p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-medium text-[11px]">Font pairing</div>
-                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                    <div className="font-medium text-[0.8125rem]">
+                      Font pairing
+                    </div>
+                    <p className="mt-0.5 text-[0.75rem] text-muted-foreground">
                       Three pairings across serif, sans, and monospace.
                     </p>
                   </div>
@@ -443,7 +449,7 @@ export function DevPanel() {
                     }
                   >
                     <SelectTrigger
-                      className="h-7 w-[150px] text-[10px]"
+                      className="h-7 w-[150px] text-[0.75rem]"
                       aria-label="Font pairing"
                     >
                       <SelectValue />
@@ -468,10 +474,10 @@ export function DevPanel() {
                           : "border-hairline",
                       )}
                     >
-                      <div className="font-medium text-[9px]">
+                      <div className="font-medium text-[0.6875rem]">
                         {pairing.label}
                       </div>
-                      <div className="mt-0.5 truncate text-[8px] text-muted-foreground">
+                      <div className="mt-0.5 truncate text-[0.625rem] text-muted-foreground">
                         {pairing.serif} / {pairing.sans} / {pairing.mono}
                       </div>
                     </div>
@@ -482,11 +488,70 @@ export function DevPanel() {
               <div className="rounded-lg border border-hairline bg-card/25 p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-1.5 font-medium text-[11px]">
+                    <div className="flex items-center gap-1.5 font-medium text-[0.8125rem]">
+                      <TypeIcon className="size-3.5 text-primary" />
+                      Text size
+                    </div>
+                    <p className="mt-0.5 text-[0.75rem] text-muted-foreground">
+                      Scale the interface and editor type without changing the
+                      layout scale.
+                    </p>
+                  </div>
+                  <Select
+                    value={textScaleId}
+                    onValueChange={(value) =>
+                      setTextScaleId(
+                        value as (typeof TEXT_SCALES)[number]["id"],
+                      )
+                    }
+                  >
+                    <SelectTrigger
+                      className="h-7 w-[150px] text-[0.75rem]"
+                      aria-label="Text size"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TEXT_SCALES.map((scale) => (
+                        <SelectItem key={scale.id} value={scale.id}>
+                          {scale.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  {TEXT_SCALES.map((scale) => (
+                    <button
+                      key={scale.id}
+                      type="button"
+                      onClick={() => setTextScaleId(scale.id)}
+                      className={cn(
+                        "rounded border px-2 py-1.5 text-left transition-colors",
+                        scale.id === textScaleId
+                          ? "border-primary/30 bg-primary/5"
+                          : "border-hairline hover:bg-accent",
+                      )}
+                    >
+                      <div className="font-medium text-[0.6875rem]">
+                        {scale.label}
+                      </div>
+                      <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
+                        {scale.description}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-hairline bg-card/25 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-1.5 font-medium text-[0.8125rem]">
                       <BotIcon className="size-3.5 text-primary" />
                       AI model
                     </div>
-                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                    <p className="mt-0.5 text-[0.75rem] text-muted-foreground">
                       Only the active Groq model is called. Pick a smaller model
                       to conserve compute.
                     </p>
@@ -500,7 +565,7 @@ export function DevPanel() {
                     }
                   >
                     <SelectTrigger
-                      className="h-7 w-[170px] text-[10px]"
+                      className="h-7 w-[190px] text-[0.75rem]"
                       aria-label="AI model"
                     >
                       <SelectValue />
@@ -527,21 +592,21 @@ export function DevPanel() {
                           : "border-hairline hover:bg-accent",
                       )}
                     >
-                      <div className="font-medium text-[9px]">
+                      <div className="font-medium text-[0.6875rem]">
                         {model.label}
                       </div>
-                      <div className="mt-0.5 text-[8px] text-muted-foreground">
+                      <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
                         {model.compute} · {model.contextWindow} ctx
                       </div>
                     </button>
                   ))}
                 </div>
-                <div className="mt-2 rounded border border-hairline/70 bg-background/40 px-2 py-1.5 text-[9px] text-muted-foreground">
+                <div className="mt-2 rounded border border-hairline/70 bg-background/40 px-2 py-1.5 text-[0.6875rem] text-muted-foreground">
                   {selectedModel.description}
                 </div>
               </div>
 
-              <div className="rounded-lg border border-[#b9822f]/20 bg-[#b9822f]/5 p-3 text-[#8a6421] text-[10px] leading-relaxed">
+              <div className="rounded-lg border border-[#b9822f]/20 bg-[#b9822f]/5 p-3 text-[#8a6421] text-[0.75rem] leading-relaxed">
                 <div className="flex items-center gap-1.5 font-medium">
                   <AlertTriangleIcon className="size-3.5" />
                   Before shipping
@@ -556,7 +621,7 @@ export function DevPanel() {
             <div className="space-y-4">
               <div>
                 <h3 className="font-medium text-sm">Workspace state</h3>
-                <p className="mt-1 text-[10px] text-muted-foreground">
+                <p className="mt-1 text-[0.75rem] text-muted-foreground">
                   Live view of the current project. Actions apply immediately.
                 </p>
               </div>
@@ -580,10 +645,10 @@ export function DevPanel() {
                     key={label}
                     className="min-w-0 rounded-md border border-hairline bg-card/25 px-2.5 py-2"
                   >
-                    <div className="text-[8px] text-muted-foreground uppercase tracking-[0.1em]">
+                    <div className="text-[0.625rem] text-muted-foreground uppercase tracking-[0.1em]">
                       {label}
                     </div>
-                    <div className="mt-0.5 truncate font-mono text-[10px]">
+                    <div className="mt-0.5 truncate font-mono text-[0.75rem]">
                       {value}
                     </div>
                   </div>
@@ -647,11 +712,11 @@ export function DevPanel() {
               </div>
 
               <div className="rounded-lg border border-hairline bg-card/25 p-3">
-                <div className="flex items-center gap-1.5 font-medium text-[10px]">
+                <div className="flex items-center gap-1.5 font-medium text-[0.75rem]">
                   <ShieldAlertIcon className="size-3.5 text-[#b9822f]" />
                   Local experiment files
                 </div>
-                <p className="mt-1 text-[10px] text-muted-foreground leading-relaxed">
+                <p className="mt-1 text-[0.75rem] text-muted-foreground leading-relaxed">
                   The panel state is written to{" "}
                   <code>.dev-panel.local.json</code> and excluded by{" "}
                   <code>.gitignore</code>. Snapshots download to your browser;
@@ -680,7 +745,7 @@ export function DevPanel() {
             <div className="space-y-4">
               <div>
                 <h3 className="font-medium text-sm">Local bridge</h3>
-                <p className="mt-1 text-[10px] text-muted-foreground">
+                <p className="mt-1 text-[0.75rem] text-muted-foreground">
                   Inspect the Lean Lake and LaTeX service endpoints.
                 </p>
               </div>
@@ -710,11 +775,11 @@ export function DevPanel() {
                   Open Lean panel
                 </Button>
               </div>
-              <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-dark p-3 font-mono text-[9px] text-on-dark-soft leading-relaxed">
+              <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-dark p-3 font-mono text-[0.6875rem] text-on-dark-soft leading-relaxed">
                 {bridgeResult ??
                   "Run Check bridge to query /api/lean/status, /api/lean/projects, and /api/lean/toolchains."}
               </pre>
-              <p className="text-[9px] text-muted-foreground leading-relaxed">
+              <p className="text-[0.6875rem] text-muted-foreground leading-relaxed">
                 The Lean bridge is optional. Configure it with{" "}
                 <code>LEAN_PROJECT_DIR</code> or select a project in the Lean
                 panel. The panel discovers Lake projects and installed Elan
@@ -727,7 +792,7 @@ export function DevPanel() {
             <div className="space-y-4">
               <div>
                 <h3 className="font-medium text-sm">Local data</h3>
-                <p className="mt-1 text-[10px] text-muted-foreground">
+                <p className="mt-1 text-[0.75rem] text-muted-foreground">
                   Browser keys used by arcanaTeX. The developer settings file is
                   gitignored; other project data is local to this browser.
                 </p>
@@ -772,7 +837,7 @@ export function DevPanel() {
               </div>
               <div className="overflow-hidden rounded-lg border border-hairline">
                 {storageEntries.length === 0 ? (
-                  <p className="p-3 text-[10px] text-muted-foreground">
+                  <p className="p-3 text-[0.75rem] text-muted-foreground">
                     No `open-prism` keys found.
                   </p>
                 ) : (
@@ -781,17 +846,17 @@ export function DevPanel() {
                       key={entry.key}
                       className="flex items-center justify-between gap-3 border-hairline border-b px-3 py-2 last:border-b-0"
                     >
-                      <span className="min-w-0 truncate font-mono text-[9px]">
+                      <span className="min-w-0 truncate font-mono text-[0.6875rem]">
                         {entry.key}
                       </span>
-                      <span className="shrink-0 font-mono text-[8px] text-muted-foreground">
+                      <span className="shrink-0 font-mono text-[0.625rem] text-muted-foreground">
                         {entry.size} chars
                       </span>
                     </div>
                   ))
                 )}
               </div>
-              <div className="rounded-lg border border-[#b9822f]/20 bg-[#b9822f]/5 p-3 text-[#8a6421] text-[10px] leading-relaxed">
+              <div className="rounded-lg border border-[#b9822f]/20 bg-[#b9822f]/5 p-3 text-[#8a6421] text-[0.75rem] leading-relaxed">
                 Developer flags persist in <code>.dev-panel.local.json</code>{" "}
                 (gitignored) and in this browser. Use the flag reset before
                 taking a production build.
@@ -800,7 +865,7 @@ export function DevPanel() {
           )}
         </div>
 
-        <div className="flex shrink-0 items-center justify-between border-hairline border-t px-4 py-2 text-[9px] text-muted-foreground">
+        <div className="flex shrink-0 items-center justify-between border-hairline border-t px-4 py-2 text-[0.6875rem] text-muted-foreground">
           <span>Development-only control surface</span>
           <span className="font-mono">⌘/Ctrl + Shift + D</span>
         </div>

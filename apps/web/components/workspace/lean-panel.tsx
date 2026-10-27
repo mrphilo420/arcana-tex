@@ -459,7 +459,7 @@ export function LeanPanel() {
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+              <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
                 Lake project
               </span>
               <Button
@@ -489,7 +489,7 @@ export function LeanPanel() {
                   {projectOptions.map((project) => (
                     <SelectItem key={project.path} value={project.path}>
                       <span className="font-medium">{project.name}</span>
-                      <span className="ml-2 font-mono text-[9px] text-muted-foreground">
+                      <span className="ml-2 font-mono text-[0.6875rem] text-muted-foreground">
                         {project.path}
                       </span>
                     </SelectItem>
@@ -498,11 +498,11 @@ export function LeanPanel() {
               </Select>
             ) : (
               <div className="rounded-lg border border-hairline border-dashed bg-card/20 p-3">
-                <div className="flex items-center gap-2 font-medium text-[11px]">
+                <div className="flex items-center gap-2 font-medium text-[0.8125rem]">
                   <SearchIcon className="size-3.5 text-primary" />
                   No Lake project detected
                 </div>
-                <p className="mt-1 text-[10px] text-muted-foreground leading-relaxed">
+                <p className="mt-1 text-[0.75rem] text-muted-foreground leading-relaxed">
                   Enter the absolute path to a directory containing a
                   `lakefile.lean` or `lakefile.toml`.
                 </p>
@@ -514,7 +514,7 @@ export function LeanPanel() {
                 value={customPath}
                 onChange={(event) => setCustomPath(event.target.value)}
                 placeholder="/absolute/path/to/lake-project"
-                className="h-8 flex-1 font-mono text-[10px]"
+                className="h-8 flex-1 font-mono text-[0.75rem]"
                 aria-label="Custom Lake project path"
                 onKeyDown={(event) => {
                   if (event.key === "Enter") useCustomProject();
@@ -523,21 +523,21 @@ export function LeanPanel() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 shrink-0 text-[10px]"
+                className="h-8 shrink-0 text-[0.75rem]"
                 onClick={useCustomProject}
                 disabled={isScanning || isLoading || isBuilding}
               >
                 Use path
               </Button>
             </div>
-            <p className="text-[9px] text-muted-foreground leading-relaxed">
+            <p className="text-[0.6875rem] text-muted-foreground leading-relaxed">
               Discovery checks Elan&apos;s known projects and common document
               folders. You can always enter a path manually.
             </p>
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-[10px] text-destructive leading-relaxed">
+            <div className="flex items-start gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-[0.75rem] text-destructive leading-relaxed">
               <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
               {error}
             </div>
@@ -556,15 +556,15 @@ export function LeanPanel() {
                 <TerminalIcon className="size-4 text-primary" />
                 Connect a local Lake project
               </div>
-              <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
+              <p className="mt-2 text-[0.8125rem] text-muted-foreground leading-relaxed">
                 {status?.error ||
                   "The local bridge is not configured yet. Start the LaTeX/sync API with a Lean project root."}
               </p>
-              <pre className="mt-3 overflow-x-auto rounded-md bg-surface-dark p-3 font-mono text-[10px] text-on-dark-soft leading-relaxed">
+              <pre className="mt-3 overflow-x-auto rounded-md bg-surface-dark p-3 font-mono text-[0.75rem] text-on-dark-soft leading-relaxed">
                 {`LEAN_PROJECT_DIR="/absolute/path/to/lake-project" \\
   pnpm --filter @open-prism/latex-api dev`}
               </pre>
-              <p className="mt-2 text-[10px] text-muted-foreground leading-relaxed">
+              <p className="mt-2 text-[0.75rem] text-muted-foreground leading-relaxed">
                 Run the web app locally so the browser can reach the bridge.
                 Optionally set the same <code>LEAN_BRIDGE_TOKEN</code> in the
                 API environment and <code>apps/web/.env.local</code>.
@@ -583,16 +583,16 @@ export function LeanPanel() {
                         {status.projectName ?? "Lean project"}
                       </span>
                       {status.hasLakefile && (
-                        <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1.5 py-0.5 font-mono text-[#2a8f83] text-[8px] uppercase tracking-[0.1em]">
+                        <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1.5 py-0.5 font-mono text-[#2a8f83] text-[0.625rem] uppercase tracking-[0.1em]">
                           Lake
                         </span>
                       )}
                     </div>
-                    <div className="mt-1.5 truncate font-mono text-[9px] text-muted-foreground">
+                    <div className="mt-1.5 truncate font-mono text-[0.6875rem] text-muted-foreground">
                       {status.projectPath}
                     </div>
                     {status.toolchainPin && (
-                      <div className="mt-1 truncate font-mono text-[9px] text-muted-foreground/75">
+                      <div className="mt-1 truncate font-mono text-[0.6875rem] text-muted-foreground/75">
                         pinned: {status.toolchainPin}
                       </div>
                     )}
@@ -600,16 +600,16 @@ export function LeanPanel() {
                 </div>
 
                 <div className="mt-3">
-                  <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+                  <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
                     Lean version
                   </span>
                   {toolchains.length === 0 ? (
-                    <p className="mt-1 text-[10px] text-muted-foreground">
+                    <p className="mt-1 text-[0.75rem] text-muted-foreground">
                       No Elan toolchains found. Install Lean 4 with Elan or set
                       LAKE_BIN.
                     </p>
                   ) : toolchains.length === 1 ? (
-                    <div className="mt-1 rounded-md border border-hairline bg-background/50 px-2.5 py-2 font-mono text-[10px]">
+                    <div className="mt-1 rounded-md border border-hairline bg-background/50 px-2.5 py-2 font-mono text-[0.75rem]">
                       {toolchains[0].label}
                     </div>
                   ) : (
@@ -634,7 +634,7 @@ export function LeanPanel() {
                     </Select>
                   )}
                   {status.toolchainPin && !status.pinnedToolchainId && (
-                    <p className="mt-1 text-[#b9822f] text-[9px] leading-relaxed">
+                    <p className="mt-1 text-[#b9822f] text-[0.6875rem] leading-relaxed">
                       The pinned toolchain is not installed. Choose an installed
                       Lean version explicitly.
                     </p>
@@ -674,11 +674,11 @@ export function LeanPanel() {
                   </Button>
                 </div>
                 {selectedToolchainInfo && (
-                  <p className="mt-2 text-[9px] text-muted-foreground">
+                  <p className="mt-2 text-[0.6875rem] text-muted-foreground">
                     Selected: {selectedToolchainInfo.label}
                   </p>
                 )}
-                <p className="mt-2 text-[9px] text-muted-foreground leading-relaxed">
+                <p className="mt-2 text-[0.6875rem] text-muted-foreground leading-relaxed">
                   Import copies `.lean` files into this browser project for chat
                   context. Matching paths are refreshed; local files are never
                   changed.
@@ -697,7 +697,7 @@ export function LeanPanel() {
                       <span className="font-medium">
                         {build.success ? "Build succeeded" : "Build failed"}
                       </span>
-                      <span className="font-mono text-[9px] text-muted-foreground">
+                      <span className="font-mono text-[0.6875rem] text-muted-foreground">
                         {formatDuration(build.durationMs)}
                         {build.exitCode !== null
                           ? ` · exit ${build.exitCode}`
@@ -708,12 +708,12 @@ export function LeanPanel() {
                       </span>
                     </div>
                     {build.command && (
-                      <span className="truncate font-mono text-[8px] text-muted-foreground/70">
+                      <span className="truncate font-mono text-[0.625rem] text-muted-foreground/70">
                         {build.command}
                       </span>
                     )}
                   </div>
-                  <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-dark p-3 font-mono text-[9px] text-on-dark-soft leading-relaxed">
+                  <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-dark p-3 font-mono text-[0.6875rem] text-on-dark-soft leading-relaxed">
                     {output ||
                       build.error ||
                       (build.success
@@ -725,16 +725,16 @@ export function LeanPanel() {
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+                  <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
                     Lean sources
                   </span>
-                  <span className="font-mono text-[9px] text-muted-foreground">
+                  <span className="font-mono text-[0.6875rem] text-muted-foreground">
                     {files.length} file{files.length === 1 ? "" : "s"}
                   </span>
                 </div>
                 <div className="max-h-56 overflow-y-auto rounded-lg border border-hairline bg-card/20 p-1.5">
                   {files.length === 0 ? (
-                    <p className="px-2 py-3 text-[10px] text-muted-foreground">
+                    <p className="px-2 py-3 text-[0.75rem] text-muted-foreground">
                       No `.lean` sources found outside ignored build
                       directories.
                     </p>
@@ -742,10 +742,10 @@ export function LeanPanel() {
                     files.map((file) => (
                       <div
                         key={file.path}
-                        className="flex items-center justify-between gap-2 rounded px-2 py-1.5 font-mono text-[10px] hover:bg-background/70"
+                        className="flex items-center justify-between gap-2 rounded px-2 py-1.5 font-mono text-[0.75rem] hover:bg-background/70"
                       >
                         <span className="min-w-0 truncate">{file.path}</span>
-                        <span className="shrink-0 text-[9px] text-muted-foreground">
+                        <span className="shrink-0 text-[0.6875rem] text-muted-foreground">
                           {formatBytes(file.size)}
                         </span>
                       </div>
@@ -756,7 +756,7 @@ export function LeanPanel() {
             </>
           )}
 
-          <p className="text-[9px] text-muted-foreground leading-relaxed">
+          <p className="text-[0.6875rem] text-muted-foreground leading-relaxed">
             The bridge runs `lake build` in the selected project directory and
             exposes only `.lean` reads. It does not accept arbitrary commands,
             and it never writes to the local project. Only connect trusted

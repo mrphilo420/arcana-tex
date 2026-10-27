@@ -5,6 +5,7 @@ import {
   convertToModelMessages,
   stepCountIs,
   type ToolSet,
+  type UIMessage,
 } from "ai";
 import { NextResponse } from "next/server";
 import {
@@ -107,6 +108,54 @@ interface ChatMessageLike {
   role?: string;
   content?: unknown;
   parts?: Array<{ type?: string; text?: string }>;
+  [key: string]: unknown;
+}
+
+const MAX_HISTORY_CHARS = 6500;
+const MAX_MESSAGE_PART_CHARS = 3500;
+const MAX_SYSTEM_CHARS = 7000;
+
+function truncateText(text: string, limit: number): string {
+  if (text.length <= limit) return text;
+  const head = Math.ceil(limit * 0.7);
+  const tail = limit - head;
+  return `${text.slice(0, head)}\n… truncated …\n${text.slice(-tail)}`;
+}
+
+function truncateDeep(value: unknown, limit: number): unknown {
+  if (typeof value === "string") return truncateText(value, limit);
+  if (Array.isArray(value))
+    return value.map((item) => truncateDeep(item, limit));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [
+        key,
+        truncateDeep(item, limit),
+      ]),
+    );
+  }
+  return value;
+}
+
+function compactChatMessages(input: unknown): ChatMessageLike[] {
+  if (!Array.isArray(input)) return [];
+  const messages = input.map((message) =>
+    truncateDeep(message, MAX_MESSAGE_PART_CHARS),
+  ) as ChatMessageLike[];
+
+  let start = messages.length;
+  let used = 0;
+  for (let index = messages.length - 1; index >= 0; index--) {
+    const size = JSON.stringify(messages[index]).length;
+    if (used + size > MAX_HISTORY_CHARS && used > 0) break;
+    used += size;
+    start = index;
+  }
+
+  // Keep a complete turn boundary when possible so tool results stay paired
+  // with the assistant call that produced them.
+  while (start > 0 && messages[start]?.role !== "user") start--;
+  return messages.slice(start);
 }
 
 function messageText(message: ChatMessageLike): string {
@@ -175,10 +224,17 @@ export async function POST(req: Request) {
     }
   }
 
-  const { messages, system, tools, model: requestedModel } = await req.json();
+  const payload = await req.json();
+  const messages = compactChatMessages(payload.messages);
+  const system =
+    typeof payload.system === "string"
+      ? truncateText(payload.system, MAX_SYSTEM_CHARS)
+      : undefined;
+  const tools = payload.tools;
+  const requestedModel = payload.model;
   const selectedModel =
     useGroq && isGroqModelId(requestedModel) ? requestedModel : chatModel;
-  const latestText = latestUserText(messages ?? []);
+  const latestText = latestUserText(messages);
   const review = getPaperReviewInvocation(latestText);
   const activeTools = review ? readOnlyTools(tools) : tools;
 
@@ -200,12 +256,25 @@ export async function POST(req: Request) {
   const result = streamText({
     model: modelProvider.chat(selectedModel),
     system: systemParts.join("\n\n"),
-    messages: await convertToModelMessages(messages),
+    messages: await convertToModelMessages(messages as unknown as UIMessage[]),
+    maxOutputTokens: 2048,
     stopWhen: stepCountIs(review ? 16 : 10),
     tools: activeTools
       ? (frontendTools(activeTools) as unknown as ToolSet)
       : undefined,
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse({
+    onError: (error) => {
+      const statusCode =
+        error && typeof error === "object" && "statusCode" in error
+          ? (error as { statusCode?: number }).statusCode
+          : undefined;
+      if (statusCode === 413) {
+        return "Groq rejected this request as too large for the current token limit. The editor context was compacted automatically; try sending the message again or choose the Fast model.";
+      }
+      console.error("Chat stream error", error);
+      return "Chat failed while contacting the model. Check the server logs and your Groq configuration.";
+    },
+  });
 }

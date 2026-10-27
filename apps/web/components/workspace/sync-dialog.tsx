@@ -179,7 +179,7 @@ export function SyncDialog({ open, onOpenChange }: SyncDialogProps) {
                 <Input
                   readOnly
                   value={getShareUrl(projectId ?? "", token)}
-                  className="h-8 bg-muted/40 font-mono text-[11px]"
+                  className="h-8 bg-muted/40 font-mono text-[0.8125rem]"
                   onFocus={(event) => event.target.select()}
                 />
                 <Button
@@ -203,7 +203,7 @@ export function SyncDialog({ open, onOpenChange }: SyncDialogProps) {
                 {peers.map((peer) => (
                   <span
                     key={peer.id}
-                    className="rounded-full bg-muted px-2 py-0.5 text-[11px]"
+                    className="rounded-full bg-muted px-2 py-0.5 text-[0.8125rem]"
                   >
                     {peer.name}
                   </span>
