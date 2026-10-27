@@ -90,6 +90,19 @@ export function isLatexRelatedFile(
   return fileKindForFile(file) === "latex";
 }
 
+/**
+ * Text files that belong in a LaTeX compilation. Lean, Python, R, and
+ * Markdown sources are project files, but they are not LaTeX inputs.
+ */
+export function isCompileResourceFile(
+  file: Pick<ProjectFile, "name" | "path">,
+): boolean {
+  const kind = fileKindForFile(file);
+  return (
+    kind !== "lean" && kind !== "python" && kind !== "r" && kind !== "markdown"
+  );
+}
+
 export function isLatexPatchableFile(path: string): boolean {
   return fileKindForName(path) === "latex";
 }

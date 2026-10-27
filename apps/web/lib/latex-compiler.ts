@@ -1,3 +1,4 @@
+import { isCompileResourceFile } from "@/lib/file-kind";
 import type { ProjectFile } from "@/lib/project-files";
 
 export type LatexCompiler = "pdflatex" | "xelatex" | "lualatex" | "tectonic";
@@ -30,7 +31,7 @@ export function gatherResources(
   for (const file of files) {
     const path = file.path || file.name;
 
-    if (file.type === "tex") {
+    if (file.type === "tex" && isCompileResourceFile(file)) {
       resources.push({
         path,
         content: file.content ?? "",
