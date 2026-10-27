@@ -100,7 +100,7 @@ you configure.
   detected. Includes a slide navigator, frame snippets, theme and aspect-ratio
   controls, overlays, notes, handout mode, and a three-step deck wizard.
 - **TikZ studio** - Draw rectangles, ellipses, lines, arrows, and text on a
-  16 × 10 cm snap grid. Edit LaTeX labels with a tabbed ribbon keyboard, and
+  16 × 10 cm snap grid. Edit LaTeX labels with the grouped ribbon keyboard, and
   insert or update a self-contained TikZ figure in the document.
 - **Research diagram wizard** - 28 agnostic templates spanning research
   workflows, systems, mathematics, and statistics: PCA biplots, CFA/SEM path
@@ -126,8 +126,11 @@ you configure.
   entries and insert `\cite` without leaving the editor.
 - **Comments and versions** - Anchor comments to a line or selection; save up
   to 30 local snapshots per project and restore them from the inspector.
-- **Workspace LaTeX keyboard** - Toggleable Text, Math, Greek, Symbols, and
-  TikZ groups that insert at the CodeMirror caret with keyboard shortcuts.
+- **Grouped LaTeX keyboard** - A toggleable function-first palette for Text,
+  Structures, Operators, Greek, Symbols, Format, and TikZ. Each category opens
+  focused sub-panels such as scripts, fractions, roots, brackets, accents,
+  matrices, environments, big operators, functions, and spacing; every button
+  inserts at the CodeMirror caret and preserves the current selection.
 - **Themes and typography** - 48 ccthemes palettes plus Arcana, applied to both
   the interface and the code editor from the toolbar or developer panel. Four
   font pairings cover serif, sans, and monospace: Cupertino (system), Editorial,

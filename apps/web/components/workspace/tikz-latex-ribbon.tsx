@@ -24,52 +24,26 @@ import {
   EyeOffIcon,
   GripHorizontalIcon,
   GroupIcon,
-  LayersIcon,
   MousePointer2Icon,
   MoveUpRightIcon,
-  NetworkIcon,
   PanelTopIcon,
   Redo2Icon,
   RotateCcwIcon,
   Settings2Icon,
-  SparklesIcon,
   SquareIcon,
   Trash2Icon,
   TypeIcon,
   Undo2Icon,
   UngroupIcon,
-  WorkflowIcon,
   XIcon,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { TABS, type RibbonItem, type RibbonTab } from "./latex-keyboard-data";
 
 export interface LatexInsertion {
   before: string;
   after?: string;
-}
-
-interface RibbonItem extends Partial<LatexInsertion> {
-  label: string;
-  title: string;
-  description?: string;
-  className?: string;
-  icon?: LucideIcon;
-  action?: "diagram-wizard";
-  templateId?: string;
-  large?: boolean;
-}
-
-interface RibbonGroup {
-  name: string;
-  items: RibbonItem[];
-}
-
-interface RibbonTab {
-  id: string;
-  label: string;
-  groups: RibbonGroup[];
 }
 
 interface RibbonCustomization {
@@ -79,567 +53,6 @@ interface RibbonCustomization {
 }
 
 const RIBBON_STORAGE_PREFIX = "openprism-latex-ribbon";
-
-const textGroup: RibbonGroup = {
-  name: "Text",
-  items: [
-    {
-      label: "B",
-      title: "Bold (⌘/Ctrl+B)",
-      before: "\\textbf{",
-      after: "}",
-      className: "font-bold",
-    },
-    {
-      label: "I",
-      title: "Italic (⌘/Ctrl+I)",
-      before: "\\textit{",
-      after: "}",
-      className: "font-serif italic",
-    },
-    {
-      label: "U",
-      title: "Underline (⌘/Ctrl+U)",
-      before: "\\underline{",
-      after: "}",
-      className: "underline",
-    },
-    {
-      label: "em",
-      title: "Emphasis (⌘/Ctrl+E)",
-      before: "\\emph{",
-      after: "}",
-      className: "font-serif italic",
-    },
-    {
-      label: "tt",
-      title: "Typewriter",
-      before: "\\texttt{",
-      after: "}",
-      className: "font-mono",
-    },
-    {
-      label: "sf",
-      title: "Sans serif",
-      before: "\\textsf{",
-      after: "}",
-    },
-    {
-      label: "rm",
-      title: "Roman",
-      before: "\\textrm{",
-      after: "}",
-      className: "font-serif",
-    },
-  ],
-};
-
-const styleGroup: RibbonGroup = {
-  name: "Style",
-  items: [
-    {
-      label: "A",
-      title: "Red text",
-      before: "\\textcolor{red}{",
-      after: "}",
-      className: "text-[#c64545] font-bold",
-    },
-    {
-      label: "A",
-      title: "Blue text",
-      before: "\\textcolor{blue}{",
-      after: "}",
-      className: "text-[#2563eb] font-bold",
-    },
-    {
-      label: "small",
-      title: "Small",
-      before: "\\small ",
-      className: "text-[0.75rem]",
-    },
-    {
-      label: "large",
-      title: "Large",
-      before: "\\large ",
-      className: "text-[0.875rem]",
-    },
-    {
-      label: "¶",
-      title: "Paragraph break",
-      before: "\\par ",
-    },
-    {
-      label: "↵",
-      title: "New line",
-      before: "\\newline ",
-    },
-  ],
-};
-
-const mathGroup: RibbonGroup = {
-  name: "Math",
-  items: [
-    {
-      label: "x",
-      title: "Inline math $...$",
-      before: "$",
-      after: "$",
-      className: "font-serif italic",
-    },
-    {
-      label: "∑",
-      title: "Display math \\[...\\]",
-      before: "\\[",
-      after: "\\]",
-      className: "font-serif",
-    },
-    {
-      label: "a/b",
-      title: "Fraction",
-      before: "\\frac{",
-      after: "}{}",
-      className: "font-serif text-[0.875rem]",
-    },
-    {
-      label: "√",
-      title: "Square root",
-      before: "\\sqrt{",
-      after: "}",
-      className: "font-serif",
-    },
-    {
-      label: "∑",
-      title: "Sum",
-      before: "\\sum",
-      className: "font-serif",
-    },
-    {
-      label: "∏",
-      title: "Product",
-      before: "\\prod",
-      className: "font-serif",
-    },
-    {
-      label: "∫",
-      title: "Integral",
-      before: "\\int",
-      className: "font-serif",
-    },
-    {
-      label: "lim",
-      title: "Limit",
-      before: "\\lim_{",
-      after: "}",
-      className: "font-serif",
-    },
-    {
-      label: "(n k)",
-      title: "Binomial coefficient",
-      before: "\\binom{",
-      after: "}{}",
-      className: "font-serif text-[0.75rem]",
-    },
-    {
-      label: "x̄",
-      title: "Overline",
-      before: "\\overline{",
-      after: "}",
-      className: "font-serif",
-    },
-    {
-      label: "x̂",
-      title: "Hat",
-      before: "\\hat{",
-      after: "}",
-      className: "font-serif",
-    },
-    {
-      label: "x⃗",
-      title: "Vector",
-      before: "\\vec{",
-      after: "}",
-      className: "font-serif",
-    },
-    {
-      label: "∂",
-      title: "Partial derivative",
-      before: "\\partial",
-      className: "font-serif",
-    },
-    {
-      label: "∞",
-      title: "Infinity",
-      before: "\\infty",
-      className: "font-serif",
-    },
-  ],
-};
-
-const environmentGroup: RibbonGroup = {
-  name: "Environments",
-  items: [
-    {
-      label: "aligned",
-      title: "Aligned equations",
-      before: "\\begin{aligned}\n  ",
-      after: "\n\\end{aligned}",
-      className: "font-mono text-[0.75rem]",
-    },
-    {
-      label: "cases",
-      title: "Cases",
-      before: "\\begin{cases}\n  ",
-      after: "\n\\end{cases}",
-      className: "font-mono text-[0.75rem]",
-    },
-    {
-      label: "pmatrix",
-      title: "Parenthesized matrix",
-      before: "\\begin{pmatrix}\n  ",
-      after: "\n\\end{pmatrix}",
-      className: "font-mono text-[0.75rem]",
-    },
-    {
-      label: "bmatrix",
-      title: "Bracketed matrix",
-      before: "\\begin{bmatrix}\n  ",
-      after: "\n\\end{bmatrix}",
-      className: "font-mono text-[0.75rem]",
-    },
-  ],
-};
-
-const greekLower = [
-  ["α", "\\alpha"],
-  ["β", "\\beta"],
-  ["γ", "\\gamma"],
-  ["δ", "\\delta"],
-  ["ε", "\\varepsilon"],
-  ["ζ", "\\zeta"],
-  ["η", "\\eta"],
-  ["θ", "\\theta"],
-  ["ι", "\\iota"],
-  ["κ", "\\kappa"],
-  ["λ", "\\lambda"],
-  ["μ", "\\mu"],
-  ["ν", "\\nu"],
-  ["ξ", "\\xi"],
-  ["π", "\\pi"],
-  ["ρ", "\\rho"],
-  ["σ", "\\sigma"],
-  ["τ", "\\tau"],
-  ["υ", "\\upsilon"],
-  ["φ", "\\varphi"],
-  ["χ", "\\chi"],
-  ["ψ", "\\psi"],
-  ["ω", "\\omega"],
-] as const;
-
-const greekUpper = [
-  ["Γ", "\\Gamma"],
-  ["Δ", "\\Delta"],
-  ["Θ", "\\Theta"],
-  ["Λ", "\\Lambda"],
-  ["Ξ", "\\Xi"],
-  ["Π", "\\Pi"],
-  ["Σ", "\\Sigma"],
-  ["Υ", "\\Upsilon"],
-  ["Φ", "\\Phi"],
-  ["Ψ", "\\Psi"],
-  ["Ω", "\\Omega"],
-] as const;
-
-const greekLowerGroup: RibbonGroup = {
-  name: "Lowercase",
-  items: greekLower.map(([label, command]) => ({
-    label,
-    title: command,
-    before: command,
-    className: "font-serif text-[1rem]",
-  })),
-};
-
-const greekUpperGroup: RibbonGroup = {
-  name: "Uppercase",
-  items: greekUpper.map(([label, command]) => ({
-    label,
-    title: command,
-    before: command,
-    className: "font-serif text-[1rem]",
-  })),
-};
-
-const operatorGroup: RibbonGroup = {
-  name: "Operators",
-  items: [
-    ["×", "\\times"],
-    ["·", "\\cdot"],
-    ["±", "\\pm"],
-    ["∓", "\\mp"],
-    ["≤", "\\le"],
-    ["≥", "\\ge"],
-    ["≠", "\\ne"],
-    ["≈", "\\approx"],
-    ["≡", "\\equiv"],
-    ["∼", "\\sim"],
-    ["∝", "\\propto"],
-    ["∞", "\\infty"],
-    ["∂", "\\partial"],
-    ["∇", "\\nabla"],
-    ["∀", "\\forall"],
-    ["∃", "\\exists"],
-    ["∈", "\\in"],
-    ["∉", "\\notin"],
-    ["⊂", "\\subset"],
-    ["⊃", "\\supset"],
-    ["∪", "\\cup"],
-    ["∩", "\\cap"],
-    ["∅", "\\emptyset"],
-    ["∖", "\\setminus"],
-  ].map(([label, before]) => ({
-    label,
-    title: before,
-    before,
-    className: "font-serif text-[1rem]",
-  })),
-};
-
-const arrowGroup: RibbonGroup = {
-  name: "Arrows",
-  items: [
-    ["→", "\\to"],
-    ["←", "\\leftarrow"],
-    ["↔", "\\leftrightarrow"],
-    ["⇒", "\\Rightarrow"],
-    ["⇐", "\\Leftarrow"],
-    ["⇔", "\\Leftrightarrow"],
-    ["↦", "\\mapsto"],
-    ["↪", "\\hookrightarrow"],
-    ["↠", "\\twoheadrightarrow"],
-    ["⟶", "\\longrightarrow"],
-    ["↑", "\\uparrow"],
-    ["↓", "\\downarrow"],
-  ].map(([label, before]) => ({
-    label,
-    title: before,
-    before,
-    className: "font-serif text-[1rem]",
-  })),
-};
-
-const dotsGroup: RibbonGroup = {
-  name: "Dots",
-  items: [
-    {
-      label: "…",
-      title: "\\ldots",
-      before: "\\ldots",
-      className: "font-serif",
-    },
-    {
-      label: "⋯",
-      title: "\\cdots",
-      before: "\\cdots",
-      className: "font-serif",
-    },
-    {
-      label: "⋮",
-      title: "\\vdots",
-      before: "\\vdots",
-      className: "font-serif",
-    },
-    {
-      label: "⋱",
-      title: "\\ddots",
-      before: "\\ddots",
-      className: "font-serif",
-    },
-  ],
-};
-
-const tikzGroup: RibbonGroup = {
-  name: "Math text",
-  items: [
-    {
-      label: "text",
-      title: "Text inside math",
-      before: "\\text{",
-      after: "}",
-      className: "font-sans text-[0.75rem]",
-    },
-    {
-      label: "rm",
-      title: "Roman math",
-      before: "\\mathrm{",
-      after: "}",
-      className: "font-serif text-[0.875rem]",
-    },
-    {
-      label: "bf",
-      title: "Bold math",
-      before: "\\mathbf{",
-      after: "}",
-      className: "font-serif font-bold text-[0.875rem]",
-    },
-    {
-      label: "cal",
-      title: "Calligraphic",
-      before: "\\mathcal{",
-      after: "}",
-      className: "font-serif italic text-[0.875rem]",
-    },
-    {
-      label: "op",
-      title: "Operator name",
-      before: "\\operatorname{",
-      after: "}",
-      className: "font-sans text-[0.75rem]",
-    },
-    {
-      label: "disp",
-      title: "Display style",
-      before: "\\displaystyle ",
-      className: "font-serif text-[0.75rem]",
-    },
-    {
-      label: "script",
-      title: "Script style",
-      before: "\\scriptstyle ",
-      className: "font-serif text-[0.75rem]",
-    },
-  ],
-};
-
-const decorationGroup: RibbonGroup = {
-  name: "Decorations",
-  items: [
-    {
-      label: "⏟",
-      title: "Underbrace",
-      before: "\\underbrace{",
-      after: "}_{}",
-      className: "font-serif text-[1rem]",
-    },
-    {
-      label: "⏞",
-      title: "Overbrace",
-      before: "\\overbrace{",
-      after: "}^{}",
-      className: "font-serif text-[1rem]",
-    },
-    {
-      label: "sub",
-      title: "Substack",
-      before: "\\substack{",
-      after: "}",
-      className: "font-serif text-[0.75rem]",
-    },
-    {
-      label: "red",
-      title: "Red math",
-      before: "\\color{red}{",
-      after: "}",
-      className: "text-[#c64545] font-serif text-[0.75rem]",
-    },
-    {
-      label: "blue",
-      title: "Blue math",
-      before: "\\color{blue}{",
-      after: "}",
-      className: "text-[#2563eb] font-serif text-[0.75rem]",
-    },
-  ],
-};
-
-const diagramWizardGroup: RibbonGroup = {
-  name: "Diagram wizard",
-  items: [
-    {
-      label: "Diagram Wizard",
-      title: "Research diagram wizard",
-      description:
-        "Choose a research, process, model, systems, concept, or math diagram and insert it as editable shapes.",
-      icon: SparklesIcon,
-      action: "diagram-wizard",
-      large: true,
-    },
-  ],
-};
-
-const quickDiagramGroup: RibbonGroup = {
-  name: "Quick start",
-  items: [
-    {
-      label: "Pipeline",
-      title: "Research pipeline",
-      description: "Question → data → method → results → conclusion.",
-      icon: WorkflowIcon,
-      action: "diagram-wizard",
-      templateId: "research-pipeline",
-      large: true,
-    },
-    {
-      label: "Flowchart",
-      title: "Research flowchart",
-      description: "A branching process with a decision point.",
-      icon: NetworkIcon,
-      action: "diagram-wizard",
-      templateId: "research-flow",
-      large: true,
-    },
-    {
-      label: "Network",
-      title: "Neural network",
-      description: "Three connected layers with input and output labels.",
-      icon: NetworkIcon,
-      action: "diagram-wizard",
-      templateId: "neural-network",
-      large: true,
-    },
-    {
-      label: "Layers",
-      title: "Layered architecture",
-      description: "Application, interface, services, and storage layers.",
-      icon: LayersIcon,
-      action: "diagram-wizard",
-      templateId: "layered-architecture",
-      large: true,
-    },
-  ],
-};
-
-const TABS: RibbonTab[] = [
-  {
-    id: "home",
-    label: "Home",
-    groups: [textGroup, styleGroup],
-  },
-  {
-    id: "insert",
-    label: "Insert",
-    groups: [diagramWizardGroup, quickDiagramGroup],
-  },
-  {
-    id: "math",
-    label: "Math",
-    groups: [mathGroup, environmentGroup],
-  },
-  {
-    id: "greek",
-    label: "Greek",
-    groups: [greekLowerGroup, greekUpperGroup],
-  },
-  {
-    id: "symbols",
-    label: "Symbols",
-    groups: [operatorGroup, arrowGroup, dotsGroup],
-  },
-  {
-    id: "tikz",
-    label: "TikZ",
-    groups: [tikzGroup, decorationGroup],
-  },
-];
 
 function normalizeCustomization(
   raw: Partial<RibbonCustomization> | null,
@@ -782,6 +195,7 @@ export function TikzLatexRibbon({
   );
   const [customizationLoaded, setCustomizationLoaded] = useState(false);
   const [tabId, setTabId] = useState(availableTabs[0]?.id ?? "home");
+  const [activeGroupName, setActiveGroupName] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [customizeTabId, setCustomizeTabId] = useState(
@@ -839,6 +253,10 @@ export function TikzLatexRibbon({
           !customization.hiddenGroups[activeTab.id]?.includes(group.name),
       )
     : [];
+  const activeGroup =
+    activeGroups.find((group) => group.name === activeGroupName) ??
+    activeGroups[0] ??
+    null;
   const customizeTab =
     availableTabs.find((tab) => tab.id === customizeTabId) ??
     activeTab ??
@@ -850,6 +268,10 @@ export function TikzLatexRibbon({
       setTabId(activeTab.id);
     }
   }, [activeTab, tabId]);
+
+  useEffect(() => {
+    setActiveGroupName(null);
+  }, [activeTab?.id]);
 
   const moveTab = (id: string, direction: -1 | 1) => {
     setCustomization((current) => {
@@ -923,14 +345,14 @@ export function TikzLatexRibbon({
     window.addEventListener("pointerup", handleUp);
   };
 
-  const renderItemButton = (item: RibbonItem) => {
+  const renderItemButton = (item: RibbonItem, index: number) => {
     const Icon = item.icon;
     const actionDisabled = Boolean(item.action && !onAction);
     const itemDisabled = (disabled && !item.action) || actionDisabled;
 
     return (
       <RibbonTooltip
-        key={`${item.label}-${item.title}`}
+        key={`${item.label}-${item.title}-${index}`}
         title={item.title}
         description={item.description}
         detail={item.before ? `${item.before}${item.after ?? ""}` : undefined}
@@ -1214,11 +636,7 @@ export function TikzLatexRibbon({
           <RibbonTooltip
             key={tab.id}
             title={`${tab.label} tab`}
-            description={
-              tab.id === "insert"
-                ? "Research diagram wizard and quick templates."
-                : undefined
-            }
+            description={tab.description}
           >
             <button
               type="button"
@@ -1228,7 +646,10 @@ export function TikzLatexRibbon({
                   ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground",
               )}
-              onClick={() => setTabId(tab.id)}
+              onClick={() => {
+                setTabId(tab.id);
+                setActiveGroupName(null);
+              }}
             >
               {tab.label}
             </button>
@@ -1241,11 +662,11 @@ export function TikzLatexRibbon({
           </span>
         )}
 
-        <span className="ml-auto hidden pr-1 text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em] md:block">
-          {scope === "workspace"
-            ? "Workspace LaTeX keyboard · ⌘/Ctrl+Shift+K"
-            : "LaTeX label keyboard"}
-        </span>
+        {scope === "tikz" && (
+          <span className="ml-auto hidden shrink-0 pr-1 text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em] md:block">
+            LaTeX label keyboard
+          </span>
+        )}
 
         <RibbonTooltip title="Customize ribbon">
           <button
@@ -1295,26 +716,29 @@ export function TikzLatexRibbon({
       </div>
 
       {!collapsed && (
-        <div className="flex min-h-[68px] items-stretch gap-0 overflow-x-auto px-2 py-1.5">
-          {activeTab && activeGroups.length > 0 ? (
-            activeGroups.map((group, index) => (
-              <div
-                key={group.name}
-                className={cn(
-                  "flex shrink-0 flex-col justify-between px-2.5",
-                  index > 0 && "border-hairline/70 border-l",
-                )}
-              >
-                <div className="flex items-center gap-0.5">
-                  {group.items.map(renderItemButton)}
-                </div>
-                <div className="mt-0.5 whitespace-nowrap text-center font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em]">
+        <div className="border-hairline/70 border-b px-2">
+          {activeGroups.length > 0 ? (
+            <div className="flex min-h-7 items-center gap-1 overflow-x-auto py-1">
+              {activeGroups.map((group) => (
+                <button
+                  key={group.name}
+                  type="button"
+                  aria-pressed={activeGroup?.name === group.name}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => setActiveGroupName(group.name)}
+                  className={cn(
+                    "shrink-0 rounded-full border px-2 py-0.5 font-medium text-[0.7rem] transition-colors",
+                    activeGroup?.name === group.name
+                      ? "border-hairline bg-background text-foreground shadow-sm"
+                      : "border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground",
+                  )}
+                >
                   {group.name}
-                </div>
-              </div>
-            ))
+                </button>
+              ))}
+            </div>
           ) : (
-            <div className="flex min-w-[240px] items-center gap-2 px-3 text-[0.75rem] text-muted-foreground">
+            <div className="flex min-h-7 items-center gap-2 text-[0.75rem] text-muted-foreground">
               {visibleTabs.length === 0
                 ? "All tabs are hidden."
                 : "All groups on this tab are hidden."}
@@ -1330,6 +754,24 @@ export function TikzLatexRibbon({
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {!collapsed && activeGroup && (
+        <div className="flex min-h-[58px] items-start gap-0 overflow-x-auto px-2 py-1.5">
+          <div
+            className={cn(
+              "gap-0.5 px-0.5",
+              activeGroup.items.length > 5 &&
+                activeGroup.items.every((item) => !item.large)
+                ? "grid grid-flow-col grid-rows-2"
+                : "flex items-center",
+            )}
+          >
+            {activeGroup.items.map((item, itemIndex) =>
+              renderItemButton(item, itemIndex),
+            )}
+          </div>
 
           {disabled && (
             <div className="flex min-w-[180px] items-center px-4 text-[0.75rem] text-muted-foreground">
