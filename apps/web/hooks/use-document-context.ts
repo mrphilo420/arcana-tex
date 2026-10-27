@@ -26,6 +26,12 @@ const CODE_EXECUTION_GUIDE = `Python, R, and subagents are available for computa
 - Code runs in a temporary directory, not the project root. Pass any data the script needs through its files input; do not assume it can read project paths.
 - Use one code-tool call per script. If it succeeds, use the result and move on. If it fails, read stderr and fix the script; never put tool names, error messages, or pseudo-instructions into the script body.`;
 
+const PROOF_GOLF_GUIDE = `RAG and proof golf:
+- When the user asks to golf, shorten, minimize, simplify, or tighten a proof, use retrieve_context first. Retrieve the exact theorem/lemma, its statement, imports, and nearby declarations or proof text. Use read_project_file or inspect_lean_sources to verify the exact source before editing.
+- Preserve theorem statements, names, assumptions, and imports unless the user explicitly asks to change them. Golf the proof body, not the specification. For Lean, do not claim success without a Lake build. For LaTeX proofs, recompile before claiming success.
+- Return changes through propose_patch, not direct writes. Explain your work in chat as you go: what you retrieved, what you are changing, why it should be shorter or clearer, and how it will be validated. Do not expose hidden chain-of-thought; provide a concise work log.
+- The patch opens a side-by-side preview with Keep and Undo. After Keep, run the matching validator: Lean build for Lean, LaTeX compile for TeX, Python/R runtime for Python/R. Python scripts may compute or validate a patch, but source application still goes through propose_patch for approval.`;
+
 function activeModeGuide(kind: FileKind, path: string): string {
   switch (kind) {
     case "latex":
@@ -137,7 +143,7 @@ The user is currently editing "${activeFile?.path ?? "document.tex"}":
 ${mainFileContext}${leanContextSection}
 ${selectionInfo}
 
-The project may contain multiple files that reference each other with \\input, \\include, \\bibliography, or \\includegraphics. Use the file list to understand the project structure and reference the current document when helping the user. If you need the full text of a large file, use read_project_file instead of assuming the truncated excerpt is complete.${CODE_EXECUTION_GUIDE}`,
+The project may contain multiple files that reference each other with \\input, \\include, \\bibliography, or \\includegraphics. Use the file list to understand the project structure and reference the current document when helping the user. If you need the full text of a large file, use read_project_file instead of assuming the truncated excerpt is complete.${CODE_EXECUTION_GUIDE}${PROOF_GOLF_GUIDE}`,
       }),
     });
   }, [

@@ -7,6 +7,7 @@ import { LatexEditor } from "./editor/latex-editor";
 import { LatexTools } from "./editor/latex-tools";
 import { ResearchTools } from "./editor/research-tools";
 import { CodeTools } from "./editor/code-tools";
+import { ProofTools } from "./editor/proof-tools";
 import { PdfPreview } from "./preview/pdf-preview";
 import { BeamerPanel } from "./beamer-panel";
 import { LeanInfoview } from "./lean-infoview";
@@ -17,6 +18,7 @@ import { ProjectInspector } from "./project-inspector";
 import { SubmissionPanel } from "./submission-panel";
 import { SyncDialog } from "./sync-dialog";
 import { TikzStudio } from "./tikz-studio";
+import { PatchPreviewDialog } from "./patch-preview-dialog";
 import { WorkspaceTopBar } from "./workspace-top-bar";
 import { useAutoCompile } from "@/hooks/use-auto-compile";
 import { useProjectInit } from "@/hooks/use-project-init";
@@ -67,6 +69,8 @@ export function WorkspaceLayout() {
       <LatexTools />
       <ResearchTools />
       <CodeTools />
+      <ProofTools />
+      <PatchPreviewDialog />
       <BeamerPanel />
       {leanLakeEnabled && <LeanPanel />}
       <CommentsPanel />
