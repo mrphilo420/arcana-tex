@@ -6,6 +6,7 @@ import {
   LLM_PROVIDER_PRESETS,
   modelValue,
   openCodeFamilyLabel,
+  openCodeModelStatus,
   parseModelValue,
 } from "@/lib/chat-models";
 
@@ -113,6 +114,27 @@ describe("classifyOpenCodeModel", () => {
     ]) {
       expect(classifyOpenCodeModel(model)).toBeNull();
     }
+  });
+
+  it("marks free-tier models disabled with a note", () => {
+    expect(openCodeModelStatus("deepseek-v4.1-flash-free")).toMatchObject({
+      family: null,
+      free: true,
+      disabled: true,
+    });
+    expect(openCodeModelStatus("deepseek-v4.1-flash-free").note).toContain(
+      "OpenCode client",
+    );
+    expect(openCodeModelStatus("jev-1.13")).toMatchObject({
+      family: null,
+      free: false,
+      disabled: true,
+    });
+    expect(openCodeModelStatus("deepseek-v4.1-flash")).toMatchObject({
+      family: "openai-chat",
+      free: false,
+      disabled: false,
+    });
   });
 
   it("labels API families for the picker", () => {

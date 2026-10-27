@@ -59,6 +59,16 @@ export function ChatRuntimeProvider({
   }, []);
 
   useEffect(() => {
+    const timer = setInterval(
+      () => {
+        void useChatModelStore.getState().refreshOptions();
+      },
+      6 * 60 * 60 * 1000,
+    );
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     transport.setRuntime(runtime);
   }, [transport, runtime]);
 

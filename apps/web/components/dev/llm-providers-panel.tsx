@@ -7,6 +7,7 @@ import {
   KeyRoundIcon,
   Loader2Icon,
   PlusIcon,
+  RefreshCwIcon,
   ServerIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -36,7 +37,9 @@ interface PublicProvider {
   baseUrl: string;
   api: LlmProviderApi;
   models: string[];
+  freeModels: string[];
   defaultModel: string;
+  modelsUpdatedAt?: number;
   hasApiKey: boolean;
   apiKeyPreview: string | null;
   headerKeys: string[];
@@ -127,12 +130,22 @@ function parseHeaders(value: string): Record<string, string> | undefined {
   );
 }
 
+function updatedLabel(timestamp?: number): string {
+  if (!timestamp) return "never";
+  const days = Math.floor((Date.now() - timestamp) / 86_400_000);
+  if (days <= 0) return "today";
+  if (days === 1) return "1 day ago";
+  return `${days} days ago`;
+}
+
 export function LlmProvidersPanel() {
   const [providers, setProviders] = useState<PublicProvider[]>([]);
   const [form, setForm] = useState<ProviderForm>(EMPTY_FORM);
+  const [freeModels, setFreeModels] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDiscovering, setIsDiscovering] = useState(false);
+  const [refreshing, setRefreshing] = useState<string | null>(null);
 
   const loadProviders = useCallback(async () => {
     try {
@@ -190,6 +203,9 @@ export function LlmProvidersPanel() {
             api: form.api,
             headers,
             models,
+            freeModels: freeModels.filter((modelId) =>
+              models.includes(modelId),
+            ),
             defaultModel: form.defaultModel.trim() || models[0],
           },
           apiKey: form.apiKey.trim() || undefined,
@@ -203,6 +219,7 @@ export function LlmProvidersPanel() {
         throw new Error(data.error || "Could not save provider.");
       setProviders(Array.isArray(data.providers) ? data.providers : []);
       setForm(EMPTY_FORM);
+      setFreeModels([]);
       await refreshModelPicker();
       toast.success("LLM provider saved");
     } catch (error) {
@@ -235,7 +252,10 @@ export function LlmProvidersPanel() {
         throw new Error(data.error || "Could not delete provider.");
       }
       setProviders(Array.isArray(data.providers) ? data.providers : []);
-      if (form.id === provider.id) setForm(EMPTY_FORM);
+      if (form.id === provider.id) {
+        setForm(EMPTY_FORM);
+        setFreeModels([]);
+      }
       await refreshModelPicker();
       toast.success("Provider deleted");
     } catch (error) {
@@ -272,7 +292,13 @@ export function LlmProvidersPanel() {
         }),
       });
       const data = (await response.json()) as {
-        models?: Array<{ id: string; label: string }>;
+        models?: Array<{
+          id: string;
+          label: string;
+          free?: boolean;
+          disabled?: boolean;
+          note?: string;
+        }>;
         note?: string;
         error?: string;
       };
@@ -282,12 +308,18 @@ export function LlmProvidersPanel() {
       const models = data.models ?? [];
       if (models.length > 0) {
         const ids = models.map((model) => model.id);
+        const selectable = models.filter((model) => !model.disabled);
+        const defaultModel =
+          selectable.find((model) => model.id === form.defaultModel)?.id ??
+          selectable[0]?.id ??
+          ids[0];
         update({
           models: ids.join("\n"),
-          defaultModel: ids.includes(form.defaultModel)
-            ? form.defaultModel
-            : ids[0],
+          defaultModel,
         });
+        setFreeModels(
+          models.filter((model) => model.free).map((model) => model.id),
+        );
       }
       toast.success(data.note || `Discovered ${models.length} models`);
     } catch (error) {
@@ -299,17 +331,75 @@ export function LlmProvidersPanel() {
     }
   };
 
+  const refresh = async (id?: string) => {
+    setRefreshing(id ?? "all");
+    try {
+      const response = await fetch("/api/dev/llm-providers/refresh", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(id ? { id } : {}),
+      });
+      const data = (await response.json()) as {
+        providers?: PublicProvider[];
+        refreshed?: string[];
+        errors?: Array<{ id: string; error: string }>;
+        error?: string;
+      };
+      if (!response.ok) {
+        throw new Error(data.error || "Could not refresh models.");
+      }
+      setProviders(Array.isArray(data.providers) ? data.providers : []);
+      await refreshModelPicker();
+      const count = data.refreshed?.length ?? 0;
+      if (data.errors && data.errors.length > 0) {
+        toast.warning(
+          `Refreshed ${count} provider${count === 1 ? "" : "s"} with ${data.errors.length} error${data.errors.length === 1 ? "" : "s"}`,
+          {
+            description: data.errors
+              .map((error) => `${error.id}: ${error.error}`)
+              .join(" ")
+              .slice(0, 240),
+          },
+        );
+      } else {
+        toast.success(`Refreshed ${count} provider${count === 1 ? "" : "s"}`);
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not refresh models.",
+      );
+    } finally {
+      setRefreshing(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div>
-        <h3 className="font-medium text-sm">LLM providers</h3>
-        <p className="mt-1 text-[0.75rem] text-muted-foreground leading-relaxed">
-          Add any OpenAI-compatible API. Keys are written to{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-[0.7rem]">
-            .llm-providers.local.json
-          </code>{" "}
-          on this machine and are never returned to the browser.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="font-medium text-sm">LLM providers</h3>
+          <p className="mt-1 text-[0.75rem] text-muted-foreground leading-relaxed">
+            Add any OpenAI-compatible API. Keys are written to{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-[0.7rem]">
+              .llm-providers.local.json
+            </code>{" "}
+            on this machine and are never returned to the browser. Models
+            refresh automatically when stale.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 shrink-0 gap-1 text-[0.7rem]"
+          onClick={() => void refresh()}
+          disabled={refreshing !== null}
+        >
+          <RefreshCwIcon
+            className={cn("size-3", refreshing === "all" && "animate-spin")}
+          />
+          Refresh all
+        </Button>
       </div>
 
       <div className="flex flex-wrap gap-1.5">
@@ -320,7 +410,10 @@ export function LlmProvidersPanel() {
             variant="outline"
             size="sm"
             className="h-7 gap-1 text-[0.75rem]"
-            onClick={() => setForm(formFromPreset(preset))}
+            onClick={() => {
+              setForm(formFromPreset(preset));
+              setFreeModels([]);
+            }}
             title={preset.description}
           >
             <PlusIcon className="size-3" />
@@ -365,8 +458,16 @@ export function LlmProvidersPanel() {
                       {provider.models.length} model
                       {provider.models.length === 1 ? "" : "s"}
                     </span>
+                    {provider.freeModels.length > 0 && (
+                      <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-700">
+                        {provider.freeModels.length} free
+                      </span>
+                    )}
                     <span className="rounded bg-muted px-1.5 py-0.5">
                       default: {provider.defaultModel || "—"}
+                    </span>
+                    <span className="rounded bg-muted px-1.5 py-0.5">
+                      updated: {updatedLabel(provider.modelsUpdatedAt)}
                     </span>
                     <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
                       <KeyRoundIcon className="size-3" />
@@ -386,8 +487,27 @@ export function LlmProvidersPanel() {
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="h-7 gap-1 text-[0.75rem]"
+                    onClick={() => void refresh(provider.id)}
+                    disabled={refreshing !== null}
+                  >
+                    <RefreshCwIcon
+                      className={cn(
+                        "size-3",
+                        refreshing === provider.id && "animate-spin",
+                      )}
+                    />
+                    Refresh
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
                     className="h-7 text-[0.75rem]"
-                    onClick={() => setForm(formFromProvider(provider))}
+                    onClick={() => {
+                      setForm(formFromProvider(provider));
+                      setFreeModels(provider.freeModels ?? []);
+                    }}
                   >
                     Edit
                   </Button>
@@ -537,9 +657,9 @@ export function LlmProvidersPanel() {
           Leave headers blank to keep the stored headers; enter {"{}"} to clear
           them. Discovery calls GET /models with the same base URL and key. It
           uses Bearer auth for OpenAI-compatible endpoints and x-api-key plus
-          anthropic-version for Anthropic. OpenCode discovery calls /v1/models,
-          imports paid/Go models, and skips free-tier or unsupported API
-          families.
+          anthropic-version for Anthropic. OpenCode discovery calls /v1/models
+          and marks free-tier or unsupported entries as disabled. Free models
+          are sorted first in the picker.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <Button
@@ -577,7 +697,10 @@ export function LlmProvidersPanel() {
               variant="ghost"
               size="sm"
               className="h-8"
-              onClick={() => setForm(EMPTY_FORM)}
+              onClick={() => {
+                setForm(EMPTY_FORM);
+                setFreeModels([]);
+              }}
             >
               Cancel
             </Button>

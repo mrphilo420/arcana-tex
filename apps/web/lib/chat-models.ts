@@ -66,6 +66,9 @@ export interface ChatModelSelection extends ChatModelOption {
   modelId: string;
   providerId: string;
   providerLabel: string;
+  free?: boolean;
+  disabled?: boolean;
+  note?: string;
 }
 
 export type LlmProviderApi =
@@ -232,41 +235,81 @@ const OPENCODE_FAMILY_LABELS: Record<string, string> = {
   google: "Gemini",
 };
 
+export interface OpenCodeModelStatus {
+  family: LlmProviderApi | null;
+  free: boolean;
+  disabled: boolean;
+  note?: string;
+}
+
 /**
- * OpenCode serves each model from one API family. These rules mirror the
- * official endpoint table; free-tier, Jev, and non-chat models return null
- * because they are not usable from an external client.
+ * OpenCode serves each model from one API family. Free-tier models are visible
+ * in the catalogue but only work inside the OpenCode client, so they are
+ * reported as disabled; Jev/SystemOne and non-chat models are also disabled.
  */
-export function classifyOpenCodeModel(modelId: string): LlmProviderApi | null {
+export function openCodeModelStatus(modelId: string): OpenCodeModelStatus {
   const id = modelId.trim().toLowerCase();
-  if (
-    !id ||
-    id === "test" ||
-    id === "big-pickle" ||
-    id.startsWith("jev-") ||
-    id.startsWith("sam-") ||
+  const free =
     id.endsWith("-free") ||
+    id === "big-pickle" ||
+    (id.startsWith("jev-") && id.endsWith("-free"));
+
+  if (!id || id === "test") {
+    return { family: null, free: false, disabled: true };
+  }
+  if (id.startsWith("jev-")) {
+    return {
+      family: null,
+      free,
+      disabled: true,
+      note: "Jev/SystemOne models are not supported by the chat adapter.",
+    };
+  }
+  if (free) {
+    return {
+      family: null,
+      free: true,
+      disabled: true,
+      note: "Free tier is only available inside the OpenCode client.",
+    };
+  }
+  if (
+    id.startsWith("sam-") ||
     /(?:image|voice|transcribe|embed|tts|audio|vision)/.test(id)
   ) {
-    return null;
+    return {
+      family: null,
+      free: false,
+      disabled: true,
+      note: "Non-chat model.",
+    };
   }
-  if (id.startsWith("claude-")) return "anthropic";
+
+  if (id.startsWith("claude-")) {
+    return { family: "anthropic", free: false, disabled: false };
+  }
   if (
     id === "qwen3.8-flash" ||
     id === "qwen3.6-plus" ||
     id === "qwen3.5-plus"
   ) {
-    return "anthropic";
+    return { family: "anthropic", free: false, disabled: false };
   }
-  if (id.startsWith("gemini-")) return "google";
+  if (id.startsWith("gemini-")) {
+    return { family: "google", free: false, disabled: false };
+  }
   if (
     id.startsWith("gpt-") ||
     id.startsWith("grok-") ||
     id.startsWith("muse-")
   ) {
-    return "openai-responses";
+    return { family: "openai-responses", free: false, disabled: false };
   }
-  return "openai-chat";
+  return { family: "openai-chat", free: false, disabled: false };
+}
+
+export function classifyOpenCodeModel(modelId: string): LlmProviderApi | null {
+  return openCodeModelStatus(modelId).family;
 }
 
 export function openCodeFamilyLabel(api: LlmProviderApi): string {

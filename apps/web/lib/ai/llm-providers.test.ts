@@ -83,27 +83,95 @@ describe("discoverLlmModels", () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.models).toEqual([
+      expect(result.models).toHaveLength(7);
+      expect(result.models.slice(0, 4)).toMatchObject([
         {
           id: "deepseek-v4.1-flash",
           label: "deepseek-v4.1-flash",
           api: "openai-chat",
+          free: false,
+          disabled: false,
         },
         {
           id: "claude-sonnet-5-5",
           label: "claude-sonnet-5-5",
           api: "anthropic",
+          free: false,
+          disabled: false,
         },
-        { id: "gpt-6.1-sol", label: "gpt-6.1-sol", api: "openai-responses" },
-        { id: "gemini-4-argon", label: "gemini-4-argon", api: "google" },
+        {
+          id: "gpt-6.1-sol",
+          label: "gpt-6.1-sol",
+          api: "openai-responses",
+          free: false,
+          disabled: false,
+        },
+        {
+          id: "gemini-4-argon",
+          label: "gemini-4-argon",
+          api: "google",
+          free: false,
+          disabled: false,
+        },
       ]);
-      expect(result.note).toContain("Skipped 3");
+      expect(result.models[4]).toMatchObject({
+        id: "deepseek-v4.1-flash-free",
+        free: true,
+        disabled: true,
+      });
+      expect(result.models[4]?.note).toContain("OpenCode client");
+      expect(result.models[5]).toMatchObject({
+        id: "big-pickle",
+        free: true,
+        disabled: true,
+      });
+      expect(result.models[6]).toMatchObject({
+        id: "jev-1.13",
+        free: false,
+        disabled: true,
+      });
+      expect(result.note).toContain("2 free-tier models");
+      expect(result.note).toContain("3 total entries are disabled");
     }
 
     const [url, init] = fetchMock.mock.calls[0] ?? [];
     expect(String(url)).toBe("https://opencode.ai/inference/v1/models");
     const headers = new Headers((init as RequestInit | undefined)?.headers);
     expect(headers.get("authorization")).toBe("Bearer oc-test");
+  });
+
+  it("marks free models from provider pricing metadata", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      jsonResponse({
+        data: [
+          { id: "free-hf", providers: [{ is_free: true }] },
+          {
+            id: "paid-hf",
+            providers: [{ is_free: false, pricing: { input: 1, output: 2 } }],
+          },
+          { id: "free-or", pricing: { prompt: "0", completion: "0" } },
+          { id: "paid-or", pricing: { prompt: "0.1", completion: "0" } },
+        ],
+      }),
+    );
+
+    const result = await discoverLlmModels({
+      baseUrl: "https://example.test/v1",
+      api: "openai-chat",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(
+        result.models.map((model) => ({ id: model.id, free: model.free })),
+      ).toEqual([
+        { id: "free-hf", free: true },
+        { id: "paid-hf", free: false },
+        { id: "free-or", free: true },
+        { id: "paid-or", free: false },
+      ]);
+      expect(result.note).toContain("2 free");
+    }
   });
 
   it("uses Google headers and parses model names", async () => {

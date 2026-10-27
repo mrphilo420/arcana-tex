@@ -79,9 +79,10 @@ paid/Go models. Each model is routed to the API family that serves it:
   Plus.
 - **Gemini** - Gemini models.
 
-Discovery skips free-tier models because they are only available inside the
-OpenCode client, plus Jev/SystemOne and non-chat models. You can add a supported
-model ID manually if it is missing.
+Free-tier OpenCode models are listed in the picker as **Free · Unavailable**
+because they only work inside the OpenCode client. Jev/SystemOne and non-chat
+models are also marked unavailable. You can add a supported model ID manually
+if it is missing.
 
 The model picker shows the family next to each OpenCode model, so you can see
 how it will be routed.
@@ -189,6 +190,23 @@ If no provider is configured, the existing environment fallback still works:
 Configured providers take precedence. A provider-qualified model that no longer
 exists returns an error instead of silently switching to another provider.
 
+## Model refresh and free models
+
+Configured providers refresh their model catalogs when stale. The default TTL
+is **168 hours (weekly)**. Set `LLM_MODEL_REFRESH_HOURS=24` for a daily refresh.
+
+- `/api/ai/models` checks the TTL in the background; the picker updates on the
+  next fetch.
+- The developer **Models** tab has **Refresh all** and per-provider **Refresh**
+  buttons, plus an "updated" timestamp.
+- A refresh preserves your existing curated model list. It updates availability
+  and free flags, but does not silently add every new model. Use **Discover
+  models** to expand the list.
+- Free detection uses OpenAI/OpenRouter zero pricing, Hugging Face provider
+  `is_free` metadata, and OpenCode free-tier model names.
+- Free models are sorted first in the picker and labeled **Free**. OpenCode
+  free-tier models remain disabled because external clients cannot use them.
+
 ## Cost reporting
 
 OpenCode returns the request cost and billing source in the API usage metadata:
@@ -201,8 +219,11 @@ panel yet.
 - Discovery accepts OpenAI-style `{ "data": [...] }`, plain arrays,
   `{ "models": [...] }`, and Google's `models` response. Anthropic uses native
   headers; OpenCode uses `/v1/models`.
-- OpenCode free-tier models are skipped because external clients receive HTTP
-  403. Jev/SystemOne is not a chat-completions model and is also skipped.
+- OpenCode free-tier models are shown as disabled because external clients
+  receive HTTP 403. Jev/SystemOne is not a chat-completions model and is also
+  disabled.
+- Refreshes run on access and on a six-hour client check. The server TTL
+  controls when a provider is actually re-queried.
 - Amazon Bedrock, Azure-specific authentication, and other non-OpenAI,
   non-Anthropic, non-Google protocols are not wired as native adapters. Use an
   OpenAI-compatible gateway or add an AI SDK adapter.

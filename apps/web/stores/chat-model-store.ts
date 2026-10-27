@@ -67,12 +67,17 @@ export const useChatModelStore = create<ChatModelState>()((set, get) => ({
       };
       const options = Array.isArray(data.models) ? data.models : [];
       const current = get().selectedModelId;
-      const selected = options.some((option) => option.value === current)
-        ? current
-        : data.defaultModel &&
-            options.some((option) => option.value === data.defaultModel)
-          ? data.defaultModel
-          : (options[0]?.value ?? "");
+      const currentOption = options.find((option) => option.value === current);
+      const defaultOption = data.defaultModel
+        ? options.find(
+            (option) => option.value === data.defaultModel && !option.disabled,
+          )
+        : undefined;
+      const firstSelectable = options.find((option) => !option.disabled);
+      const selected =
+        currentOption && !currentOption.disabled
+          ? current
+          : (defaultOption?.value ?? firstSelectable?.value ?? "");
       persistSelectedModel(selected);
       set({ options, selectedModelId: selected, isLoading: false });
     } catch {

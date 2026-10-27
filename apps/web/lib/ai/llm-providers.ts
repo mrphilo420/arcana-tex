@@ -2,7 +2,8 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
-import { chmod, readFile, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { chmod, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   classifyOpenCodeModel,
@@ -11,6 +12,7 @@ import {
   isGroqModelId,
   modelValue,
   openCodeFamilyLabel,
+  openCodeModelStatus,
   parseModelValue,
   type ChatModelSelection,
   type LlmProviderApi,
@@ -25,6 +27,8 @@ const MAX_BASE_URL_CHARS = 500;
 const MAX_API_KEY_CHARS = 500;
 const MAX_HEADERS = 20;
 const DISCOVERY_TIMEOUT_MS = 20_000;
+const DEFAULT_MODEL_REFRESH_HOURS = 168;
+let refreshPromise: Promise<ModelRefreshResult> | null = null;
 
 export interface StoredLlmProvider {
   id: string;
@@ -34,7 +38,9 @@ export interface StoredLlmProvider {
   apiKey: string;
   headers: Record<string, string>;
   models: string[];
+  freeModels: string[];
   defaultModel: string;
+  modelsUpdatedAt?: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -45,7 +51,9 @@ export interface PublicLlmProvider {
   baseUrl: string;
   api: LlmProviderApi;
   models: string[];
+  freeModels: string[];
   defaultModel: string;
+  modelsUpdatedAt?: number;
   hasApiKey: boolean;
   apiKeyPreview: string | null;
   headerKeys: string[];
@@ -157,6 +165,9 @@ export async function readLlmProviders(): Promise<StoredLlmProvider[]> {
       .slice(0, MAX_PROVIDERS)
       .map((provider) => {
         const models = normalizeModels(provider.models);
+        const freeModels = normalizeModels(provider.freeModels).filter((id) =>
+          models.includes(id),
+        );
         return {
           ...provider,
           api: normalizeProviderApi(provider.api),
@@ -166,11 +177,16 @@ export async function readLlmProviders(): Promise<StoredLlmProvider[]> {
               : "",
           headers: normalizeHeaders(provider.headers),
           models,
+          freeModels,
           defaultModel:
             typeof provider.defaultModel === "string" &&
             models.includes(provider.defaultModel)
               ? provider.defaultModel
               : (models[0] ?? ""),
+          modelsUpdatedAt:
+            typeof provider.modelsUpdatedAt === "number"
+              ? provider.modelsUpdatedAt
+              : undefined,
         };
       });
   } catch {
@@ -182,11 +198,13 @@ async function writeLlmProviders(
   providers: StoredLlmProvider[],
 ): Promise<void> {
   const payload: ProviderFile = { version: 1, providers };
-  await writeFile(CONFIG_PATH, `${JSON.stringify(payload, null, 2)}\n`, {
+  const temporary = `${CONFIG_PATH}.${randomUUID()}.tmp`;
+  await writeFile(temporary, `${JSON.stringify(payload, null, 2)}\n`, {
     encoding: "utf-8",
     mode: 0o600,
   });
-  await chmod(CONFIG_PATH, 0o600).catch(() => {});
+  await chmod(temporary, 0o600).catch(() => {});
+  await rename(temporary, CONFIG_PATH);
 }
 
 export async function publicLlmProviders(): Promise<PublicLlmProvider[]> {
@@ -197,7 +215,9 @@ export async function publicLlmProviders(): Promise<PublicLlmProvider[]> {
     baseUrl: provider.baseUrl,
     api: provider.api,
     models: provider.models,
+    freeModels: provider.freeModels,
     defaultModel: provider.defaultModel,
+    modelsUpdatedAt: provider.modelsUpdatedAt,
     hasApiKey: Boolean(provider.apiKey),
     apiKeyPreview: maskApiKey(provider.apiKey),
     headerKeys: Object.keys(provider.headers),
@@ -214,6 +234,7 @@ export interface ProviderInput {
   apiKey?: string;
   headers?: unknown;
   models?: unknown;
+  freeModels?: unknown;
   defaultModel?: string;
 }
 
@@ -262,6 +283,11 @@ export async function upsertLlmProvider(
     input.headers === undefined
       ? (existing?.headers ?? {})
       : normalizeHeaders(input.headers);
+  const freeModels = (
+    input.freeModels === undefined
+      ? (existing?.freeModels ?? [])
+      : normalizeModels(input.freeModels)
+  ).filter((modelId) => models.includes(modelId));
 
   const defaultModel =
     typeof input.defaultModel === "string" &&
@@ -278,7 +304,9 @@ export async function upsertLlmProvider(
     apiKey,
     headers,
     models,
+    freeModels,
     defaultModel,
+    modelsUpdatedAt: now,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
@@ -299,7 +327,9 @@ export async function upsertLlmProvider(
       baseUrl: provider.baseUrl,
       api: provider.api,
       models: provider.models,
+      freeModels: provider.freeModels,
       defaultModel: provider.defaultModel,
+      modelsUpdatedAt: provider.modelsUpdatedAt,
       hasApiKey: Boolean(provider.apiKey),
       apiKeyPreview: maskApiKey(provider.apiKey),
       headerKeys: Object.keys(provider.headers),
@@ -320,6 +350,38 @@ export async function deleteLlmProvider(
   return { success: true };
 }
 
+function recordIsFree(record: Record<string, unknown>): boolean {
+  if (record.free === true) return true;
+  if (typeof record.id === "string" && record.id.endsWith(":free")) {
+    return true;
+  }
+  if (Array.isArray(record.providers)) {
+    if (
+      record.providers.some(
+        (provider) =>
+          provider &&
+          typeof provider === "object" &&
+          (provider as { is_free?: unknown }).is_free === true,
+      )
+    ) {
+      return true;
+    }
+  }
+  if (record.pricing && typeof record.pricing === "object") {
+    const values = Object.values(
+      record.pricing as Record<string, unknown>,
+    ).filter(
+      (value) =>
+        typeof value === "number" ||
+        (typeof value === "string" && value.trim() !== ""),
+    );
+    if (values.length > 0 && values.every((value) => Number(value) === 0)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function discoverLlmModels(input: {
   providerId?: string;
   baseUrl?: string;
@@ -329,7 +391,14 @@ export async function discoverLlmModels(input: {
 }): Promise<
   | {
       success: true;
-      models: Array<{ id: string; label: string; api?: LlmProviderApi }>;
+      models: Array<{
+        id: string;
+        label: string;
+        api?: LlmProviderApi;
+        free?: boolean;
+        disabled?: boolean;
+        note?: string;
+      }>;
       note: string;
     }
   | { success: false; error: string }
@@ -417,7 +486,9 @@ export async function discoverLlmModels(input: {
         : [];
   const parsed = source
     .map((item) => {
-      if (typeof item === "string") return { id: item, label: item };
+      if (typeof item === "string") {
+        return { id: item, label: item, free: item.endsWith(":free") };
+      }
       if (item && typeof item === "object") {
         const record = item as {
           id?: unknown;
@@ -440,22 +511,36 @@ export async function discoverLlmModels(input: {
               : typeof record.name === "string"
                 ? record.name.replace(/^models\//, "")
                 : id;
-        return id ? { id, label } : null;
+        return id
+          ? {
+              id,
+              label,
+              free: recordIsFree(record as Record<string, unknown>),
+            }
+          : null;
       }
       return null;
     })
-    .filter((item): item is { id: string; label: string } => Boolean(item))
+    .filter((item): item is { id: string; label: string; free: boolean } =>
+      Boolean(item),
+    )
     .slice(0, MAX_MODELS);
 
   if (api === "opencode") {
-    const supported = parsed
-      .map((model) => ({ ...model, api: classifyOpenCodeModel(model.id) }))
-      .filter(
-        (model): model is { id: string; label: string; api: LlmProviderApi } =>
-          Boolean(model.api),
-      );
-    const skipped = parsed.length - supported.length;
-    const counts = supported.reduce<Record<string, number>>((acc, model) => {
+    const all = parsed.map((model) => {
+      const status = openCodeModelStatus(model.id);
+      return {
+        ...model,
+        api: status.family ?? undefined,
+        free: status.free,
+        disabled: status.disabled,
+        note: status.note,
+      };
+    });
+    const selectable = all.filter((model) => !model.disabled);
+    const freeCount = all.filter((model) => model.free).length;
+    const counts = selectable.reduce<Record<string, number>>((acc, model) => {
+      if (!model.api) return acc;
       acc[model.api] = (acc[model.api] ?? 0) + 1;
       return acc;
     }, {});
@@ -465,33 +550,170 @@ export async function discoverLlmModels(input: {
           `${count} ${openCodeFamilyLabel(family as LlmProviderApi)}`,
       )
       .join(", ");
+    const disabledCount = all.length - selectable.length;
 
     return {
       success: true,
-      models: supported,
+      models: all,
       note:
-        supported.length > 0
-          ? `Imported ${supported.length} paid/Go model${
-              supported.length === 1 ? "" : "s"
+        selectable.length > 0
+          ? `Imported ${selectable.length} selectable model${
+              selectable.length === 1 ? "" : "s"
             }${summary ? ` (${summary})` : ""}.${
-              skipped > 0
-                ? ` Skipped ${skipped} free or unsupported model${
-                    skipped === 1 ? "" : "s"
-                  }.`
+              freeCount > 0
+                ? ` ${freeCount} free-tier model${
+                    freeCount === 1 ? " is" : "s are"
+                  } listed as disabled because they only work inside OpenCode.`
+                : ""
+            }${
+              disabledCount > 0
+                ? ` ${disabledCount} total entries are disabled.`
                 : ""
             }`
-          : "The endpoint responded, but it returned no supported paid/Go models. Add model IDs manually.",
+          : "The endpoint returned no selectable chat models. Add model IDs manually.",
     };
   }
 
+  const freeCount = parsed.filter((model) => model.free).length;
   return {
     success: true,
     models: parsed,
     note:
       parsed.length > 0
-        ? `Discovered ${parsed.length} model${parsed.length === 1 ? "" : "s"}.`
+        ? `Discovered ${parsed.length} model${
+            parsed.length === 1 ? "" : "s"
+          }${freeCount > 0 ? ` (${freeCount} free)` : ""}.`
         : "The endpoint responded, but it returned no recognizable models. Add model IDs manually.",
   };
+}
+
+export interface ModelRefreshResult {
+  refreshed: string[];
+  errors: Array<{ id: string; error: string }>;
+}
+
+function modelRefreshHours(): number {
+  const parsed = Number.parseFloat(process.env.LLM_MODEL_REFRESH_HOURS ?? "");
+  return Number.isFinite(parsed) && parsed > 0
+    ? parsed
+    : DEFAULT_MODEL_REFRESH_HOURS;
+}
+
+async function refreshProviderBatch(
+  targets: StoredLlmProvider[],
+  providers: StoredLlmProvider[],
+): Promise<ModelRefreshResult> {
+  const updates = new Map<
+    string,
+    {
+      models: string[];
+      freeModels: string[];
+      defaultModel: string;
+      modelsUpdatedAt: number;
+    }
+  >();
+  const errors: Array<{ id: string; error: string }> = [];
+
+  for (const provider of targets) {
+    const result = await discoverLlmModels({
+      providerId: provider.id,
+      baseUrl: provider.baseUrl,
+      api: provider.api,
+      apiKey: provider.apiKey,
+      headers: provider.headers,
+    });
+    if (!result.success) {
+      errors.push({ id: provider.id, error: result.error });
+      continue;
+    }
+    const discovered = result.models;
+    const discoveredIds = new Set(discovered.map((model) => model.id));
+    const models =
+      provider.api === "opencode" || provider.models.length === 0
+        ? discovered.map((model) => model.id).slice(0, MAX_MODELS)
+        : provider.models.filter((modelId) => discoveredIds.has(modelId));
+    if (models.length === 0) {
+      errors.push({
+        id: provider.id,
+        error: "No existing models were found in the provider catalog.",
+      });
+      continue;
+    }
+    const freeIds = new Set(
+      discovered.filter((model) => model.free).map((model) => model.id),
+    );
+    const freeModels = models.filter((modelId) => freeIds.has(modelId));
+    const defaultModel =
+      models.includes(provider.defaultModel) &&
+      (provider.api !== "opencode" ||
+        classifyOpenCodeModel(provider.defaultModel))
+        ? provider.defaultModel
+        : provider.api === "opencode"
+          ? (models.find((id) => classifyOpenCodeModel(id)) ?? models[0])
+          : models[0];
+    updates.set(provider.id, {
+      models,
+      freeModels,
+      defaultModel,
+      modelsUpdatedAt: Date.now(),
+    });
+  }
+
+  if (updates.size > 0) {
+    await writeLlmProviders(
+      providers.map((provider) =>
+        updates.has(provider.id)
+          ? { ...provider, ...updates.get(provider.id) }
+          : provider,
+      ),
+    );
+  }
+
+  return { refreshed: [...updates.keys()], errors };
+}
+
+function runRefresh(
+  task: () => Promise<ModelRefreshResult>,
+): Promise<ModelRefreshResult> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = task().finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
+
+export async function refreshLlmProviderModels(
+  providerId?: string,
+): Promise<ModelRefreshResult> {
+  return runRefresh(async () => {
+    const providers = await readLlmProviders();
+    const targets = providerId
+      ? providers.filter((provider) => provider.id === providerId)
+      : providers;
+    if (targets.length === 0) {
+      return {
+        refreshed: [],
+        errors: providerId
+          ? [{ id: providerId, error: "Provider not found." }]
+          : [],
+      };
+    }
+    return refreshProviderBatch(targets, providers);
+  });
+}
+
+export async function refreshStaleLlmProviders(): Promise<ModelRefreshResult> {
+  return runRefresh(async () => {
+    const providers = await readLlmProviders();
+    const ttl = modelRefreshHours() * 60 * 60 * 1000;
+    const now = Date.now();
+    const stale = providers.filter(
+      (provider) =>
+        !provider.modelsUpdatedAt || now - provider.modelsUpdatedAt > ttl,
+    );
+    if (stale.length === 0) return { refreshed: [], errors: [] };
+    return refreshProviderBatch(stale, providers);
+  });
 }
 
 function openCodeRoot(baseUrl: string): string {
@@ -754,28 +976,48 @@ export async function getChatModelSelections(): Promise<{
   models: ChatModelSelection[];
   defaultModel: string;
 }> {
+  void refreshStaleLlmProviders().catch((error) => {
+    console.error("Model refresh failed", error);
+  });
   const providers = await readLlmProviders();
   const models: ChatModelSelection[] = [];
 
   for (const provider of providers) {
     for (const modelId of provider.models) {
-      const family =
-        provider.api === "opencode" ? classifyOpenCodeModel(modelId) : null;
-      if (provider.api === "opencode" && !family) continue;
+      if (provider.api === "opencode") {
+        const status = openCodeModelStatus(modelId);
+        models.push({
+          id: modelId,
+          value: modelValue(provider.id, modelId),
+          modelId,
+          label: modelId,
+          description: status.family
+            ? `${provider.label} · ${openCodeFamilyLabel(status.family)}`
+            : `${provider.label} · Unavailable`,
+          tier: "balanced",
+          contextWindow: "provider",
+          compute: "provider",
+          providerId: provider.id,
+          providerLabel: provider.label,
+          free: status.free || provider.freeModels.includes(modelId),
+          disabled: status.disabled,
+          note: status.note,
+        });
+        continue;
+      }
+
       models.push({
         id: modelId,
         value: modelValue(provider.id, modelId),
         modelId,
         label: modelId,
-        description:
-          provider.api === "opencode" && family
-            ? `${provider.label} · ${openCodeFamilyLabel(family)}`
-            : `${provider.label} · ${provider.baseUrl}`,
+        description: `${provider.label} · ${provider.baseUrl}`,
         tier: "balanced",
         contextWindow: "provider",
         compute: "provider",
         providerId: provider.id,
         providerLabel: provider.label,
+        free: provider.freeModels.includes(modelId),
       });
     }
   }
@@ -837,7 +1079,7 @@ export async function getChatModelSelections(): Promise<{
         "")
     : models.some((model) => model.value === DEFAULT_GROQ_MODEL_ID)
       ? DEFAULT_GROQ_MODEL_ID
-      : (models[0]?.value ?? "");
+      : (models.find((model) => !model.disabled)?.value ?? "");
 
   return { models, defaultModel };
 }

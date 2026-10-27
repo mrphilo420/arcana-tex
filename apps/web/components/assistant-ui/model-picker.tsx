@@ -36,6 +36,13 @@ export function ModelPicker({ className }: { className?: string }) {
       });
     }
   }
+  const rank = (model: (typeof options)[number]) =>
+    model.disabled ? (model.free ? 2 : 3) : model.free ? 0 : 1;
+  for (const group of groups.values()) {
+    group.models.sort(
+      (a, b) => rank(a) - rank(b) || a.label.localeCompare(b.label),
+    );
+  }
 
   return (
     <Select
@@ -64,8 +71,15 @@ export function ModelPicker({ className }: { className?: string }) {
             <SelectGroup key={providerId}>
               <SelectLabel>{group.providerLabel}</SelectLabel>
               {group.models.map((model) => (
-                <SelectItem key={model.value} value={model.value}>
+                <SelectItem
+                  key={model.value}
+                  value={model.value}
+                  disabled={model.disabled}
+                  title={model.note}
+                >
                   {model.label}
+                  {model.free ? " · Free" : ""}
+                  {model.disabled ? " · Unavailable" : ""}
                 </SelectItem>
               ))}
             </SelectGroup>

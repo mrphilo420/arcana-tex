@@ -40,6 +40,7 @@ export async function POST(request: Request) {
             : undefined,
       headers: provider.headers,
       models: provider.models,
+      freeModels: provider.freeModels,
       defaultModel:
         typeof provider.defaultModel === "string"
           ? provider.defaultModel

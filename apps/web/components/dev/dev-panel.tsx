@@ -140,6 +140,14 @@ export function DevPanel() {
   const selectedModel = modelOptions.find(
     (option) => option.value === selectedModelId,
   );
+  const modelRank = (model: (typeof modelOptions)[number]) =>
+    model.disabled ? (model.free ? 2 : 3) : model.free ? 0 : 1;
+  const sortedModelOptions = [...modelOptions].sort(
+    (a, b) =>
+      modelRank(a) - modelRank(b) ||
+      a.providerLabel.localeCompare(b.providerLabel) ||
+      a.label.localeCompare(b.label),
+  );
 
   const projectId = useDocumentStore((s) => s.projectId);
   const projectName = useDocumentStore((s) => s.projectName);
@@ -618,14 +626,21 @@ export function DevPanel() {
                       <SelectValue placeholder="No model configured" />
                     </SelectTrigger>
                     <SelectContent>
-                      {modelOptions.length === 0 ? (
+                      {sortedModelOptions.length === 0 ? (
                         <SelectItem value="__none" disabled>
                           No models configured
                         </SelectItem>
                       ) : (
-                        modelOptions.map((model) => (
-                          <SelectItem key={model.value} value={model.value}>
+                        sortedModelOptions.map((model) => (
+                          <SelectItem
+                            key={model.value}
+                            value={model.value}
+                            disabled={model.disabled}
+                            title={model.note}
+                          >
                             {model.providerLabel} · {model.label}
+                            {model.free ? " · Free" : ""}
+                            {model.disabled ? " · Unavailable" : ""}
                           </SelectItem>
                         ))
                       )}
