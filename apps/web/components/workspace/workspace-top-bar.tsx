@@ -84,6 +84,8 @@ export function WorkspaceTopBar() {
   const activeFile = files.find((file) => file.id === activeFileId);
   const isLeanActive = activeFile ? isLeanFile(activeFile) : false;
   const isLatexActive = activeFile ? isLatexRelatedFile(activeFile) : false;
+  const visibleErrorCount = isLatexActive ? errorCount : 0;
+  const visibleWarningCount = isLatexActive ? warningCount : 0;
   const beamerInfo = useMemo(
     () => getBeamerInfo(files, mainFileId),
     [files, mainFileId],
@@ -160,26 +162,26 @@ export function WorkspaceTopBar() {
           size="sm"
           className="h-9 gap-1.5 px-2"
           onClick={() => {
-            if (errorCount > 0) setInspectorTab("logs");
+            if (visibleErrorCount > 0) setInspectorTab("logs");
             else setInspectorOpen(true);
           }}
           title={
-            errorCount > 0
-              ? `Open ${errorCount} compile error${errorCount === 1 ? "" : "s"}`
-              : warningCount > 0
-                ? `Open ${warningCount} compile warning${warningCount === 1 ? "" : "s"}`
+            visibleErrorCount > 0
+              ? `Open ${visibleErrorCount} compile error${visibleErrorCount === 1 ? "" : "s"}`
+              : visibleWarningCount > 0
+                ? `Open ${visibleWarningCount} compile warning${visibleWarningCount === 1 ? "" : "s"}`
                 : "Project info, versions, comments, and logs"
           }
           aria-label="Project inspector"
         >
           <span className="relative">
             <PanelRightIcon className="size-4" />
-            {errorCount > 0 && (
+            {visibleErrorCount > 0 && (
               <span className="absolute -top-1.5 -right-2 flex min-w-3.5 items-center justify-center rounded-full bg-destructive px-0.5 text-[0.75rem] text-white leading-3.5">
-                {errorCount > 9 ? "9+" : errorCount}
+                {visibleErrorCount > 9 ? "9+" : visibleErrorCount}
               </span>
             )}
-            {errorCount === 0 && warningCount > 0 && (
+            {visibleErrorCount === 0 && visibleWarningCount > 0 && (
               <span className="absolute -top-1 -right-1.5 size-1.5 rounded-full bg-[#b9822f]" />
             )}
           </span>

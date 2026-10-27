@@ -18,6 +18,7 @@ import {
   type SubmissionTarget,
 } from "@/lib/submission";
 import { detectMainFile } from "@/lib/project-files";
+import { isLatexRelatedFile } from "@/lib/file-kind";
 import { useDocumentStore } from "@/stores/document-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +54,7 @@ export function SubmissionPanel() {
   const setOpen = useDocumentStore((s) => s.setSubmissionOpen);
   const files = useDocumentStore((s) => s.files);
   const mainFileId = useDocumentStore((s) => s.mainFileId);
+  const activeFileId = useDocumentStore((s) => s.activeFileId);
   const compiler = useDocumentStore((s) => s.compiler);
   const diagnostics = useDocumentStore((s) => s.compileDiagnostics);
   const compileError = useDocumentStore((s) => s.compileError);
@@ -61,6 +63,8 @@ export function SubmissionPanel() {
   const setActiveFile = useDocumentStore((s) => s.setActiveFile);
   const requestJump = useDocumentStore((s) => s.requestJumpToPosition);
   const requestCompile = useDocumentStore((s) => s.requestCompile);
+  const activeFile = files.find((file) => file.id === activeFileId);
+  const isLatexActive = activeFile ? isLatexRelatedFile(activeFile) : false;
 
   const [target, setTarget] = useState<SubmissionTarget>(() => {
     if (typeof window === "undefined") return "arxiv";
@@ -347,7 +351,7 @@ export function SubmissionPanel() {
             </Button>
           </div>
 
-          {compileError && (
+          {compileError && isLatexActive && (
             <div className="flex items-center justify-between rounded-lg border border-destructive/25 bg-destructive/5 p-3">
               <div className="text-[0.75rem] text-destructive">
                 The project has a compile error.

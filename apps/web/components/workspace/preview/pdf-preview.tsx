@@ -258,6 +258,28 @@ export function PdfPreview() {
     );
   };
 
+  if (!canCompile) {
+    return (
+      <div className="flex h-full flex-col bg-muted/50">
+        <div className="flex h-9 items-center gap-1.5 border-border border-b bg-background px-2 text-[0.75rem] text-muted-foreground">
+          <FileTextIcon className="size-3.5" />
+          LaTeX compiler inactive for this file
+        </div>
+        <div className="flex flex-1 flex-col items-center justify-center p-8">
+          <FileTextIcon className="mb-4 size-12 text-muted-foreground/50" />
+          <h2 className="mb-2 font-medium text-lg text-muted-foreground">
+            No LaTeX compile
+          </h2>
+          <p className="max-w-md text-center text-muted-foreground text-sm">
+            LaTeX compilation is available only for LaTeX-family files. Python,
+            R, Lean, Markdown, data, and other files are handled by their own
+            runtimes and are not sent to TeX.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full flex-col bg-muted/50">
       <div className="flex h-9 items-center justify-between border-border border-b bg-background px-2">

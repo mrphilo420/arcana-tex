@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import type { ProjectComment, ProjectVersion } from "@/lib/storage/schema";
 import type { CompileDiagnostic } from "@/lib/compile-diagnostics";
 import { diagnosticNature } from "@/lib/compile-diagnostics";
+import { isLatexRelatedFile } from "@/lib/file-kind";
 import {
   applyAiFixPatches,
   requestAiFixes,
@@ -151,6 +152,7 @@ export function ProjectInspector() {
   const setProjectName = useDocumentStore((s) => s.setProjectName);
   const createdAt = useDocumentStore((s) => s.createdAt);
   const files = useDocumentStore((s) => s.files);
+  const activeFileId = useDocumentStore((s) => s.activeFileId);
   const mainFileId = useDocumentStore((s) => s.mainFileId);
   const compiler = useDocumentStore((s) => s.compiler);
   const comments = useDocumentStore((s) => s.comments);
@@ -199,6 +201,8 @@ export function ProjectInspector() {
       : null;
 
   const mainFile = files.find((file) => file.id === mainFileId);
+  const activeFile = files.find((file) => file.id === activeFileId);
+  const isLatexActive = activeFile ? isLatexRelatedFile(activeFile) : false;
   const openComments = comments.filter((comment) => !comment.resolved).length;
   const wordCount = useMemo(
     () =>
@@ -1181,8 +1185,21 @@ export function ProjectInspector() {
             </div>
           )}
 
-          {tab === "logs" && (
-            <div className="space-y-4 p-4">
+          {tab === "logs" &&
+            (!isLatexActive ? (
+              <div className="flex flex-col items-center justify-center p-8 text-center">
+                <ScrollTextIcon className="mb-3 size-8 text-muted-foreground/50" />
+                <p className="font-medium text-sm">
+                  LaTeX compiler inactive
+                </p>
+                <p className="mt-1 max-w-sm text-muted-foreground text-xs leading-relaxed">
+                  Compile warnings and errors belong to the LaTeX main document.
+                  Open a LaTeX file to review or repair them. Python, R, and Lean
+                  files use their own runtimes and diagnostics.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="flex flex-wrap items-center gap-1.5 font-medium text-sm">
@@ -1686,8 +1703,8 @@ export function ProjectInspector() {
                   </div>
                 </div>
               )}
-            </div>
-          )}
+              </div>
+            ))}
         </div>
 
         <div className="flex shrink-0 items-center justify-between border-hairline border-t px-4 py-2.5 text-[0.75rem] text-muted-foreground">
