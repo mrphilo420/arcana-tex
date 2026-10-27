@@ -1,13 +1,16 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
 import { chmod, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
+  classifyOpenCodeModel,
   DEFAULT_GROQ_MODEL_ID,
   groqModelSelections,
   isGroqModelId,
   modelValue,
+  openCodeFamilyLabel,
   parseModelValue,
   type ChatModelSelection,
   type LlmProviderApi,
@@ -98,7 +101,9 @@ function normalizeProviderApi(
 ): LlmProviderApi {
   return value === "openai-chat" ||
     value === "openai-responses" ||
-    value === "anthropic"
+    value === "anthropic" ||
+    value === "google" ||
+    value === "opencode"
     ? value
     : fallback;
 }
@@ -324,7 +329,7 @@ export async function discoverLlmModels(input: {
 }): Promise<
   | {
       success: true;
-      models: Array<{ id: string; label: string }>;
+      models: Array<{ id: string; label: string; api?: LlmProviderApi }>;
       note: string;
     }
   | { success: false; error: string }
@@ -347,6 +352,11 @@ export async function discoverLlmModels(input: {
     typeof input.apiKey === "string" && input.apiKey.trim()
       ? input.apiKey.trim().slice(0, MAX_API_KEY_CHARS)
       : (stored?.apiKey ?? "");
+  const root = baseUrl.replace(/\/+$/, "");
+  const modelsUrl =
+    api === "opencode"
+      ? `${root.endsWith("/v1") ? root : `${root}/v1`}/models`
+      : `${root}/models`;
   const headers: Record<string, string> = {
     accept: "application/json",
     ...(input.headers === undefined
@@ -356,13 +366,15 @@ export async function discoverLlmModels(input: {
   if (api === "anthropic") {
     if (apiKey) headers["x-api-key"] = apiKey;
     headers["anthropic-version"] = headers["anthropic-version"] ?? "2023-06-01";
+  } else if (api === "google") {
+    if (apiKey) headers["x-goog-api-key"] = apiKey;
   } else if (apiKey) {
     headers.authorization = `Bearer ${apiKey}`;
   }
 
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}/models`, {
+    response = await fetch(modelsUrl, {
       headers,
       cache: "no-store",
       signal: AbortSignal.timeout(DISCOVERY_TIMEOUT_MS),
@@ -371,7 +383,7 @@ export async function discoverLlmModels(input: {
     const message = error instanceof Error ? error.message : "request failed";
     return {
       success: false,
-      error: `Could not reach ${baseUrl}/models: ${message}`,
+      error: `Could not reach ${modelsUrl}: ${message}`,
     };
   }
 
@@ -403,7 +415,7 @@ export async function discoverLlmModels(input: {
           Array.isArray((payload as { models?: unknown }).models)
         ? (payload as { models: unknown[] }).models
         : [];
-  const models = source
+  const parsed = source
     .map((item) => {
       if (typeof item === "string") return { id: item, label: item };
       if (item && typeof item === "object") {
@@ -411,14 +423,23 @@ export async function discoverLlmModels(input: {
           id?: unknown;
           name?: unknown;
           display_name?: unknown;
+          displayName?: unknown;
         };
-        const id = typeof record.id === "string" ? record.id : "";
+        const rawId =
+          typeof record.id === "string"
+            ? record.id
+            : typeof record.name === "string"
+              ? record.name
+              : "";
+        const id = rawId.replace(/^models\//, "");
         const label =
           typeof record.display_name === "string"
             ? record.display_name
-            : typeof record.name === "string"
-              ? record.name
-              : id;
+            : typeof record.displayName === "string"
+              ? record.displayName
+              : typeof record.name === "string"
+                ? record.name.replace(/^models\//, "")
+                : id;
         return id ? { id, label } : null;
       }
       return null;
@@ -426,26 +447,124 @@ export async function discoverLlmModels(input: {
     .filter((item): item is { id: string; label: string } => Boolean(item))
     .slice(0, MAX_MODELS);
 
+  if (api === "opencode") {
+    const supported = parsed
+      .map((model) => ({ ...model, api: classifyOpenCodeModel(model.id) }))
+      .filter(
+        (model): model is { id: string; label: string; api: LlmProviderApi } =>
+          Boolean(model.api),
+      );
+    const skipped = parsed.length - supported.length;
+    const counts = supported.reduce<Record<string, number>>((acc, model) => {
+      acc[model.api] = (acc[model.api] ?? 0) + 1;
+      return acc;
+    }, {});
+    const summary = Object.entries(counts)
+      .map(
+        ([family, count]) =>
+          `${count} ${openCodeFamilyLabel(family as LlmProviderApi)}`,
+      )
+      .join(", ");
+
+    return {
+      success: true,
+      models: supported,
+      note:
+        supported.length > 0
+          ? `Imported ${supported.length} paid/Go model${
+              supported.length === 1 ? "" : "s"
+            }${summary ? ` (${summary})` : ""}.${
+              skipped > 0
+                ? ` Skipped ${skipped} free or unsupported model${
+                    skipped === 1 ? "" : "s"
+                  }.`
+                : ""
+            }`
+          : "The endpoint responded, but it returned no supported paid/Go models. Add model IDs manually.",
+    };
+  }
+
   return {
     success: true,
-    models,
+    models: parsed,
     note:
-      models.length > 0
-        ? `Discovered ${models.length} model${models.length === 1 ? "" : "s"}.`
+      parsed.length > 0
+        ? `Discovered ${parsed.length} model${parsed.length === 1 ? "" : "s"}.`
         : "The endpoint responded, but it returned no recognizable models. Add model IDs manually.",
   };
+}
+
+function openCodeRoot(baseUrl: string): string {
+  const root = baseUrl.replace(/\/+$/, "");
+  return root.endsWith("/v1") ? root.slice(0, -3) : root;
+}
+
+function createOpenCodeModel(
+  provider: StoredLlmProvider,
+  modelId: string,
+  family: LlmProviderApi,
+): LanguageModel {
+  const root = openCodeRoot(provider.baseUrl);
+  const apiKey = provider.apiKey || "local";
+  const headers = provider.headers;
+
+  if (family === "anthropic") {
+    return createAnthropic({
+      apiKey,
+      baseURL: `${root}/anthropic/v1`,
+      headers,
+    }).messages(modelId);
+  }
+
+  if (family === "google") {
+    return createGoogleGenerativeAI({
+      apiKey,
+      baseURL: `${root}/google/v1beta`,
+      headers: {
+        ...headers,
+        Authorization: `Bearer ${apiKey}`,
+      },
+    }).chat(modelId);
+  }
+
+  const client = createOpenAI({
+    apiKey,
+    baseURL: `${root}/openai/v1`,
+    headers,
+  });
+  return family === "openai-responses"
+    ? client.responses(modelId)
+    : client.chat(modelId);
 }
 
 function createProviderModel(
   provider: StoredLlmProvider,
   modelId: string,
 ): LanguageModel {
+  if (provider.api === "opencode") {
+    const family = classifyOpenCodeModel(modelId);
+    if (!family) {
+      throw new Error(
+        `OpenCode model ${modelId} is free-tier or uses an unsupported API family.`,
+      );
+    }
+    return createOpenCodeModel(provider, modelId, family);
+  }
+
   if (provider.api === "anthropic") {
     return createAnthropic({
       apiKey: provider.apiKey || "local",
       baseURL: provider.baseUrl,
       headers: provider.headers,
     }).messages(modelId);
+  }
+
+  if (provider.api === "google") {
+    return createGoogleGenerativeAI({
+      apiKey: provider.apiKey || "local",
+      baseURL: provider.baseUrl,
+      headers: provider.headers,
+    }).chat(modelId);
   }
 
   const client = createOpenAI({
@@ -503,6 +622,17 @@ function envOpenAiModel(requested: unknown): ResolvedChatModel | null {
   };
 }
 
+function providerSupportsModel(
+  provider: StoredLlmProvider,
+  modelId: string,
+): boolean {
+  if (!provider.models.includes(modelId)) return false;
+  if (provider.api === "opencode") {
+    return classifyOpenCodeModel(modelId) !== null;
+  }
+  return true;
+}
+
 function resolveConfiguredModel(
   providers: StoredLlmProvider[],
   requested: unknown,
@@ -511,7 +641,7 @@ function resolveConfiguredModel(
     const parsed = parseModelValue(requested.trim());
     if (parsed) {
       const provider = providers.find((item) => item.id === parsed.providerId);
-      if (provider?.models.includes(parsed.modelId)) {
+      if (provider && providerSupportsModel(provider, parsed.modelId)) {
         return {
           value: modelValue(provider.id, parsed.modelId),
           providerId: provider.id,
@@ -524,7 +654,7 @@ function resolveConfiguredModel(
       }
     } else {
       const provider = providers.find((item) =>
-        item.models.includes(requested.trim()),
+        providerSupportsModel(item, requested.trim()),
       );
       if (provider) {
         return {
@@ -542,9 +672,15 @@ function resolveConfiguredModel(
 
   if (typeof requested === "string" && requested.trim()) return null;
 
-  const fallback = providers.find((provider) => provider.models.length > 0);
+  const fallback = providers.find((provider) =>
+    provider.models.some((modelId) => providerSupportsModel(provider, modelId)),
+  );
   if (!fallback) return null;
-  const modelId = fallback.defaultModel || fallback.models[0];
+  const modelId = providerSupportsModel(fallback, fallback.defaultModel)
+    ? fallback.defaultModel
+    : (fallback.models.find((modelId) =>
+        providerSupportsModel(fallback, modelId),
+      ) ?? "");
   if (!modelId) return null;
   return {
     value: modelValue(fallback.id, modelId),
@@ -583,12 +719,18 @@ export async function getChatModelSelections(): Promise<{
 
   for (const provider of providers) {
     for (const modelId of provider.models) {
+      const family =
+        provider.api === "opencode" ? classifyOpenCodeModel(modelId) : null;
+      if (provider.api === "opencode" && !family) continue;
       models.push({
         id: modelId,
         value: modelValue(provider.id, modelId),
         modelId,
         label: modelId,
-        description: `${provider.label} · ${provider.baseUrl}`,
+        description:
+          provider.api === "opencode" && family
+            ? `${provider.label} · ${openCodeFamilyLabel(family)}`
+            : `${provider.label} · ${provider.baseUrl}`,
         tier: "balanced",
         contextWindow: "provider",
         compute: "provider",
@@ -624,11 +766,14 @@ export async function getChatModelSelections(): Promise<{
     }
   }
 
-  const firstProvider = providers.find(
-    (provider) => provider.models.length > 0,
+  const firstProvider = providers.find((provider) =>
+    provider.models.some((modelId) => providerSupportsModel(provider, modelId)),
   );
-  const defaultModel = firstProvider?.defaultModel
-    ? modelValue(firstProvider.id, firstProvider.defaultModel)
+  const defaultModel = firstProvider
+    ? providerSupportsModel(firstProvider, firstProvider.defaultModel)
+      ? modelValue(firstProvider.id, firstProvider.defaultModel)
+      : (models.find((model) => model.providerId === firstProvider.id)?.value ??
+        "")
     : models.some((model) => model.value === DEFAULT_GROQ_MODEL_ID)
       ? DEFAULT_GROQ_MODEL_ID
       : (models[0]?.value ?? "");

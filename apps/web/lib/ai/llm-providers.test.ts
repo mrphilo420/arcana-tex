@@ -60,6 +60,80 @@ describe("discoverLlmModels", () => {
     expect(headers.get("x-api-key")).toBeNull();
   });
 
+  it("imports paid OpenCode models and routes them by API family", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      jsonResponse({
+        data: [
+          { id: "deepseek-v4.1-flash" },
+          { id: "claude-sonnet-5-5" },
+          { id: "gpt-6.1-sol" },
+          { id: "gemini-4-argon" },
+          { id: "deepseek-v4.1-flash-free" },
+          { id: "big-pickle" },
+          { id: "jev-1.13" },
+        ],
+      }),
+    );
+
+    const result = await discoverLlmModels({
+      baseUrl: "https://opencode.ai/inference",
+      api: "opencode",
+      apiKey: "oc-test",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.models).toEqual([
+        {
+          id: "deepseek-v4.1-flash",
+          label: "deepseek-v4.1-flash",
+          api: "openai-chat",
+        },
+        {
+          id: "claude-sonnet-5-5",
+          label: "claude-sonnet-5-5",
+          api: "anthropic",
+        },
+        { id: "gpt-6.1-sol", label: "gpt-6.1-sol", api: "openai-responses" },
+        { id: "gemini-4-argon", label: "gemini-4-argon", api: "google" },
+      ]);
+      expect(result.note).toContain("Skipped 3");
+    }
+
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(String(url)).toBe("https://opencode.ai/inference/v1/models");
+    const headers = new Headers((init as RequestInit | undefined)?.headers);
+    expect(headers.get("authorization")).toBe("Bearer oc-test");
+  });
+
+  it("uses Google headers and parses model names", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      jsonResponse({
+        models: [
+          { name: "models/gemini-3.5-flash", displayName: "Gemini 3.5 Flash" },
+        ],
+      }),
+    );
+
+    const result = await discoverLlmModels({
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      api: "google",
+      apiKey: "google-test",
+    });
+
+    expect(result).toMatchObject({
+      success: true,
+      models: [{ id: "gemini-3.5-flash", label: "Gemini 3.5 Flash" }],
+    });
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(String(url)).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/models",
+    );
+    const headers = new Headers((init as RequestInit | undefined)?.headers);
+    expect(headers.get("x-goog-api-key")).toBe("google-test");
+    expect(headers.get("authorization")).toBeNull();
+  });
+
   it("reports a provider HTTP error without echoing the key", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("unauthorized", { status: 401 }),

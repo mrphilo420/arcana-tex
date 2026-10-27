@@ -1,9 +1,9 @@
 # LLM providers
 
 arcanaTeX can call OpenAI-compatible chat endpoints, OpenAI Responses endpoints,
-and the native Anthropic Messages API. Providers are added in the developer
-control panel and used by chat, AI compile fixes, subagents, and the
-mathematical prover.
+the native Anthropic Messages API, native Google Gemini, and OpenCode's
+multi-API inference gateway. Providers are added in the developer control panel
+and used by chat, AI compile fixes, subagents, and the mathematical prover.
 
 ## Add a provider
 
@@ -12,15 +12,15 @@ mathematical prover.
 3. Choose a preset or fill in the form:
    - **Label** - display name.
    - **Base URL** - the API base URL, including `/v1` when the provider
-     requires it.
-   - **API type** - OpenAI chat completions, OpenAI responses, or Anthropic
-     messages.
+     requires it. For OpenCode, use the inference root.
+   - **API type** - OpenAI chat, OpenAI responses, Anthropic messages, Google
+     Gemini, or OpenCode auto-route.
    - **API key** - optional for local servers such as Ollama.
    - **Models** - one model ID per line or comma-separated.
    - **Default model** - the model selected when the provider is first used.
    - **Extra headers** - optional JSON for gateways that need custom headers.
-4. Click **Discover models** to call `GET {baseUrl}/models` and import the
-   returned IDs, or enter model IDs manually.
+4. Click **Discover models** to call the provider's model endpoint and import
+   the returned IDs, or enter model IDs manually.
 5. Click **Save provider**.
 
 The provider appears in the model picker, grouped by provider label. Selecting
@@ -30,28 +30,29 @@ a provider-qualified model sends `providerId::modelId` to the server.
 
 - **OpenAI chat completions** - the default. Calls
   `POST {baseUrl}/chat/completions`. Use it for OpenAI, Groq, OpenRouter,
-  Meta AI, Nous Portal, DeepSeek, xAI, Google's OpenAI-compatible endpoint,
-  and most gateways.
+  Meta AI, Nous Portal, DeepSeek, xAI, and most gateways.
 - **OpenAI responses** - calls `POST {baseUrl}/responses`. Use it for providers
-  and models that expose the Responses API, such as OpenCode Zen GPT, Grok, and
-  Muse Spark models.
+  and models that expose the Responses API.
 - **Anthropic messages** - calls `POST {baseUrl}/messages` with the native
-  Anthropic Messages API. Use it for `https://api.anthropic.com/v1` or an
-  Anthropic-compatible proxy such as OpenCode Zen's Anthropic endpoint.
+  Anthropic Messages API.
+- **Google Gemini** - calls the native Generative AI API with
+  `x-goog-api-key`. Base URL is normally
+  `https://generativelanguage.googleapis.com/v1beta`.
+- **OpenCode auto-route** - one OpenCode key and inference root. arcanaTeX
+  chooses the correct endpoint for every model.
 
 ## Presets
 
 | Preset | Base URL | API type |
 | --- | --- | --- |
 | Meta AI | `https://api.meta.ai/v1` | OpenAI chat |
-| OpenCode Zen / Go | `https://opencode.ai/inference/openai/v1` | OpenAI chat |
-| OpenCode Responses | `https://opencode.ai/inference/openai/v1` | OpenAI responses |
+| OpenCode Zen / Go | `https://opencode.ai/inference` | OpenCode auto-route |
 | Anthropic | `https://api.anthropic.com/v1` | Anthropic messages |
 | Nous Portal / Hermes | `https://inference-api.nousresearch.com/v1` | OpenAI chat |
 | OpenAI | `https://api.openai.com/v1` | OpenAI chat |
 | Groq | `https://api.groq.com/openai/v1` | OpenAI chat |
 | OpenRouter | `https://openrouter.ai/api/v1` | OpenAI chat |
-| Google Gemini | `https://generativelanguage.googleapis.com/v1beta/openai` | OpenAI chat |
+| Google Gemini | `https://generativelanguage.googleapis.com/v1beta` | Google Gemini |
 | DeepSeek | `https://api.deepseek.com/v1` | OpenAI chat |
 | xAI | `https://api.x.ai/v1` | OpenAI chat |
 | Ollama | `http://localhost:11434/v1` | OpenAI chat |
@@ -61,21 +62,39 @@ a provider-qualified model sends `providerId::modelId` to the server.
 OpenCode Zen and OpenCode Go share the OpenCode inference gateway. Use an
 OpenCode API key from <https://opencode.ai/auth>.
 
-- **Chat-completions models** (DeepSeek V4.1 Flash, Qwen3.8 Max, GLM 5.3,
-  Kimi K2.6, MiniMax M3): use the **OpenCode Zen / Go** preset with base URL
-  `https://opencode.ai/inference/openai/v1`.
-- **Responses models** (GPT 6.1 Sol, Muse Spark 1.2, Grok 4.7): use the
-  **OpenCode Responses** preset with the same base URL and API type
-  **OpenAI responses**.
-- **Anthropic-routed models** (Claude, Qwen Flash on the Anthropic endpoint):
-  add a provider with base URL
-  `https://opencode.ai/inference/anthropic/v1` and API type
-  **Anthropic messages**.
+Use one **OpenCode Zen / Go** provider with:
 
-If a model is not in the preset, click **Discover models** or enter its ID from
-the OpenCode model list. Discovery imports every ID the provider returns,
-including image, voice, and embedding models; choose a chat/text model for the
-assistant.
+- Base URL: `https://opencode.ai/inference`
+- API type: **OpenCode auto-route**
+- Key: your OpenCode personal or service-account key
+
+Discovery calls `GET https://opencode.ai/inference/v1/models` and imports the
+paid/Go models. Each model is routed to the API family that serves it:
+
+- **Chat Completions** - DeepSeek, Kimi, GLM, MiniMax, Mistral, Qwen3.8 Max,
+  and the open models.
+- **OpenAI Responses** - GPT, Grok, and Muse models.
+- **Anthropic messages** - Claude, Qwen3.8 Flash, Qwen3.6 Plus, and Qwen3.5
+  Plus.
+- **Gemini** - Gemini models.
+
+Discovery skips free-tier models because they are only available inside the
+OpenCode client, plus Jev/SystemOne and non-chat models. You can add a supported
+model ID manually if it is missing.
+
+The model picker shows the family next to each OpenCode model, so you can see
+how it will be routed.
+
+## Google Gemini
+
+The Google preset uses the native Gemini API:
+
+- Base URL: `https://generativelanguage.googleapis.com/v1beta`
+- API type: Google Gemini
+- Example models: `gemini-3.5-flash`, `gemini-3.1-pro`
+
+Discovery uses `x-goog-api-key` and parses the Google `models` response. For an
+OpenCode Gemini model, use the OpenCode auto-route provider instead.
 
 ## Anthropic
 
@@ -153,13 +172,22 @@ If no provider is configured, the existing environment fallback still works:
 Configured providers take precedence. A provider-qualified model that no longer
 exists returns an error instead of silently switching to another provider.
 
+## Cost reporting
+
+OpenCode returns the request cost and billing source in the API usage metadata:
+`usage.cost` and `usage.opencode.billing_source` (for example `balance`, `go`,
+or `free`). arcanaTeX forwards the provider response but does not display a cost
+panel yet.
+
 ## Limitations
 
-- Discovery expects `GET {baseUrl}/models` to return an OpenAI-style
-  `{ "data": [...] }` payload; plain arrays and `{ "models": [...] }` are also
-  accepted. Anthropic is handled through its native headers.
-- Native Google Gemini API, Amazon Bedrock, and other non-OpenAI/non-Anthropic
-  protocols are not wired as native adapters. Use an OpenAI-compatible gateway
-  for those models, or add an AI SDK adapter in a follow-up.
+- Discovery accepts OpenAI-style `{ "data": [...] }`, plain arrays,
+  `{ "models": [...] }`, and Google's `models` response. Anthropic uses native
+  headers; OpenCode uses `/v1/models`.
+- OpenCode free-tier models are skipped because external clients receive HTTP
+  403. Jev/SystemOne is not a chat-completions model and is also skipped.
+- Amazon Bedrock, Azure-specific authentication, and other non-OpenAI,
+  non-Anthropic, non-Google protocols are not wired as native adapters. Use an
+  OpenAI-compatible gateway or add an AI SDK adapter.
 - The dev panel is development-only. The saved provider file is still read by
   the server in production builds.

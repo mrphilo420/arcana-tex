@@ -68,7 +68,12 @@ export interface ChatModelSelection extends ChatModelOption {
   providerLabel: string;
 }
 
-export type LlmProviderApi = "openai-chat" | "openai-responses" | "anthropic";
+export type LlmProviderApi =
+  | "openai-chat"
+  | "openai-responses"
+  | "anthropic"
+  | "google"
+  | "opencode";
 
 export interface LlmProviderPreset {
   providerId: string;
@@ -91,30 +96,16 @@ export const LLM_PROVIDER_PRESETS: LlmProviderPreset[] = [
   {
     providerId: "opencode",
     label: "OpenCode Zen / Go",
-    baseUrl: "https://opencode.ai/inference/openai/v1",
-    api: "openai-chat",
+    baseUrl: "https://opencode.ai/inference",
+    api: "opencode",
     description:
-      "OpenCode Zen and Go chat-completion models, including DeepSeek, Qwen, GLM, Kimi, and MiniMax.",
+      "OpenCode Zen/Go multi-API gateway. Discovery imports paid/Go models and routes each model to Chat Completions, Responses, Anthropic, or Gemini automatically.",
     models: [
       { id: "deepseek-v4.1-flash", label: "DeepSeek V4.1 Flash" },
-      { id: "qwen3.8-max", label: "Qwen3.8 Max" },
-      { id: "glm-5.3", label: "GLM 5.3" },
-      { id: "kimi-k2.6", label: "Kimi K2.6" },
-      { id: "minimax-m3", label: "MiniMax M3" },
-    ],
-  },
-  {
-    providerId: "opencode-responses",
-    label: "OpenCode Responses",
-    baseUrl: "https://opencode.ai/inference/openai/v1",
-    api: "openai-responses",
-    description:
-      "OpenCode Zen models that use the OpenAI Responses API, such as GPT, Grok, and Muse Spark.",
-    models: [
+      { id: "kimi-k3", label: "Kimi K3" },
+      { id: "claude-sonnet-5-5", label: "Claude Sonnet 5.5" },
       { id: "gpt-6.1-sol", label: "GPT 6.1 Sol" },
-      { id: "muse-spark-1.2", label: "Muse Spark 1.2" },
-      { id: "grok-4.7", label: "Grok 4.7" },
-      { id: "gpt-5.6-luna", label: "GPT 5.6 Luna" },
+      { id: "gemini-4-argon", label: "Gemini 4 Argon" },
     ],
   },
   {
@@ -178,9 +169,9 @@ export const LLM_PROVIDER_PRESETS: LlmProviderPreset[] = [
   {
     providerId: "google",
     label: "Google Gemini",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-    api: "openai-chat",
-    description: "Gemini through Google's OpenAI-compatible endpoint.",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    api: "google",
+    description: "Gemini through the native Google Generative AI API.",
     models: [
       { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
       { id: "gemini-3.1-pro", label: "Gemini 3.1 Pro" },
@@ -217,6 +208,54 @@ export const LLM_PROVIDER_PRESETS: LlmProviderPreset[] = [
     models: [],
   },
 ];
+
+const OPENCODE_FAMILY_LABELS: Record<string, string> = {
+  "openai-chat": "Chat Completions",
+  "openai-responses": "Responses",
+  anthropic: "Anthropic messages",
+  google: "Gemini",
+};
+
+/**
+ * OpenCode serves each model from one API family. These rules mirror the
+ * official endpoint table; free-tier, Jev, and non-chat models return null
+ * because they are not usable from an external client.
+ */
+export function classifyOpenCodeModel(modelId: string): LlmProviderApi | null {
+  const id = modelId.trim().toLowerCase();
+  if (
+    !id ||
+    id === "test" ||
+    id === "big-pickle" ||
+    id.startsWith("jev-") ||
+    id.startsWith("sam-") ||
+    id.endsWith("-free") ||
+    /(?:image|voice|transcribe|embed|tts|audio|vision)/.test(id)
+  ) {
+    return null;
+  }
+  if (id.startsWith("claude-")) return "anthropic";
+  if (
+    id === "qwen3.8-flash" ||
+    id === "qwen3.6-plus" ||
+    id === "qwen3.5-plus"
+  ) {
+    return "anthropic";
+  }
+  if (id.startsWith("gemini-")) return "google";
+  if (
+    id.startsWith("gpt-") ||
+    id.startsWith("grok-") ||
+    id.startsWith("muse-")
+  ) {
+    return "openai-responses";
+  }
+  return "openai-chat";
+}
+
+export function openCodeFamilyLabel(api: LlmProviderApi): string {
+  return OPENCODE_FAMILY_LABELS[api] ?? api;
+}
 
 const MODEL_SEPARATOR = "::";
 

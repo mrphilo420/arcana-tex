@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  classifyOpenCodeModel,
   DEFAULT_GROQ_MODEL_ID,
   groqModelSelections,
   LLM_PROVIDER_PRESETS,
   modelValue,
+  openCodeFamilyLabel,
   parseModelValue,
 } from "@/lib/chat-models";
 
@@ -51,13 +53,10 @@ describe("LLM_PROVIDER_PRESETS", () => {
       LLM_PROVIDER_PRESETS.map((preset) => [preset.providerId, preset]),
     );
     expect(byId.get("opencode")).toMatchObject({
-      baseUrl: "https://opencode.ai/inference/openai/v1",
-      api: "openai-chat",
+      baseUrl: "https://opencode.ai/inference",
+      api: "opencode",
     });
-    expect(byId.get("opencode-responses")).toMatchObject({
-      baseUrl: "https://opencode.ai/inference/openai/v1",
-      api: "openai-responses",
-    });
+    expect(byId.get("opencode-responses")).toBeUndefined();
     expect(byId.get("anthropic")).toMatchObject({
       baseUrl: "https://api.anthropic.com/v1",
       api: "anthropic",
@@ -66,14 +65,57 @@ describe("LLM_PROVIDER_PRESETS", () => {
       baseUrl: "https://inference-api.nousresearch.com/v1",
       api: "openai-chat",
     });
+    expect(byId.get("google")).toMatchObject({
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      api: "google",
+    });
   });
 
   it("uses a supported API type for every preset", () => {
     for (const preset of LLM_PROVIDER_PRESETS) {
-      expect(["openai-chat", "openai-responses", "anthropic"]).toContain(
-        preset.api,
-      );
+      expect([
+        "openai-chat",
+        "openai-responses",
+        "anthropic",
+        "google",
+        "opencode",
+      ]).toContain(preset.api);
     }
+  });
+});
+
+describe("classifyOpenCodeModel", () => {
+  it("routes models to their documented API families", () => {
+    expect(classifyOpenCodeModel("deepseek-v4.1-flash")).toBe("openai-chat");
+    expect(classifyOpenCodeModel("glm-5.3")).toBe("openai-chat");
+    expect(classifyOpenCodeModel("kimi-k3")).toBe("openai-chat");
+    expect(classifyOpenCodeModel("qwen3.8-max")).toBe("openai-chat");
+    expect(classifyOpenCodeModel("claude-sonnet-5-5")).toBe("anthropic");
+    expect(classifyOpenCodeModel("qwen3.8-flash")).toBe("anthropic");
+    expect(classifyOpenCodeModel("gpt-6.1-sol")).toBe("openai-responses");
+    expect(classifyOpenCodeModel("grok-4.7")).toBe("openai-responses");
+    expect(classifyOpenCodeModel("muse-spark-1.3")).toBe("openai-responses");
+    expect(classifyOpenCodeModel("gemini-4-argon")).toBe("google");
+  });
+
+  it("skips free-tier and unsupported models", () => {
+    for (const model of [
+      "deepseek-v4.1-flash-free",
+      "big-pickle",
+      "jev-1.13",
+      "test",
+      "sam-3.1",
+      "muse-image-1.0",
+    ]) {
+      expect(classifyOpenCodeModel(model)).toBeNull();
+    }
+  });
+
+  it("labels API families for the picker", () => {
+    expect(openCodeFamilyLabel("openai-chat")).toBe("Chat Completions");
+    expect(openCodeFamilyLabel("openai-responses")).toBe("Responses");
+    expect(openCodeFamilyLabel("anthropic")).toBe("Anthropic messages");
+    expect(openCodeFamilyLabel("google")).toBe("Gemini");
   });
 });
 

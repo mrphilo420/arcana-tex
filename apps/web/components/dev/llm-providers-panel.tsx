@@ -68,6 +68,8 @@ const API_LABELS: Record<LlmProviderApi, string> = {
   "openai-chat": "OpenAI chat",
   "openai-responses": "OpenAI responses",
   anthropic: "Anthropic messages",
+  google: "Google Gemini",
+  opencode: "OpenCode auto-route",
 };
 
 function formFromPreset(preset: LlmProviderPreset): ProviderForm {
@@ -460,8 +462,20 @@ export function LlmProvidersPanel() {
                   OpenAI responses
                 </SelectItem>
                 <SelectItem value="anthropic">Anthropic messages</SelectItem>
+                <SelectItem value="google">Google Gemini</SelectItem>
+                <SelectItem value="opencode">OpenCode auto-route</SelectItem>
               </SelectContent>
             </Select>
+            {form.api === "opencode" && (
+              <p className="text-[0.7rem] text-muted-foreground">
+                Use the inference root, for example{" "}
+                <code className="rounded bg-muted px-1 py-0.5">
+                  https://opencode.ai/inference
+                </code>
+                . Models are routed to /openai/v1, /anthropic/v1, or
+                /google/v1beta.
+              </p>
+            )}
           </div>
           <div className="space-y-1 sm:col-span-2">
             <Label htmlFor="llm-provider-key" className="text-[0.75rem]">
@@ -523,7 +537,9 @@ export function LlmProvidersPanel() {
           Leave headers blank to keep the stored headers; enter {"{}"} to clear
           them. Discovery calls GET /models with the same base URL and key. It
           uses Bearer auth for OpenAI-compatible endpoints and x-api-key plus
-          anthropic-version for Anthropic.
+          anthropic-version for Anthropic. OpenCode discovery calls /v1/models,
+          imports paid/Go models, and skips free-tier or unsupported API
+          families.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <Button
