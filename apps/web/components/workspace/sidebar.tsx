@@ -17,6 +17,7 @@ import {
   Loader2Icon,
   MessageCircleIcon,
   MessagesSquareIcon,
+  NetworkIcon,
   PlusIcon,
   RefreshCwIcon,
   UploadIcon,
@@ -39,6 +40,7 @@ import {
 } from "@/lib/project-import";
 import { Button } from "@/components/ui/button";
 import { FileTree } from "./file-tree";
+import { FileTreeVisualizer } from "./file-tree-visualizer";
 import {
   Dialog,
   DialogContent,
@@ -156,6 +158,7 @@ export function Sidebar() {
   const [userName, setUserName] = useState("Guest");
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [visualizerOpen, setVisualizerOpen] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renameFileId, setRenameFileId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -500,6 +503,18 @@ export function Sidebar() {
 
         <div className="ml-auto flex items-center gap-0.5">
           {activeTab === "files" ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-6 shrink-0"
+              onClick={() => setVisualizerOpen(true)}
+              title="Visualize file tree"
+              aria-label="Visualize file tree"
+            >
+              <NetworkIcon className="size-3.5" />
+            </Button>
+          ) : null}
+          {activeTab === "files" ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -727,6 +742,16 @@ export function Sidebar() {
       )}
 
       {/* Add File Dialog */}
+      <FileTreeVisualizer
+        files={files}
+        projectName={projectName}
+        activeFileId={activeFileId}
+        mainFileId={mainFileId}
+        open={visualizerOpen}
+        onOpenChange={setVisualizerOpen}
+        onSelect={setActiveFile}
+      />
+
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

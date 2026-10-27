@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { useDocumentStore } from "@/stores/document-store";
 import { useSyncStore } from "@/stores/sync-store";
 import { useDevFeatureFlag } from "@/stores/dev-panel-store";
+import { useEditorPreferencesStore } from "@/stores/editor-preferences-store";
 
 export function WorkspaceTopBar() {
   const projectName = useDocumentStore((s) => s.projectName);
@@ -70,6 +71,7 @@ export function WorkspaceTopBar() {
   const peers = useSyncStore((s) => s.peers);
 
   const { theme, setTheme } = useTheme();
+  const terminalThemeId = useEditorPreferencesStore((s) => s.terminalThemeId);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -297,35 +299,37 @@ export function WorkspaceTopBar() {
 
         <DevPanelButton />
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-9"
-          onClick={() => {
-            if (theme === "system") setTheme("light");
-            else if (theme === "light") setTheme("dark");
-            else setTheme("system");
-          }}
-          title={
-            !mounted
-              ? "Theme"
-              : theme === "system"
-                ? "System theme"
-                : theme === "light"
-                  ? "Light mode"
-                  : "Dark mode"
-          }
-        >
-          {!mounted ? (
-            <MonitorIcon className="size-4" />
-          ) : theme === "system" ? (
-            <MonitorIcon className="size-4" />
-          ) : theme === "light" ? (
-            <SunIcon className="size-4" />
-          ) : (
-            <MoonIcon className="size-4" />
-          )}
-        </Button>
+        {terminalThemeId === "arcana" && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-9"
+            onClick={() => {
+              if (theme === "system") setTheme("light");
+              else if (theme === "light") setTheme("dark");
+              else setTheme("system");
+            }}
+            title={
+              !mounted
+                ? "Theme"
+                : theme === "system"
+                  ? "System theme"
+                  : theme === "light"
+                    ? "Light mode"
+                    : "Dark mode"
+            }
+          >
+            {!mounted ? (
+              <MonitorIcon className="size-4" />
+            ) : theme === "system" ? (
+              <MonitorIcon className="size-4" />
+            ) : theme === "light" ? (
+              <SunIcon className="size-4" />
+            ) : (
+              <MoonIcon className="size-4" />
+            )}
+          </Button>
+        )}
       </div>
     </header>
   );

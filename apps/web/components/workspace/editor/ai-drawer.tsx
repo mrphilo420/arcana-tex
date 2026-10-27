@@ -35,6 +35,7 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 
 import { ChatQuickActions } from "@/components/assistant-ui/chat-quick-actions";
+import { ModelPicker } from "@/components/assistant-ui/model-picker";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { cn } from "@/lib/utils";
 import { useDocumentStore } from "@/stores/document-store";
@@ -209,7 +210,10 @@ const ThreadScrollToBottom: FC = () => {
 const Composer: FC = () => {
   return (
     <ComposerPrimitive.Root className="shrink-0 p-3">
-      <ChatQuickActions className="mb-2 px-1" />
+      <div className="mb-2 flex items-center justify-between gap-2 px-1">
+        <ChatQuickActions />
+        <ModelPicker className="h-6 w-[140px] shrink-0 bg-transparent" />
+      </div>
       <div className="flex w-full flex-col rounded-xl border border-input bg-muted/30 transition-colors focus-within:border-ring focus-within:bg-background">
         <ComposerPrimitive.Input
           placeholder="Ask about LaTeX, /paper-review, or Lean..."

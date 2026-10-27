@@ -56,14 +56,17 @@ you configure.
 - **Multi-file LaTeX workspace** - Folder import, nested file tree, images,
   bibliography and class/style files, Lean 4 sources, Markdown notes,
   main-document selection, and pdfLaTeX/XeLaTeX/LuaLaTeX compilation.
+- **Project map** - A visual file-tree map with folder/file nodes, type colors,
+  zoom, and click-to-open navigation from the Files header.
 - **Live PDF preview** - Automatic compilation after edits settle, zoom and
   page navigation, and a toggle to pause auto-compilation. Clicking any
   `.tex`/`.ltx` file opens it and refreshes the compiled preview when Auto is
   on.
-- **AI-assisted writing** - A project-aware assistant built on assistant-ui.
-  The model receives the project file list plus active and main documents, and
-  can create/read/search files, set the main document, and edit the active
-  document. Keys remain server-side.
+- **AI-assisted writing** - A project-aware assistant built on assistant-ui and
+  Groq. The model receives the project file list plus active and main
+  documents, and can create/read/search files, set the main document, and edit
+  the active document. Choose the active model in the assistant or developer
+  panel so only the selected model is called. Keys remain server-side.
 - **Paper review skill** - Type `/paper-review` or use the **Review paper**
   action in chat. The skill runs a read-only editorial panel, audits Lean
   formalization when present, and returns a decision and prioritized revision
@@ -114,9 +117,10 @@ you configure.
   to 30 local snapshots per project and restore them from the inspector.
 - **Workspace LaTeX keyboard** - Toggleable Text, Math, Greek, Symbols, and
   TikZ groups that insert at the CodeMirror caret with keyboard shortcuts.
-- **Terminal themes** - Seven editor palettes: Arcana, Solarized Dark, Dracula,
-  Nord, Tokyo Night, Gruvbox, and Solarized Light. Selection is available from
-  the editor toolbar and the developer panel, and persists across sessions.
+- **Themes and typography** - 48 ccthemes palettes plus Arcana, applied to both
+  the interface and the code editor from the toolbar or developer panel. Three
+  font pairings cover serif, sans, and monospace: Editorial, Modern, and
+  Technical. Theme and font choices persist across sessions.
 - **Lean Infoview** - Opens automatically for `.lean` files with proof health,
   declarations, imports, local messages, and project details. Hide it or dock it
   left/right, then reopen it from the top bar. **Restart File** re-runs local
@@ -150,8 +154,11 @@ pnpm install
 cp apps/web/.env.example apps/web/.env.local
 
 # Configure your environment variables in apps/web/.env.local
-# - OPENAI_API_KEY: Your OpenAI API key (server-side only)
-# - OPENAI_MODEL: Optional model id (defaults to gpt-4o)
+# - GROQ_API_KEY: Groq API key (server-side only; preferred when set)
+# - GROQ_MODEL: Optional Groq model id (defaults to qwen/qwen3.8-27b)
+# - GROQ_BASE_URL: Optional Groq OpenAI-compatible endpoint
+# - OPENAI_API_KEY: OpenAI-compatible fallback (server-side only)
+# - OPENAI_MODEL: Optional fallback model id (defaults to gpt-4o)
 # - OPENAI_BASE_URL: Optional OpenAI-compatible endpoint
 # - LATEX_API_URL: URL to the LaTeX compilation service
 # - KV_REST_API_URL: KV REST API URL (for rate limiting)
@@ -174,7 +181,19 @@ development setup.
 ## Connecting a model
 
 The chat runs through `apps/web/app/api/chat/route.ts` with the Vercel AI SDK.
-The API key stays on the server and is never sent to the browser.
+The API key stays on the server and is never sent to the browser. Groq is used
+when `GROQ_API_KEY` is set; otherwise the OpenAI-compatible fallback is used.
+
+**Groq:**
+
+```bash
+GROQ_API_KEY="gsk_..."
+GROQ_BASE_URL="https://api.groq.com/openai/v1"
+GROQ_MODEL="qwen/qwen3.8-27b"  # or openai/gpt-oss-120b, openai/gpt-oss-20b
+```
+
+The model picker in the assistant and developer panel selects the active model.
+The server accepts only the curated Groq ids in `apps/web/lib/chat-models.ts`.
 
 **OpenAI:**
 
@@ -486,9 +505,12 @@ Hono-based service for LaTeX compilation and sync:
 1. Import the repository into Vercel.
 2. Set the root directory to `apps/web`.
 3. Configure environment variables:
-   - `OPENAI_API_KEY`
-   - `OPENAI_MODEL` (optional)
-   - `OPENAI_BASE_URL` (optional)
+   - `GROQ_API_KEY`
+   - `GROQ_MODEL` (optional)
+   - `GROQ_BASE_URL` (optional)
+   - `OPENAI_API_KEY` (fallback)
+   - `OPENAI_MODEL` (optional fallback)
+   - `OPENAI_BASE_URL` (optional fallback)
    - `LATEX_API_URL`
    - `SPRINGER_META_API_KEY` (optional)
    - `SPRINGER_OPENACCESS_API_KEY` (optional)
@@ -514,7 +536,9 @@ Development builds expose a local-only control panel through the flask icon or
 - A workspace snapshot with compile actions, diagnostics, and inspector access.
 - Lean bridge diagnostics.
 - Local-storage inspection and workspace snapshot export.
-- A terminal-theme preview selector for checking editor palettes.
+- An interface/editor theme selector for the ccthemes palettes.
+- A font-pairing selector (serif, sans, monospace).
+- An AI model selector that controls which Groq model the assistant calls.
 
 Feature flags are persisted to `apps/web/.dev-panel.local.json` and mirrored in
 local storage. The configuration file and the `.dev-panel/` scratch directory
@@ -533,3 +557,6 @@ the pull-request process.
 ## License
 
 [MIT](./LICENSE)
+
+Theme tokens are adapted from [livlign/ccthemes](https://github.com/livlign/ccthemes)
+under the MIT license.

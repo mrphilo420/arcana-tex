@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangleIcon,
+  BotIcon,
   CheckCircle2Icon,
   ClipboardCopyIcon,
   DownloadIcon,
@@ -29,9 +30,12 @@ import {
   type DevFeatureFlags,
   normalizeDevFeatureFlags,
 } from "@/lib/dev-panel";
+import { GROQ_CHAT_MODELS, getGroqModel } from "@/lib/chat-models";
 import { TERMINAL_THEMES } from "@/lib/editor-theme";
+import { FONT_PAIRINGS } from "@/lib/font-pairings";
 import { LEAN_PROJECT_STORAGE_KEY } from "@/lib/lean";
 import { cn } from "@/lib/utils";
+import { useChatModelStore } from "@/stores/chat-model-store";
 import { type DevPanelTab, useDevPanelStore } from "@/stores/dev-panel-store";
 import { useDocumentStore } from "@/stores/document-store";
 import { useEditorPreferencesStore } from "@/stores/editor-preferences-store";
@@ -119,6 +123,11 @@ export function DevPanel() {
   const setTerminalThemeId = useEditorPreferencesStore(
     (s) => s.setTerminalThemeId,
   );
+  const fontPairingId = useEditorPreferencesStore((s) => s.fontPairingId);
+  const setFontPairingId = useEditorPreferencesStore((s) => s.setFontPairingId);
+  const selectedModelId = useChatModelStore((s) => s.selectedModelId);
+  const setSelectedModelId = useChatModelStore((s) => s.setSelectedModelId);
+  const selectedModel = getGroqModel(selectedModelId);
 
   const projectId = useDocumentStore((s) => s.projectId);
   const projectName = useDocumentStore((s) => s.projectName);
@@ -375,10 +384,11 @@ export function DevPanel() {
                   <div>
                     <div className="flex items-center gap-1.5 font-medium text-[11px]">
                       <PaletteIcon className="size-3.5 text-primary" />
-                      Terminal theme
+                      Interface + editor theme
                     </div>
                     <p className="mt-0.5 text-[10px] text-muted-foreground">
-                      Preview editor palettes across the active workspace.
+                      Apply a ccthemes palette to the workspace and code editor.
+                      Arcana restores the cream interface.
                     </p>
                   </div>
                   <Select
@@ -391,11 +401,11 @@ export function DevPanel() {
                   >
                     <SelectTrigger
                       className="h-7 w-[150px] text-[10px]"
-                      aria-label="Terminal theme"
+                      aria-label="Interface and editor theme"
                     >
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-80">
                       {TERMINAL_THEMES.map((theme) => (
                         <SelectItem key={theme.id} value={theme.id}>
                           {theme.label}
@@ -405,7 +415,7 @@ export function DevPanel() {
                   </Select>
                 </div>
                 <div className="mt-2 flex gap-1">
-                  {TERMINAL_THEMES.map((theme) => (
+                  {TERMINAL_THEMES.slice(0, 16).map((theme) => (
                     <span
                       key={theme.id}
                       className="h-1.5 flex-1 rounded-full"
@@ -413,6 +423,121 @@ export function DevPanel() {
                       title={theme.label}
                     />
                   ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-hairline bg-card/25 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-medium text-[11px]">Font pairing</div>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      Three pairings across serif, sans, and monospace.
+                    </p>
+                  </div>
+                  <Select
+                    value={fontPairingId}
+                    onValueChange={(value) =>
+                      setFontPairingId(
+                        value as (typeof FONT_PAIRINGS)[number]["id"],
+                      )
+                    }
+                  >
+                    <SelectTrigger
+                      className="h-7 w-[150px] text-[10px]"
+                      aria-label="Font pairing"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_PAIRINGS.map((pairing) => (
+                        <SelectItem key={pairing.id} value={pairing.id}>
+                          {pairing.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  {FONT_PAIRINGS.map((pairing) => (
+                    <div
+                      key={pairing.id}
+                      className={cn(
+                        "rounded border px-2 py-1.5",
+                        pairing.id === fontPairingId
+                          ? "border-primary/30 bg-primary/5"
+                          : "border-hairline",
+                      )}
+                    >
+                      <div className="font-medium text-[9px]">
+                        {pairing.label}
+                      </div>
+                      <div className="mt-0.5 truncate text-[8px] text-muted-foreground">
+                        {pairing.serif} / {pairing.sans} / {pairing.mono}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-hairline bg-card/25 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-1.5 font-medium text-[11px]">
+                      <BotIcon className="size-3.5 text-primary" />
+                      AI model
+                    </div>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      Only the active Groq model is called. Pick a smaller model
+                      to conserve compute.
+                    </p>
+                  </div>
+                  <Select
+                    value={selectedModelId}
+                    onValueChange={(value) =>
+                      setSelectedModelId(
+                        value as (typeof GROQ_CHAT_MODELS)[number]["id"],
+                      )
+                    }
+                  >
+                    <SelectTrigger
+                      className="h-7 w-[170px] text-[10px]"
+                      aria-label="AI model"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GROQ_CHAT_MODELS.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  {GROQ_CHAT_MODELS.map((model) => (
+                    <button
+                      key={model.id}
+                      type="button"
+                      onClick={() => setSelectedModelId(model.id)}
+                      className={cn(
+                        "rounded border px-2 py-1.5 text-left transition-colors",
+                        model.id === selectedModelId
+                          ? "border-primary/30 bg-primary/5"
+                          : "border-hairline hover:bg-accent",
+                      )}
+                    >
+                      <div className="font-medium text-[9px]">
+                        {model.label}
+                      </div>
+                      <div className="mt-0.5 text-[8px] text-muted-foreground">
+                        {model.compute} · {model.contextWindow} ctx
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 rounded border border-hairline/70 bg-background/40 px-2 py-1.5 text-[9px] text-muted-foreground">
+                  {selectedModel.description}
                 </div>
               </div>
 

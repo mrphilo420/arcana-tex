@@ -40,6 +40,7 @@ import {
 import packageJson from "@/package.json";
 import { ArcanaMark } from "@/components/brand/arcana-mark";
 import { DevPanelButton } from "@/components/dev/dev-panel";
+import { useEditorPreferencesStore } from "@/stores/editor-preferences-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -178,6 +179,7 @@ function NavItem({
 export function HomePage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const terminalThemeId = useEditorPreferencesStore((s) => s.terminalThemeId);
 
   const [projects, setProjects] = useState<ProjectMeta[]>([]);
   const [folders, setFolders] = useState<ProjectFolder[]>([]);
@@ -1192,35 +1194,37 @@ export function HomePage() {
                 </div>
               </div>
               <DevPanelButton className="size-6 shrink-0 [&_svg]:size-3.5" />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-6 shrink-0"
-                onClick={() => {
-                  if (theme === "system") setTheme("light");
-                  else if (theme === "light") setTheme("dark");
-                  else setTheme("system");
-                }}
-                title={
-                  !mounted
-                    ? "Theme"
-                    : theme === "system"
-                      ? "System theme"
-                      : theme === "light"
-                        ? "Light mode"
-                        : "Dark mode"
-                }
-              >
-                {!mounted ? (
-                  <MonitorIcon className="size-3.5" />
-                ) : theme === "system" ? (
-                  <MonitorIcon className="size-3.5" />
-                ) : theme === "light" ? (
-                  <SunIcon className="size-3.5" />
-                ) : (
-                  <MoonIcon className="size-3.5" />
-                )}
-              </Button>
+              {terminalThemeId === "arcana" && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-6 shrink-0"
+                  onClick={() => {
+                    if (theme === "system") setTheme("light");
+                    else if (theme === "light") setTheme("dark");
+                    else setTheme("system");
+                  }}
+                  title={
+                    !mounted
+                      ? "Theme"
+                      : theme === "system"
+                        ? "System theme"
+                        : theme === "light"
+                          ? "Light mode"
+                          : "Dark mode"
+                  }
+                >
+                  {!mounted ? (
+                    <MonitorIcon className="size-3.5" />
+                  ) : theme === "system" ? (
+                    <MonitorIcon className="size-3.5" />
+                  ) : theme === "light" ? (
+                    <SunIcon className="size-3.5" />
+                  ) : (
+                    <MoonIcon className="size-3.5" />
+                  )}
+                </Button>
+              )}
             </>
           )}
         </div>

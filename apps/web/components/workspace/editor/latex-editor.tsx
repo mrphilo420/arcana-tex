@@ -35,7 +35,7 @@ import { useDocumentStore } from "@/stores/document-store";
 import { useDevFeatureFlag } from "@/stores/dev-panel-store";
 import { useEditorPreferencesStore } from "@/stores/editor-preferences-store";
 import { compileProject } from "@/lib/compile-project";
-import { buildEditorTheme } from "@/lib/editor-theme";
+import { buildEditorTheme, getTerminalTheme } from "@/lib/editor-theme";
 import { EditorToolbar } from "./editor-toolbar";
 import { type LatexInsertion, TikzLatexRibbon } from "../tikz-latex-ribbon";
 import { AIDrawer } from "./ai-drawer";
@@ -183,6 +183,10 @@ export function LatexEditor() {
   );
   const terminalTheme = useMemo(
     () => buildEditorTheme(terminalThemeId),
+    [terminalThemeId],
+  );
+  const editorColors = useMemo(
+    () => getTerminalTheme(terminalThemeId).colors,
     [terminalThemeId],
   );
 
@@ -598,7 +602,14 @@ export function LatexEditor() {
           )}
         >
           {stickyLines.length > 0 && (
-            <div className="absolute inset-x-0 top-0 z-10 border-white/10 border-b bg-[#181715] font-mono text-[14px] leading-[1.4] shadow-md">
+            <div
+              className="absolute inset-x-0 top-0 z-10 border-b font-mono text-[14px] leading-[1.4] shadow-md"
+              style={{
+                backgroundColor: editorColors.background,
+                borderBottomColor: editorColors.border,
+                color: editorColors.foreground,
+              }}
+            >
               {stickyLines.map((section) => (
                 <div
                   key={section.line}
@@ -617,8 +628,12 @@ export function LatexEditor() {
                   }}
                 >
                   <span
-                    className="shrink-0 bg-[#181715] py-px text-right text-[#6c6a64]"
-                    style={{ width: gutterWidth ? gutterWidth - 8 : 32 }}
+                    className="shrink-0 py-px text-right"
+                    style={{
+                      width: gutterWidth ? gutterWidth - 8 : 32,
+                      backgroundColor: editorColors.background,
+                      color: editorColors.gutter,
+                    }}
                   >
                     {section.line}
                   </span>
@@ -628,7 +643,10 @@ export function LatexEditor() {
                       dangerouslySetInnerHTML={{ __html: section.html }}
                     />
                   ) : (
-                    <span className="py-px pl-5.5 text-[#a09d96]">
+                    <span
+                      className="py-px pl-5.5"
+                      style={{ color: editorColors.comment }}
+                    >
                       {section.content}
                     </span>
                   )}

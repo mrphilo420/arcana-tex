@@ -1912,7 +1912,7 @@ export function TikzStudio() {
                   y={VIEW_H - 8}
                   fill="#b6afa2"
                   fontSize={9}
-                  fontFamily="var(--font-jetbrains), monospace"
+                  fontFamily="var(--ui-mono), monospace"
                 >
                   0,0
                 </text>
@@ -1922,7 +1922,7 @@ export function TikzStudio() {
                   fill="#b6afa2"
                   fontSize={9}
                   textAnchor="end"
-                  fontFamily="var(--font-jetbrains), monospace"
+                  fontFamily="var(--ui-mono), monospace"
                 >
                   {CM_W} cm
                 </text>
@@ -1931,7 +1931,7 @@ export function TikzStudio() {
                   y={12}
                   fill="#b6afa2"
                   fontSize={9}
-                  fontFamily="var(--font-jetbrains), monospace"
+                  fontFamily="var(--ui-mono), monospace"
                 >
                   {CM_H} cm
                 </text>
@@ -2893,7 +2893,7 @@ function MultiSelectionFrame({ shapes }: { shapes: TikzShape[] }) {
         textAnchor="middle"
         fill="#fff"
         fontSize="9"
-        fontFamily="var(--font-inter), sans-serif"
+        fontFamily="var(--ui-sans), sans-serif"
         pointerEvents="none"
       >
         {shapes.length}
@@ -2951,7 +2951,7 @@ function TikzSvgShape({
             dominantBaseline="middle"
             fill="#141413"
             fontSize={12}
-            fontFamily="var(--font-inter), sans-serif"
+            fontFamily="var(--ui-sans), sans-serif"
             pointerEvents="none"
           >
             {label}
@@ -2986,7 +2986,7 @@ function TikzSvgShape({
             dominantBaseline="middle"
             fill="#141413"
             fontSize={12}
-            fontFamily="var(--font-inter), sans-serif"
+            fontFamily="var(--ui-sans), sans-serif"
             pointerEvents="none"
           >
             {label}
@@ -3047,7 +3047,7 @@ function TikzSvgShape({
             dominantBaseline="middle"
             fill={stroke}
             fontSize={11}
-            fontFamily="var(--font-inter), sans-serif"
+            fontFamily="var(--ui-sans), sans-serif"
             pointerEvents="none"
           >
             {label}
@@ -3066,7 +3066,7 @@ function TikzSvgShape({
         dominantBaseline="middle"
         fill={stroke}
         fontSize={shapeFontSize(shape)}
-        fontFamily="var(--font-inter), sans-serif"
+        fontFamily="var(--ui-sans), sans-serif"
         pointerEvents="all"
         onPointerDown={handlePointerDown}
         style={{ cursor: "move" }}

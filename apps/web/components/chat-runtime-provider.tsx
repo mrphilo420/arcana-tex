@@ -12,6 +12,7 @@ import {
   loadChatMessages,
   saveChatMessages,
 } from "@/lib/projects/chat-history";
+import { useChatModelStore } from "@/stores/chat-model-store";
 import { useDocumentStore } from "@/stores/document-store";
 
 export function ChatRuntimeProvider({
@@ -20,7 +21,15 @@ export function ChatRuntimeProvider({
   children: React.ReactNode;
 }) {
   const projectId = useDocumentStore((state) => state.projectId);
-  const transport = useMemo(() => new AssistantChatTransport(), []);
+  const transport = useMemo(
+    () =>
+      new AssistantChatTransport({
+        body: () => ({
+          model: useChatModelStore.getState().selectedModelId,
+        }),
+      }),
+    [],
+  );
   const chat = useChat({
     transport,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
@@ -31,6 +40,10 @@ export function ChatRuntimeProvider({
   const latestMessagesRef = useRef(chat.messages);
 
   latestMessagesRef.current = chat.messages;
+
+  useEffect(() => {
+    useChatModelStore.getState().hydrate();
+  }, []);
 
   useEffect(() => {
     transport.setRuntime(runtime);

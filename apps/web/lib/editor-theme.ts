@@ -2,15 +2,47 @@ import { HighlightStyle } from "@codemirror/language";
 import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
+import { CCTHEMES, type CcTheme, type CcThemeId } from "./ccthemes";
 
-export type TerminalThemeId =
-  | "arcana"
-  | "solarized-dark"
-  | "dracula"
-  | "nord"
-  | "tokyo-night"
-  | "gruvbox"
-  | "solarized-light";
+export type TerminalThemeId = "arcana" | CcThemeId;
+
+export interface AppThemeUi {
+  background: string;
+  foreground: string;
+  card: string;
+  cardForeground: string;
+  popover: string;
+  popoverForeground: string;
+  primary: string;
+  primaryForeground: string;
+  secondary: string;
+  secondaryForeground: string;
+  muted: string;
+  mutedForeground: string;
+  accent: string;
+  accentForeground: string;
+  destructive: string;
+  border: string;
+  input: string;
+  ring: string;
+  sidebar: string;
+  sidebarForeground: string;
+  sidebarAccent: string;
+  sidebarAccentForeground: string;
+  sidebarBorder: string;
+  surfaceDark: string;
+  surfaceDarkElevated: string;
+  onDark: string;
+  onDarkSoft: string;
+  hairline: string;
+  accentTeal: string;
+  accentAmber: string;
+  chart1: string;
+  chart2: string;
+  chart3: string;
+  chart4: string;
+  chart5: string;
+}
 
 interface TerminalPalette {
   background: string;
@@ -38,207 +70,209 @@ export interface TerminalTheme {
   id: TerminalThemeId;
   label: string;
   dark: boolean;
+  ui: AppThemeUi;
   colors: TerminalPalette;
 }
 
+const CANVAS_OVERRIDES: Record<string, string> = {
+  "amber-crt": "#1a1200",
+  aubade: "#f7f1ff",
+  "catppuccin-latte": "#eff1f5",
+  "catppuccin-mocha": "#1e1e2e",
+  dracula: "#282a36",
+  everforest: "#2b3339",
+  "github-dark": "#0d1117",
+  "github-light": "#ffffff",
+  gruvbox: "#282828",
+  letterpress: "#f6f1e6",
+  "matcha-zen": "#f3f7ef",
+  nord: "#2e3440",
+  opaline: "#f7f8fb",
+  porcelain: "#f7f8fa",
+  "rose-pine-dawn": "#faf4ed",
+  "solarized-dark": "#002b36",
+  "solarized-light": "#fdf6e3",
+  synthwave: "#241b2f",
+  "tokyo-night": "#1a1b26",
+};
+
+const ARCANA_UI: AppThemeUi = {
+  background: "#faf9f5",
+  foreground: "#141413",
+  card: "#f5f0e8",
+  cardForeground: "#141413",
+  popover: "#fffdf9",
+  popoverForeground: "#141413",
+  primary: "#cc785c",
+  primaryForeground: "#ffffff",
+  secondary: "#efe9de",
+  secondaryForeground: "#252523",
+  muted: "#f0ebe2",
+  mutedForeground: "#6c6a64",
+  accent: "#efe9de",
+  accentForeground: "#141413",
+  destructive: "#c64545",
+  border: "#e6dfd8",
+  input: "#e6dfd8",
+  ring: "#cc785c",
+  sidebar: "#f5f0e8",
+  sidebarForeground: "#252523",
+  sidebarAccent: "#efe9de",
+  sidebarAccentForeground: "#141413",
+  sidebarBorder: "#e6dfd8",
+  surfaceDark: "#181715",
+  surfaceDarkElevated: "#252320",
+  onDark: "#faf9f5",
+  onDarkSoft: "#a09d96",
+  hairline: "#e6dfd8",
+  accentTeal: "#5db8a6",
+  accentAmber: "#e8a55a",
+  chart1: "#cc785c",
+  chart2: "#5db8a6",
+  chart3: "#e8a55a",
+  chart4: "#8e8b82",
+  chart5: "#c64545",
+};
+
+const ARCANA_THEME: TerminalTheme = {
+  id: "arcana",
+  label: "Arcana",
+  dark: true,
+  ui: ARCANA_UI,
+  colors: {
+    background: "#181715",
+    foreground: "#faf9f5",
+    gutter: "#6c6a64",
+    gutterActive: "#a09d96",
+    activeLine: "#1f1e1b",
+    selection: "rgba(204, 120, 92, 0.24)",
+    cursor: "#cc785c",
+    keyword: "#cc785c",
+    function: "#e8a55a",
+    type: "#5db8a6",
+    comment: "#8e8b82",
+    string: "#5db8a6",
+    number: "#5db8a6",
+    operator: "#5db8a6",
+    invalid: "#c64545",
+    accent: "#e8a55a",
+    panel: "#1f1e1b",
+    tooltip: "#252320",
+    border: "rgba(250, 249, 245, 0.12)",
+  },
+};
+
+function withAlpha(hex: string, alpha: number): string {
+  const normalized = hex.replace("#", "");
+  if (normalized.length !== 6) return `rgba(204, 120, 92, ${alpha})`;
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
+function contrastColor(background: string): string {
+  const normalized = background.replace("#", "");
+  if (normalized.length !== 6) return "#ffffff";
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+  const luminance = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
+  return luminance > 0.6 ? "#111111" : "#ffffff";
+}
+
+function themeFromCcTheme(theme: CcTheme): TerminalTheme {
+  const background =
+    CANVAS_OVERRIDES[theme.id] ||
+    theme.userMessageBackground ||
+    theme.subtle ||
+    (theme.base === "dark" ? "#181715" : "#faf9f5");
+  const card = theme.bashMessageBackgroundColor || theme.subtle || background;
+  const border = theme.promptBorder || theme.inactive || background;
+  const accent = theme.claude;
+  const dark = theme.base === "dark";
+
+  return {
+    id: theme.id as TerminalThemeId,
+    label: theme.label,
+    dark,
+    ui: {
+      background,
+      foreground: theme.text,
+      card,
+      cardForeground: theme.text,
+      popover: theme.bashMessageBackgroundColor || card,
+      popoverForeground: theme.text,
+      primary: accent,
+      primaryForeground: contrastColor(accent),
+      secondary: theme.subtle,
+      secondaryForeground: theme.text,
+      muted: theme.bashMessageBackgroundColor || theme.subtle,
+      mutedForeground: theme.inactive,
+      accent: theme.subtle,
+      accentForeground: theme.text,
+      destructive: theme.error,
+      border,
+      input: border,
+      ring: accent,
+      sidebar: background,
+      sidebarForeground: theme.text,
+      sidebarAccent: card,
+      sidebarAccentForeground: theme.text,
+      sidebarBorder: border,
+      surfaceDark: background,
+      surfaceDarkElevated: card,
+      onDark: theme.text,
+      onDarkSoft: theme.inactive,
+      hairline: border,
+      accentTeal: theme.planMode,
+      accentAmber: theme.warning,
+      chart1: accent,
+      chart2: theme.planMode,
+      chart3: theme.warning,
+      chart4: theme.inactive,
+      chart5: theme.error,
+    },
+    colors: {
+      background,
+      foreground: theme.text,
+      gutter: theme.inactive,
+      gutterActive: theme.text,
+      activeLine: theme.bashMessageBackgroundColor || theme.subtle,
+      selection: withAlpha(accent, 0.24),
+      cursor: accent,
+      keyword: accent,
+      function: theme.warning,
+      type: theme.planMode,
+      comment: theme.inactive,
+      string: theme.success,
+      number: theme.bashBorder,
+      operator: theme.planMode,
+      invalid: theme.error,
+      accent: theme.warning,
+      panel: theme.bashMessageBackgroundColor || theme.subtle,
+      tooltip: theme.subtle,
+      border,
+    },
+  };
+}
+
 export const TERMINAL_THEMES: TerminalTheme[] = [
-  {
-    id: "arcana",
-    label: "Arcana",
-    dark: true,
-    colors: {
-      background: "#181715",
-      foreground: "#faf9f5",
-      gutter: "#6c6a64",
-      gutterActive: "#a09d96",
-      activeLine: "#1f1e1b",
-      selection: "rgba(204, 120, 92, 0.24)",
-      cursor: "#cc785c",
-      keyword: "#cc785c",
-      function: "#e8a55a",
-      type: "#5db8a6",
-      comment: "#8e8b82",
-      string: "#5db8a6",
-      number: "#5db8a6",
-      operator: "#5db8a6",
-      invalid: "#c64545",
-      accent: "#e8a55a",
-      panel: "#1f1e1b",
-      tooltip: "#252320",
-      border: "rgba(250, 249, 245, 0.12)",
-    },
-  },
-  {
-    id: "solarized-dark",
-    label: "Solarized Dark",
-    dark: true,
-    colors: {
-      background: "#002b36",
-      foreground: "#93a1a1",
-      gutter: "#586e75",
-      gutterActive: "#839496",
-      activeLine: "#073642",
-      selection: "rgba(38, 139, 210, 0.25)",
-      cursor: "#b58900",
-      keyword: "#859900",
-      function: "#b58900",
-      type: "#6c71c4",
-      comment: "#586e75",
-      string: "#2aa198",
-      number: "#d33682",
-      operator: "#2aa198",
-      invalid: "#dc322f",
-      accent: "#b58900",
-      panel: "#073642",
-      tooltip: "#073642",
-      border: "rgba(147, 161, 161, 0.2)",
-    },
-  },
-  {
-    id: "dracula",
-    label: "Dracula",
-    dark: true,
-    colors: {
-      background: "#282a36",
-      foreground: "#f8f8f2",
-      gutter: "#6272a4",
-      gutterActive: "#bd93f9",
-      activeLine: "#44475a",
-      selection: "rgba(68, 71, 90, 0.85)",
-      cursor: "#f8f8f2",
-      keyword: "#ff79c6",
-      function: "#50fa7b",
-      type: "#8be9fd",
-      comment: "#6272a4",
-      string: "#f1fa8c",
-      number: "#bd93f9",
-      operator: "#ff79c6",
-      invalid: "#ff5555",
-      accent: "#ffb86c",
-      panel: "#21222c",
-      tooltip: "#44475a",
-      border: "rgba(248, 248, 242, 0.14)",
-    },
-  },
-  {
-    id: "nord",
-    label: "Nord",
-    dark: true,
-    colors: {
-      background: "#2e3440",
-      foreground: "#d8dee9",
-      gutter: "#4c566a",
-      gutterActive: "#81a1c1",
-      activeLine: "#3b4252",
-      selection: "rgba(129, 161, 193, 0.28)",
-      cursor: "#88c0d0",
-      keyword: "#81a1c1",
-      function: "#88c0d0",
-      type: "#8fbcbb",
-      comment: "#616e88",
-      string: "#a3be8c",
-      number: "#b48ead",
-      operator: "#81a1c1",
-      invalid: "#bf616a",
-      accent: "#ebcb8b",
-      panel: "#3b4252",
-      tooltip: "#434c5e",
-      border: "rgba(216, 222, 233, 0.14)",
-    },
-  },
-  {
-    id: "tokyo-night",
-    label: "Tokyo Night",
-    dark: true,
-    colors: {
-      background: "#1a1b26",
-      foreground: "#c0caf5",
-      gutter: "#3b4261",
-      gutterActive: "#7aa2f7",
-      activeLine: "#24283b",
-      selection: "rgba(122, 162, 247, 0.25)",
-      cursor: "#c0caf5",
-      keyword: "#bb9af7",
-      function: "#7aa2f7",
-      type: "#7dcfff",
-      comment: "#565f89",
-      string: "#9ece6a",
-      number: "#ff9e64",
-      operator: "#89ddff",
-      invalid: "#f7768e",
-      accent: "#e0af68",
-      panel: "#16161e",
-      tooltip: "#24283b",
-      border: "rgba(192, 202, 245, 0.14)",
-    },
-  },
-  {
-    id: "gruvbox",
-    label: "Gruvbox",
-    dark: true,
-    colors: {
-      background: "#282828",
-      foreground: "#ebdbb2",
-      gutter: "#665c54",
-      gutterActive: "#a89984",
-      activeLine: "#3c3836",
-      selection: "rgba(215, 153, 33, 0.22)",
-      cursor: "#ebdbb2",
-      keyword: "#fb4934",
-      function: "#fabd2f",
-      type: "#83a598",
-      comment: "#928374",
-      string: "#b8bb26",
-      number: "#d3869b",
-      operator: "#8ec07c",
-      invalid: "#fb4934",
-      accent: "#fe8019",
-      panel: "#1d2021",
-      tooltip: "#3c3836",
-      border: "rgba(235, 219, 178, 0.14)",
-    },
-  },
-  {
-    id: "solarized-light",
-    label: "Solarized Light",
-    dark: false,
-    colors: {
-      background: "#fdf6e3",
-      foreground: "#657b83",
-      gutter: "#93a1a1",
-      gutterActive: "#586e75",
-      activeLine: "#eee8d5",
-      selection: "rgba(38, 139, 210, 0.18)",
-      cursor: "#b58900",
-      keyword: "#859900",
-      function: "#b58900",
-      type: "#6c71c4",
-      comment: "#93a1a1",
-      string: "#2aa198",
-      number: "#d33682",
-      operator: "#2aa198",
-      invalid: "#dc322f",
-      accent: "#cb4b16",
-      panel: "#eee8d5",
-      tooltip: "#eee8d5",
-      border: "rgba(101, 123, 131, 0.18)",
-    },
-  },
+  ARCANA_THEME,
+  ...CCTHEMES.map(themeFromCcTheme),
 ];
 
 export const DEFAULT_TERMINAL_THEME_ID: TerminalThemeId = "arcana";
 
-function getTheme(id: TerminalThemeId): TerminalTheme {
-  return (
-    TERMINAL_THEMES.find((theme) => theme.id === id) ?? TERMINAL_THEMES[0]!
-  );
+export function getTerminalTheme(id: TerminalThemeId): TerminalTheme {
+  return TERMINAL_THEMES.find((theme) => theme.id === id) ?? ARCANA_THEME;
 }
 
 export function buildEditorTheme(id: TerminalThemeId): {
   theme: Extension;
   highlight: HighlightStyle;
 } {
-  const { colors, dark } = getTheme(id);
+  const { colors, dark } = getTerminalTheme(id);
 
   const theme = EditorView.theme(
     {

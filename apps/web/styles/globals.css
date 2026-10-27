@@ -6,9 +6,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-jetbrains);
-  --font-serif: var(--font-cormorant);
+  --font-sans: var(--ui-sans);
+  --font-mono: var(--ui-mono);
+  --font-serif: var(--ui-serif);
   --color-surface-dark: var(--surface-dark);
   --color-surface-dark-elevated: var(--surface-dark-elevated);
   --color-on-dark: var(--on-dark);
@@ -57,6 +57,7 @@
 
 :root {
   --radius: 0.625rem;
+  --selection: rgba(204, 120, 92, 0.28);
 
   --background: #faf9f5;
   --foreground: #141413;
@@ -147,6 +148,24 @@
   --sidebar-ring: #cc785c;
 }
 
+body {
+  --ui-serif: var(--font-cormorant);
+  --ui-sans: var(--font-inter);
+  --ui-mono: var(--font-jetbrains);
+}
+
+[data-font-pairing="modern"] body {
+  --ui-serif: var(--font-source-serif);
+  --ui-sans: var(--font-dm-sans);
+  --ui-mono: var(--font-ibm-plex-mono);
+}
+
+[data-font-pairing="technical"] body {
+  --ui-serif: var(--font-plex-serif);
+  --ui-sans: var(--font-manrope);
+  --ui-mono: var(--font-fira-code);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -159,11 +178,11 @@
     font-feature-settings: "ss01", "cv11";
   }
   ::selection {
-    background: rgba(204, 120, 92, 0.28);
+    background: var(--selection);
   }
   [data-slot="dialog-title"],
   [data-slot="sheet-title"] {
-    font-family: var(--font-cormorant), Georgia, serif;
+    font-family: var(--ui-serif), Georgia, serif;
     font-weight: 500;
     letter-spacing: -0.01em;
   }

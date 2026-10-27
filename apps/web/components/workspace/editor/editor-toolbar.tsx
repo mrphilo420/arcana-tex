@@ -59,15 +59,18 @@ function TerminalThemeMenu({ className }: { className?: string }) {
             "size-7 text-[#a09d96] hover:bg-white/10 hover:text-[#faf9f5]",
             className,
           )}
-          title={`Terminal theme: ${active.label}`}
-          aria-label="Terminal theme"
+          title={`Theme (editor + interface): ${active.label}`}
+          aria-label="Theme (editor + interface)"
         >
           <PaletteIcon className="size-3.5" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent
+        align="end"
+        className="max-h-80 w-64 overflow-y-auto"
+      >
         <DropdownMenuLabel className="text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
-          Terminal theme
+          Theme · editor + interface
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {TERMINAL_THEMES.map((theme) => (

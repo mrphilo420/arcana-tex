@@ -149,7 +149,7 @@ function TemplatePreview({
                   dominantBaseline="middle"
                   fill="#141413"
                   fontSize="12"
-                  fontFamily="var(--font-inter), sans-serif"
+                  fontFamily="var(--ui-sans), sans-serif"
                 >
                   {previewText(shape.label)}
                 </text>
@@ -180,7 +180,7 @@ function TemplatePreview({
                   dominantBaseline="middle"
                   fill="#141413"
                   fontSize="12"
-                  fontFamily="var(--font-inter), sans-serif"
+                  fontFamily="var(--ui-sans), sans-serif"
                 >
                   {previewText(shape.label)}
                 </text>
@@ -211,7 +211,7 @@ function TemplatePreview({
                   textAnchor="middle"
                   fill={stroke}
                   fontSize="10"
-                  fontFamily="var(--font-inter), sans-serif"
+                  fontFamily="var(--ui-sans), sans-serif"
                 >
                   {previewText(shape.label)}
                 </text>
@@ -228,7 +228,7 @@ function TemplatePreview({
             textAnchor="middle"
             fill={stroke}
             fontSize={shape.fontSize ?? 12}
-            fontFamily="var(--font-inter), sans-serif"
+            fontFamily="var(--ui-sans), sans-serif"
           >
             {previewText(shape.label)}
           </text>

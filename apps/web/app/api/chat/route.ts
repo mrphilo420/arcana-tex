@@ -12,16 +12,27 @@ import {
   LEAN_SYSTEM_GUIDE,
   PAPER_REVIEW_SKILL,
 } from "@/lib/chat-skills/paper-review";
+import { DEFAULT_GROQ_MODEL_ID, isGroqModelId } from "@/lib/chat-models";
 import { chatRatelimit, getIP } from "@/lib/ratelimit";
 
 export const maxDuration = 60;
 
+const groqApiKey = process.env.GROQ_API_KEY?.trim();
+const useGroq = Boolean(groqApiKey);
+
 const modelProvider = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "local",
-  baseURL: process.env.OPENAI_BASE_URL || undefined,
+  apiKey: useGroq ? groqApiKey : process.env.OPENAI_API_KEY || "local",
+  baseURL: useGroq
+    ? process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1"
+    : process.env.OPENAI_BASE_URL || undefined,
 });
 
-const chatModel = process.env.OPENAI_MODEL || "gpt-4o";
+const configuredEnvModel = process.env.GROQ_MODEL?.trim();
+const chatModel = useGroq
+  ? isGroqModelId(configuredEnvModel)
+    ? configuredEnvModel
+    : DEFAULT_GROQ_MODEL_ID
+  : process.env.OPENAI_MODEL || "gpt-4o";
 
 const SYSTEM_PROMPT = `You are a helpful research-writing and formalization assistant working in arcanaTeX, a local-first LaTeX and Lean 4 workspace.
 
@@ -135,11 +146,11 @@ function readOnlyTools(tools: unknown): unknown {
 }
 
 export async function POST(req: Request) {
-  if (!process.env.OPENAI_API_KEY && !process.env.OPENAI_BASE_URL) {
+  if (!useGroq && !process.env.OPENAI_API_KEY && !process.env.OPENAI_BASE_URL) {
     return NextResponse.json(
       {
         error:
-          "No chat model is configured. Set OPENAI_API_KEY (and optionally OPENAI_MODEL / OPENAI_BASE_URL) in apps/web/.env.local, then restart the dev server.",
+          "No chat model is configured. Set GROQ_API_KEY (or OPENAI_API_KEY / OPENAI_BASE_URL) in apps/web/.env.local, then restart the dev server.",
       },
       { status: 500 },
     );
@@ -164,7 +175,9 @@ export async function POST(req: Request) {
     }
   }
 
-  const { messages, system, tools } = await req.json();
+  const { messages, system, tools, model: requestedModel } = await req.json();
+  const selectedModel =
+    useGroq && isGroqModelId(requestedModel) ? requestedModel : chatModel;
   const latestText = latestUserText(messages ?? []);
   const review = getPaperReviewInvocation(latestText);
   const activeTools = review ? readOnlyTools(tools) : tools;
@@ -185,7 +198,7 @@ export async function POST(req: Request) {
   }
 
   const result = streamText({
-    model: modelProvider.chat(chatModel),
+    model: modelProvider.chat(selectedModel),
     system: systemParts.join("\n\n"),
     messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(review ? 16 : 10),
