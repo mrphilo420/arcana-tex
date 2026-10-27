@@ -6,6 +6,7 @@ import { Sidebar } from "./sidebar";
 import { LatexEditor } from "./editor/latex-editor";
 import { LatexTools } from "./editor/latex-tools";
 import { ResearchTools } from "./editor/research-tools";
+import { CodeTools } from "./editor/code-tools";
 import { PdfPreview } from "./preview/pdf-preview";
 import { BeamerPanel } from "./beamer-panel";
 import { LeanInfoview } from "./lean-infoview";
@@ -65,6 +66,7 @@ export function WorkspaceLayout() {
       <WorkspaceTopBar />
       <LatexTools />
       <ResearchTools />
+      <CodeTools />
       <BeamerPanel />
       {leanLakeEnabled && <LeanPanel />}
       <CommentsPanel />

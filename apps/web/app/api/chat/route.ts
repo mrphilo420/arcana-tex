@@ -13,10 +13,11 @@ import {
   LEAN_SYSTEM_GUIDE,
   PAPER_REVIEW_SKILL,
 } from "@/lib/chat-skills/paper-review";
+import { createServerTools } from "@/lib/ai/server-tools";
 import { DEFAULT_GROQ_MODEL_ID, isGroqModelId } from "@/lib/chat-models";
 import { chatRatelimit, getIP } from "@/lib/ratelimit";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const groqApiKey = process.env.GROQ_API_KEY?.trim();
 const useGroq = Boolean(groqApiKey);
@@ -71,6 +72,9 @@ You have tools available to inspect and modify the project:
 - insert_latex: insert code at the cursor position in the active file
 - replace_selection: replace the current selection (only when text is selected)
 - find_and_replace: find and replace text in the active file
+- run_python: run a Python script for computation and TikZ/PGF generation
+- run_r: run an R script for computation and TikZ/PGF generation
+- spawn_subagents: delegate independent planning, Python, R, or review work to parallel subagents
 
 When the user asks you to add, insert, or write LaTeX code to their active document, use insert_latex.
 When the user asks you to replace or modify selected text, use replace_selection.
@@ -253,15 +257,20 @@ export async function POST(req: Request) {
     );
   }
 
+  const selectedModelInstance = modelProvider.chat(selectedModel);
+  const serverTools = createServerTools(selectedModelInstance);
+  const clientTools = activeTools
+    ? (frontendTools(activeTools) as unknown as ToolSet)
+    : {};
+  const allTools = { ...serverTools, ...clientTools } as ToolSet;
+
   const result = streamText({
-    model: modelProvider.chat(selectedModel),
+    model: selectedModelInstance,
     system: systemParts.join("\n\n"),
     messages: await convertToModelMessages(messages as unknown as UIMessage[]),
     maxOutputTokens: 2048,
     stopWhen: stepCountIs(review ? 16 : 10),
-    tools: activeTools
-      ? (frontendTools(activeTools) as unknown as ToolSet)
-      : undefined,
+    tools: allTools,
   });
 
   return result.toUIMessageStreamResponse({

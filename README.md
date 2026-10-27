@@ -73,6 +73,7 @@ you configure.
   panel so only the selected model is called. Keys remain server-side; long
   chats and editor context are automatically compressed to fit the model's
   token budget.
+- **Python, R, and subagent figure tools** - The assistant can run local Python or R scripts in isolated temporary directories to compute geometry, fit data, or generate editable TikZ/PGF artifacts, then insert the checked result into the document. Up to four role-specific subagents can work on independent planning, Python, R, and TikZ-review tasks in parallel. See [docs/local-code-execution.md](./docs/local-code-execution.md).
 - **Selection chat** - Select text in the editor to reveal **Ask AI**. A small
   pop-up chat sends the file path, line range, selected source, and your
   question to the main assistant thread.
@@ -158,6 +159,7 @@ you configure.
 - pnpm 10+
 - TeX Live or MiKTeX for local compilation
 - Tectonic 0.16+ (optional; selectable compiler with automatic reruns)
+- Python 3.10+ and/or R 4.x (optional; AI computation and TikZ figure tools)
 - An OpenAI-compatible model endpoint (optional for AI features)
 
 ### Run locally
@@ -182,6 +184,8 @@ cp apps/web/.env.example apps/web/.env.local
 # - ZOTERO_LIBRARY_ID: optional: 0 resolves the key's user automatically
 # - OPENAI_API_KEY: OpenAI-compatible fallback (server-side only)
 # - OPENAI_MODEL: Optional fallback model id (defaults to gpt-4o)
+# - ENABLE_LOCAL_CODE_EXECUTION: Set false to disable AI Python/R execution
+# - PYTHON_BIN / R_BIN: Optional interpreter paths for the code tools
 # - OPENAI_BASE_URL: Optional OpenAI-compatible endpoint
 # - LATEX_API_URL: URL to the LaTeX compilation service
 # - KV_REST_API_URL: KV REST API URL (for rate limiting)
