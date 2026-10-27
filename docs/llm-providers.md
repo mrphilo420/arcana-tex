@@ -181,7 +181,10 @@ If a key is pasted into chat or a shared log, rotate it.
 If no provider is configured, the existing environment fallback still works:
 
 - `GROQ_API_KEY` with the curated Groq models;
-- `OPENAI_API_KEY` / `OPENAI_BASE_URL` with `OPENAI_MODEL` (default `gpt-4o`).
+- `OPENAI_API_KEY` / `OPENAI_BASE_URL` with `OPENAI_MODEL` (default `gpt-4o`);
+- `HUGGINGFACE_API_KEY` or `HF_TOKEN` with `HUGGINGFACE_MODEL` (default
+  `meta-llama/Llama-3.3-70B-Instruct`) and optional
+  `HUGGINGFACE_BASE_URL` (default `https://router.huggingface.co/v1`).
 
 Configured providers take precedence. A provider-qualified model that no longer
 exists returns an error instead of silently switching to another provider.

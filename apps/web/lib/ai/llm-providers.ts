@@ -622,6 +622,35 @@ function envOpenAiModel(requested: unknown): ResolvedChatModel | null {
   };
 }
 
+function envHuggingFaceModel(requested: unknown): ResolvedChatModel | null {
+  const apiKey =
+    process.env.HUGGINGFACE_API_KEY?.trim() ||
+    process.env.HF_TOKEN?.trim() ||
+    "";
+  if (!apiKey) return null;
+  const requestedId = typeof requested === "string" ? requested.trim() : "";
+  if (requestedId.includes("::")) return null;
+  const modelId =
+    requestedId ||
+    process.env.HUGGINGFACE_MODEL?.trim() ||
+    "meta-llama/Llama-3.3-70B-Instruct";
+  const baseUrl =
+    process.env.HUGGINGFACE_BASE_URL?.trim() ||
+    "https://router.huggingface.co/v1";
+  return {
+    value: modelValue("huggingface", modelId),
+    providerId: "huggingface",
+    providerLabel: "Hugging Face",
+    modelId,
+    api: "openai-chat",
+    baseUrl,
+    model: createOpenAI({
+      apiKey,
+      baseURL: baseUrl,
+    }).chat(modelId),
+  };
+}
+
 function providerSupportsModel(
   provider: StoredLlmProvider,
   modelId: string,
@@ -700,14 +729,25 @@ export async function resolveChatModel(
   const configured = resolveConfiguredModel(providers, requested);
   if (configured) return configured;
 
-  if (typeof requested === "string" && requested.trim()) {
-    const groq = envGroqModel(requested);
+  const normalized = typeof requested === "string" ? requested.trim() : "";
+  if (normalized) {
+    const parsed = parseModelValue(normalized);
+    if (parsed?.providerId === "huggingface") {
+      const huggingFace = envHuggingFaceModel(parsed.modelId);
+      if (huggingFace) return huggingFace;
+    }
+    const groq = envGroqModel(normalized);
     if (groq) return groq;
-    const openai = envOpenAiModel(requested);
+    const openai = envOpenAiModel(normalized);
     if (openai) return openai;
+    const huggingFace = envHuggingFaceModel(normalized);
+    if (huggingFace) return huggingFace;
+    return null;
   }
 
-  return envGroqModel(null) ?? envOpenAiModel(null);
+  return (
+    envGroqModel(null) ?? envOpenAiModel(null) ?? envHuggingFaceModel(null)
+  );
 }
 
 export async function getChatModelSelections(): Promise<{
@@ -762,6 +802,27 @@ export async function getChatModelSelections(): Promise<{
         compute: "provider",
         providerId: "openai",
         providerLabel: "OpenAI",
+      });
+    }
+  }
+
+  if (!configuredProviderIds.has("huggingface")) {
+    const huggingFace = envHuggingFaceModel(null);
+    if (
+      huggingFace &&
+      !models.some((model) => model.value === huggingFace.value)
+    ) {
+      models.push({
+        id: huggingFace.modelId,
+        value: huggingFace.value,
+        modelId: huggingFace.modelId,
+        label: huggingFace.modelId,
+        description: "Hugging Face environment configuration",
+        tier: "balanced",
+        contextWindow: "provider",
+        compute: "provider",
+        providerId: "huggingface",
+        providerLabel: "Hugging Face",
       });
     }
   }
