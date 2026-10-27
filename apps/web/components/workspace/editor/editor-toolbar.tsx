@@ -47,6 +47,7 @@ interface EditorToolbarProps {
   fileKind?: "latex" | "lean" | "markdown";
   imageScale?: number;
   markdownPreview?: boolean;
+  markdownPreviewAvailable?: boolean;
   onToggleMarkdownPreview?: () => void;
   onImageScaleChange?: (scale: number) => void;
 }
@@ -57,6 +58,7 @@ export function EditorToolbar({
   fileKind = "latex",
   imageScale = 1,
   markdownPreview = false,
+  markdownPreviewAvailable = true,
   onToggleMarkdownPreview,
   onImageScaleChange,
 }: EditorToolbarProps) {
@@ -162,19 +164,21 @@ export function EditorToolbar({
         <span className="rounded border border-[#e8a55a]/30 bg-[#e8a55a]/10 px-1.5 py-0.5 font-mono text-[#e8a55a] text-[9px] uppercase tracking-[0.12em]">
           Markdown
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="ml-auto h-6 gap-1 text-[#a09d96] text-[10px] hover:bg-white/10 hover:text-[#faf9f5]"
-          onClick={onToggleMarkdownPreview}
-        >
-          {markdownPreview ? (
-            <PencilIcon className="size-3.5" />
-          ) : (
-            <EyeIcon className="size-3.5" />
-          )}
-          {markdownPreview ? "Edit" : "Preview"}
-        </Button>
+        {markdownPreviewAvailable && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto h-6 gap-1 text-[#a09d96] text-[10px] hover:bg-white/10 hover:text-[#faf9f5]"
+            onClick={onToggleMarkdownPreview}
+          >
+            {markdownPreview ? (
+              <PencilIcon className="size-3.5" />
+            ) : (
+              <EyeIcon className="size-3.5" />
+            )}
+            {markdownPreview ? "Edit" : "Preview"}
+          </Button>
+        )}
       </div>
     );
   }

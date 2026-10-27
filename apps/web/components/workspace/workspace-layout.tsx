@@ -19,11 +19,13 @@ import { useAutoCompile } from "@/hooks/use-auto-compile";
 import { useProjectInit } from "@/hooks/use-project-init";
 import { useProjectSync } from "@/hooks/use-project-sync";
 import { useDocumentStore } from "@/stores/document-store";
+import { useDevFeatureFlag } from "@/stores/dev-panel-store";
 
 export function WorkspaceLayout() {
   useProjectInit();
   useAutoCompile();
 
+  const leanLakeEnabled = useDevFeatureFlag("leanLake");
   const projectId = useDocumentStore((s) => s.projectId);
   const isSyncOpen = useDocumentStore((s) => s.isSyncOpen);
   const setSyncOpen = useDocumentStore((s) => s.setSyncOpen);
@@ -36,7 +38,7 @@ export function WorkspaceLayout() {
       <LatexTools />
       <ResearchTools />
       <BeamerPanel />
-      <LeanPanel />
+      {leanLakeEnabled && <LeanPanel />}
       <CommentsPanel />
       <LiteraturePanel />
       <ProjectInspector />

@@ -298,17 +298,28 @@ input. You can also type a command directly.
 
 ### Connect a local Lake project
 
-Start the web app locally and launch the LaTeX/Lean API with your project root:
+Start the web app and the LaTeX/Lean API locally:
+
+```bash
+pnpm dev:web
+pnpm --filter @open-prism/latex-api dev
+```
+
+The **Lean** panel discovers Lake projects from Elan's known-project registry
+and common document folders. If no project is found, enter the absolute project
+path in the panel. You can also set a default project when starting the API:
 
 ```bash
 LEAN_PROJECT_DIR="/absolute/path/to/lake-project" \
   pnpm --filter @open-prism/latex-api dev
 ```
 
-`LEAN_PROJECT_DIR` supports `~`; set `LAKE_BIN` if Lake is not on `PATH`. Then
-open **Lean** in the workspace top bar. You can build the project, inspect the
-file manifest, and import `.lean` sources into the current browser project.
-The bridge accepts only `.lean` reads and a fixed `lake build` command; it never
+`LEAN_PROJECT_DIR` supports `~`; set `LAKE_BIN` if Lake is not on `PATH`. The
+panel lists installed Elan toolchains. If more than one Lean version is
+installed, choose the version explicitly; the project's `lean-toolchain` pin is
+preselected when it is available. You can build the project, inspect the file
+manifest, and import `.lean` sources into the current browser project. The
+bridge accepts only `.lean` reads and a fixed `lake build` command; it never
 writes to the local project.
 
 For a non-local deployment, set `LEAN_API_URL` and a matching
@@ -479,6 +490,26 @@ cd apps/latex-api
 docker build -t arcanatex-latex-api .
 docker run -p 3001:3001 -v arcanatex-sync:/data arcanatex-latex-api
 ```
+
+## Developer control panel
+
+Development builds expose a local-only control panel through the flask icon or
+`⌘/Ctrl + Shift + D`. It provides:
+
+- Live feature flags for the Lean Lake bridge, paper review, Lean audit, and
+  Markdown preview.
+- A workspace snapshot with compile actions, diagnostics, and inspector access.
+- Lean bridge diagnostics.
+- Local-storage inspection and workspace snapshot export.
+
+Feature flags are persisted to `apps/web/.dev-panel.local.json` and mirrored in
+local storage. The configuration file and the `.dev-panel/` scratch directory
+are gitignored. Production builds ignore the panel and use the shipped defaults;
+set `NEXT_PUBLIC_DEV_PANEL=1` and `DEV_PANEL_ENABLED=1` only for a local
+production-mode preview.
+
+The panel is deliberately a development tool, not an authorization boundary:
+it controls the local UI and does not disable server-side APIs by itself.
 
 ## Contributing
 

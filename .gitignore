@@ -39,3 +39,7 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Local developer control panel state
+apps/web/.dev-panel.local.json
+.dev-panel/

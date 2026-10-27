@@ -10,11 +10,24 @@ import {
   HammerIcon,
   Loader2Icon,
   RefreshCwIcon,
+  SearchIcon,
   TerminalIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  LEAN_PROJECT_STORAGE_KEY,
+  LEAN_TOOLCHAIN_STORAGE_KEY,
+} from "@/lib/lean";
 import { useDocumentStore } from "@/stores/document-store";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -24,15 +37,31 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
+const IMPORT_LIMIT = 500;
+
 interface LeanStatus {
   configured: boolean;
   projectName?: string;
   projectPath?: string;
   hasLakefile?: boolean;
+  toolchainPin?: string | null;
+  pinnedToolchainId?: string | null;
   lakeCommand?: string;
   lakeVersion?: string | null;
   buildInProgress?: boolean;
   error?: string;
+}
+
+interface LeanProject {
+  path: string;
+  name: string;
+  toolchainPin: string | null;
+}
+
+interface LeanToolchain {
+  id: string;
+  label: string;
+  version: string;
 }
 
 interface LeanFile {
@@ -44,6 +73,9 @@ interface LeanFile {
 interface LeanBuildResult {
   success: boolean;
   projectName?: string;
+  projectPath?: string;
+  toolchainId?: string;
+  toolchainVersion?: string | null;
   exitCode: number | null;
   timedOut: boolean;
   durationMs: number;
@@ -52,8 +84,6 @@ interface LeanBuildResult {
   error: string | null;
   command?: string;
 }
-
-const IMPORT_LIMIT = 500;
 
 function formatDuration(durationMs: number): string {
   return durationMs >= 1000
@@ -73,62 +103,219 @@ export function LeanPanel() {
   const addFiles = useDocumentStore((s) => s.addFiles);
 
   const [status, setStatus] = useState<LeanStatus | null>(null);
+  const [projects, setProjects] = useState<LeanProject[]>([]);
+  const [toolchains, setToolchains] = useState<LeanToolchain[]>([]);
+  const [selectedPath, setSelectedPath] = useState("");
+  const [selectedToolchain, setSelectedToolchain] = useState("");
+  const [customPath, setCustomPath] = useState("");
   const [files, setFiles] = useState<LeanFile[]>([]);
   const [build, setBuild] = useState<LeanBuildResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [isBuilding, setIsBuilding] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadProject = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const statusResponse = await fetch("/api/lean/status", {
-        cache: "no-store",
-      });
-      const nextStatus = (await statusResponse.json()) as LeanStatus;
-      setStatus(nextStatus);
-
-      if (!nextStatus.configured) {
-        setFiles([]);
+  const loadProject = useCallback(
+    async (
+      projectPath: string,
+      availableToolchains: LeanToolchain[],
+    ): Promise<void> => {
+      const path = projectPath.trim();
+      if (!path) {
+        setError("Enter the absolute path to a Lake project.");
         return;
       }
 
-      const filesResponse = await fetch("/api/lean/files", {
-        cache: "no-store",
-      });
-      const data = (await filesResponse.json()) as {
-        files?: LeanFile[];
+      setIsLoading(true);
+      setError(null);
+      setBuild(null);
+
+      try {
+        const query = new URLSearchParams({ path });
+        const statusResponse = await fetch(`/api/lean/status?${query}`, {
+          cache: "no-store",
+        });
+        const nextStatus = (await statusResponse.json()) as LeanStatus;
+        setStatus(nextStatus);
+
+        if (!statusResponse.ok || !nextStatus.configured) {
+          setFiles([]);
+          setError(
+            nextStatus.error ||
+              "That path is not a Lake project with a lakefile.",
+          );
+          return;
+        }
+
+        const resolvedPath = nextStatus.projectPath ?? path;
+        setSelectedPath(resolvedPath);
+        setCustomPath(resolvedPath);
+        window.localStorage.setItem(LEAN_PROJECT_STORAGE_KEY, resolvedPath);
+        setProjects((previous) => {
+          const next = {
+            path: resolvedPath,
+            name:
+              nextStatus.projectName ??
+              resolvedPath.split("/").pop() ??
+              resolvedPath,
+            toolchainPin: nextStatus.toolchainPin ?? null,
+          };
+          return previous.some((project) => project.path === resolvedPath)
+            ? previous
+            : [next, ...previous];
+        });
+
+        const savedToolchain =
+          window.localStorage.getItem(LEAN_TOOLCHAIN_STORAGE_KEY) ?? "";
+        const availableIds = new Set(
+          availableToolchains.map((toolchain) => toolchain.id),
+        );
+        const defaultToolchain =
+          (nextStatus.pinnedToolchainId &&
+          availableIds.has(nextStatus.pinnedToolchainId)
+            ? nextStatus.pinnedToolchainId
+            : null) ??
+          (availableIds.has(savedToolchain) ? savedToolchain : null) ??
+          availableToolchains[0]?.id ??
+          "";
+        setSelectedToolchain(defaultToolchain);
+        if (defaultToolchain) {
+          window.localStorage.setItem(
+            LEAN_TOOLCHAIN_STORAGE_KEY,
+            defaultToolchain,
+          );
+        }
+
+        const filesResponse = await fetch(`/api/lean/files?${query}`, {
+          cache: "no-store",
+        });
+        const filesData = (await filesResponse.json()) as {
+          files?: LeanFile[];
+          error?: string;
+        };
+        if (!filesResponse.ok) {
+          throw new Error(filesData.error || "Could not list Lean sources");
+        }
+        setFiles(filesData.files ?? []);
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Could not reach the local Lean bridge",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  const loadDiscovery = useCallback(async (): Promise<void> => {
+    setIsScanning(true);
+    setError(null);
+
+    try {
+      const [projectsResponse, toolchainsResponse] = await Promise.all([
+        fetch("/api/lean/projects", { cache: "no-store" }),
+        fetch("/api/lean/toolchains", { cache: "no-store" }),
+      ]);
+      const projectsData = (await projectsResponse.json()) as {
+        projects?: LeanProject[];
         error?: string;
       };
-      if (!filesResponse.ok) {
-        throw new Error(data.error || "Could not list Lean sources");
+      const toolchainsData = (await toolchainsResponse.json()) as {
+        toolchains?: LeanToolchain[];
+        error?: string;
+      };
+      if (!projectsResponse.ok) {
+        throw new Error(
+          projectsData.error || "Could not scan for Lake projects",
+        );
       }
-      setFiles(data.files ?? []);
-    } catch (loadError) {
+      if (!toolchainsResponse.ok) {
+        throw new Error(
+          toolchainsData.error || "Could not list Lean toolchains",
+        );
+      }
+
+      const nextProjects = projectsData.projects ?? [];
+      const nextToolchains = toolchainsData.toolchains ?? [];
+      setProjects(nextProjects);
+      setToolchains(nextToolchains);
+
+      const savedPath =
+        window.localStorage.getItem(LEAN_PROJECT_STORAGE_KEY)?.trim() ||
+        nextProjects[0]?.path ||
+        "";
+      setCustomPath(savedPath);
+      if (savedPath) {
+        await loadProject(savedPath, nextToolchains);
+      } else {
+        setSelectedPath("");
+        setStatus(null);
+        setFiles([]);
+        setError(
+          "No Lake project was found. Enter the absolute path to your project below.",
+        );
+      }
+    } catch (scanError) {
       setError(
-        loadError instanceof Error
-          ? loadError.message
+        scanError instanceof Error
+          ? scanError.message
           : "Could not reach the local Lean bridge",
       );
     } finally {
-      setIsLoading(false);
+      setIsScanning(false);
     }
-  }, []);
+  }, [loadProject]);
 
   useEffect(() => {
     if (!open) return;
-    void loadProject();
-  }, [open, loadProject]);
+    void loadDiscovery();
+  }, [open, loadDiscovery]);
+
+  const chooseProject = (projectPath: string) => {
+    setSelectedPath(projectPath);
+    window.localStorage.setItem(LEAN_PROJECT_STORAGE_KEY, projectPath);
+    void loadProject(projectPath, toolchains);
+  };
+
+  const useCustomProject = () => {
+    if (!customPath.trim()) {
+      setError("Enter the absolute path to a Lake project.");
+      return;
+    }
+    chooseProject(customPath.trim());
+  };
+
+  const chooseToolchain = (id: string) => {
+    setSelectedToolchain(id);
+    window.localStorage.setItem(LEAN_TOOLCHAIN_STORAGE_KEY, id);
+  };
 
   const runBuild = async () => {
     if (isBuilding) return;
+    if (!selectedPath) {
+      setError("Choose a Lake project first.");
+      return;
+    }
+    if (toolchains.length > 1 && !selectedToolchain) {
+      setError("Choose a Lean version before building.");
+      return;
+    }
+
     setIsBuilding(true);
     setError(null);
     try {
-      const response = await fetch("/api/lean/build", { method: "POST" });
+      const response = await fetch("/api/lean/build", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          path: selectedPath,
+          toolchain: selectedToolchain || undefined,
+        }),
+      });
       const result = (await response.json()) as LeanBuildResult;
       if (!response.ok || typeof result.success !== "boolean") {
         setError(result.error || "Lean build failed");
@@ -154,6 +341,10 @@ export function LeanPanel() {
 
   const importSources = async () => {
     if (isImporting) return;
+    if (!selectedPath) {
+      setError("Choose a Lake project first.");
+      return;
+    }
     const selected = files.slice(0, IMPORT_LIMIT);
     if (selected.length === 0) return;
 
@@ -162,10 +353,13 @@ export function LeanPanel() {
     try {
       const imported = [];
       for (const file of selected) {
-        const response = await fetch(
-          `/api/lean/file?path=${encodeURIComponent(file.path)}`,
-          { cache: "no-store" },
-        );
+        const query = new URLSearchParams({
+          project: selectedPath,
+          path: file.path,
+        });
+        const response = await fetch(`/api/lean/file?${query}`, {
+          cache: "no-store",
+        });
         const data = (await response.json()) as {
           path?: string;
           content?: string;
@@ -203,19 +397,35 @@ export function LeanPanel() {
     }
   };
 
+  const configured = Boolean(status?.configured);
   const output = build
     ? [build.stdout, build.stderr]
         .filter((part) => part.trim())
         .join("\n")
         .trim()
     : "";
-  const configured = Boolean(status?.configured);
+  const needsProject = !selectedPath;
+  const needsToolchain = toolchains.length > 1 && !selectedToolchain;
+  const selectedToolchainInfo = toolchains.find(
+    (toolchain) => toolchain.id === selectedToolchain,
+  );
+  const projectOptions =
+    selectedPath && !projects.some((project) => project.path === selectedPath)
+      ? [
+          {
+            path: selectedPath,
+            name: status?.projectName ?? selectedPath.split("/").pop() ?? "",
+            toolchainPin: status?.toolchainPin ?? null,
+          },
+          ...projects,
+        ]
+      : projects;
 
   return (
     <Sheet open={open} onOpenChange={setOpen} modal={false}>
       <SheetContent
         overlay={false}
-        className="flex w-full flex-col gap-0 p-0 sm:max-w-[560px]"
+        className="flex w-full flex-col gap-0 p-0 sm:max-w-[580px]"
         onInteractOutside={(event) => event.preventDefault()}
       >
         <SheetHeader className="border-hairline border-b px-4 py-3 pr-12">
@@ -224,52 +434,124 @@ export function LeanPanel() {
             Lean Lake
           </SheetTitle>
           <SheetDescription className="text-xs">
-            Inspect and build a local Lake project. The bridge is read-only; it
-            never writes to your Lean sources.
+            Choose a local Lake project and Lean version, then build or import
+            sources. The bridge is read-only.
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
-          {isLoading && !status && (
-            <div className="flex items-center gap-2 rounded-lg border border-hairline bg-card/30 p-3 text-muted-foreground text-xs">
-              <Loader2Icon className="size-4 animate-spin" />
-              Checking the local Lean bridge...
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+                Lake project
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-6"
+                onClick={() => void loadDiscovery()}
+                disabled={isScanning || isLoading}
+                title="Rescan local Lake projects"
+              >
+                <RefreshCwIcon
+                  className={cn("size-3.5", isScanning && "animate-spin")}
+                />
+              </Button>
+            </div>
+
+            {projectOptions.length > 0 ? (
+              <Select
+                value={selectedPath}
+                onValueChange={chooseProject}
+                disabled={isScanning || isLoading || isBuilding}
+              >
+                <SelectTrigger className="w-full" aria-label="Lake project">
+                  <SelectValue placeholder="Choose a Lake project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projectOptions.map((project) => (
+                    <SelectItem key={project.path} value={project.path}>
+                      <span className="font-medium">{project.name}</span>
+                      <span className="ml-2 font-mono text-[9px] text-muted-foreground">
+                        {project.path}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="rounded-lg border border-hairline border-dashed bg-card/20 p-3">
+                <div className="flex items-center gap-2 font-medium text-[11px]">
+                  <SearchIcon className="size-3.5 text-primary" />
+                  No Lake project detected
+                </div>
+                <p className="mt-1 text-[10px] text-muted-foreground leading-relaxed">
+                  Enter the absolute path to a directory containing a
+                  `lakefile.lean` or `lakefile.toml`.
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-1.5">
+              <Input
+                value={customPath}
+                onChange={(event) => setCustomPath(event.target.value)}
+                placeholder="/absolute/path/to/lake-project"
+                className="h-8 flex-1 font-mono text-[10px]"
+                aria-label="Custom Lake project path"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") useCustomProject();
+                }}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 shrink-0 text-[10px]"
+                onClick={useCustomProject}
+                disabled={isScanning || isLoading || isBuilding}
+              >
+                Use path
+              </Button>
+            </div>
+            <p className="text-[9px] text-muted-foreground leading-relaxed">
+              Discovery checks Elan&apos;s known projects and common document
+              folders. You can always enter a path manually.
+            </p>
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-[10px] text-destructive leading-relaxed">
+              <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
+              {error}
             </div>
           )}
 
-          {!isLoading && !configured && (
-            <div className="space-y-3">
-              <div className="rounded-lg border border-hairline bg-card/30 p-4">
-                <div className="flex items-center gap-2 font-medium text-sm">
-                  <TerminalIcon className="size-4 text-primary" />
-                  Connect a local Lake project
-                </div>
-                <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
-                  {error ||
-                    status?.error ||
-                    "The local bridge is not configured yet. Start the LaTeX/sync API with a Lean project root."}
-                </p>
-                <pre className="mt-3 overflow-x-auto rounded-md bg-surface-dark p-3 font-mono text-[10px] text-on-dark-soft leading-relaxed">
-                  {`LEAN_PROJECT_DIR="/absolute/path/to/lake-project" \\
-  pnpm --filter @open-prism/latex-api dev`}
-                </pre>
-                <p className="mt-2 text-[10px] text-muted-foreground leading-relaxed">
-                  Run the web app locally so the browser can reach the bridge.
-                  Optionally set the same <code>LEAN_BRIDGE_TOKEN</code> in the
-                  API environment and <code>apps/web/.env.local</code>.
-                </p>
+          {isLoading && (
+            <div className="flex items-center gap-2 rounded-lg border border-hairline bg-card/30 p-3 text-muted-foreground text-xs">
+              <Loader2Icon className="size-4 animate-spin" />
+              Loading Lake project...
+            </div>
+          )}
+
+          {!isLoading && !configured && !needsProject && (
+            <div className="rounded-lg border border-hairline bg-card/30 p-4">
+              <div className="flex items-center gap-2 font-medium text-sm">
+                <TerminalIcon className="size-4 text-primary" />
+                Connect a local Lake project
               </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => void loadProject()}
-                disabled={isLoading}
-              >
-                <RefreshCwIcon
-                  className={cn("size-3.5", isLoading && "animate-spin")}
-                />
-                Retry connection
-              </Button>
+              <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
+                {status?.error ||
+                  "The local bridge is not configured yet. Start the LaTeX/sync API with a Lean project root."}
+              </p>
+              <pre className="mt-3 overflow-x-auto rounded-md bg-surface-dark p-3 font-mono text-[10px] text-on-dark-soft leading-relaxed">
+                {`LEAN_PROJECT_DIR="/absolute/path/to/lake-project" \\
+  pnpm --filter @open-prism/latex-api dev`}
+              </pre>
+              <p className="mt-2 text-[10px] text-muted-foreground leading-relaxed">
+                Run the web app locally so the browser can reach the bridge.
+                Optionally set the same <code>LEAN_BRIDGE_TOKEN</code> in the
+                API environment and <code>apps/web/.env.local</code>.
+              </p>
             </div>
           )}
 
@@ -292,30 +574,66 @@ export function LeanPanel() {
                     <div className="mt-1.5 truncate font-mono text-[9px] text-muted-foreground">
                       {status.projectPath}
                     </div>
-                    {status.lakeVersion && (
+                    {status.toolchainPin && (
                       <div className="mt-1 truncate font-mono text-[9px] text-muted-foreground/75">
-                        {status.lakeVersion}
+                        pinned: {status.toolchainPin}
                       </div>
                     )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-7 shrink-0"
-                    onClick={() => void loadProject()}
-                    disabled={isLoading}
-                    title="Refresh Lean project"
-                  >
-                    <RefreshCwIcon
-                      className={cn("size-3.5", isLoading && "animate-spin")}
-                    />
-                  </Button>
                 </div>
+
+                <div className="mt-3">
+                  <span className="font-medium text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+                    Lean version
+                  </span>
+                  {toolchains.length === 0 ? (
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      No Elan toolchains found. Install Lean 4 with Elan or set
+                      LAKE_BIN.
+                    </p>
+                  ) : toolchains.length === 1 ? (
+                    <div className="mt-1 rounded-md border border-hairline bg-background/50 px-2.5 py-2 font-mono text-[10px]">
+                      {toolchains[0].label}
+                    </div>
+                  ) : (
+                    <Select
+                      value={selectedToolchain}
+                      onValueChange={chooseToolchain}
+                      disabled={isBuilding}
+                    >
+                      <SelectTrigger
+                        className="mt-1 w-full"
+                        aria-label="Lean version"
+                      >
+                        <SelectValue placeholder="Choose a Lean version" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {toolchains.map((toolchain) => (
+                          <SelectItem key={toolchain.id} value={toolchain.id}>
+                            {toolchain.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {status.toolchainPin && !status.pinnedToolchainId && (
+                    <p className="mt-1 text-[#b9822f] text-[9px] leading-relaxed">
+                      The pinned toolchain is not installed. Choose an installed
+                      Lean version explicitly.
+                    </p>
+                  )}
+                </div>
+
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   <Button
                     size="sm"
                     onClick={() => void runBuild()}
-                    disabled={isBuilding}
+                    disabled={isBuilding || needsToolchain}
+                    title={
+                      needsToolchain
+                        ? "Choose a Lean version before building"
+                        : undefined
+                    }
                   >
                     {isBuilding ? (
                       <Loader2Icon className="size-3.5 animate-spin" />
@@ -338,19 +656,17 @@ export function LeanPanel() {
                     Import Lean sources
                   </Button>
                 </div>
+                {selectedToolchainInfo && (
+                  <p className="mt-2 text-[9px] text-muted-foreground">
+                    Selected: {selectedToolchainInfo.label}
+                  </p>
+                )}
                 <p className="mt-2 text-[9px] text-muted-foreground leading-relaxed">
                   Import copies `.lean` files into this browser project for chat
                   context. Matching paths are refreshed; local files are never
                   changed.
                 </p>
               </div>
-
-              {error && (
-                <div className="flex items-start gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-[10px] text-destructive leading-relaxed">
-                  <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
-                  {error}
-                </div>
-              )}
 
               {build && (
                 <div className="space-y-2">
@@ -368,6 +684,9 @@ export function LeanPanel() {
                         {formatDuration(build.durationMs)}
                         {build.exitCode !== null
                           ? ` · exit ${build.exitCode}`
+                          : ""}
+                        {build.toolchainVersion
+                          ? ` · Lean ${build.toolchainVersion}`
                           : ""}
                       </span>
                     </div>
@@ -421,9 +740,10 @@ export function LeanPanel() {
           )}
 
           <p className="text-[9px] text-muted-foreground leading-relaxed">
-            The bridge runs `lake build` in the configured project directory and
-            exposes only `.lean` reads. It does not accept arbitrary commands or
-            paths, and it never writes to the local project.
+            The bridge runs `lake build` in the selected project directory and
+            exposes only `.lean` reads. It does not accept arbitrary commands,
+            and it never writes to the local project. Only connect trusted
+            projects: `lake build` executes the project&apos;s Lakefile.
           </p>
         </div>
       </SheetContent>

@@ -66,10 +66,12 @@ and a self-hosted LaTeX/sync service, built with Next.js and assistant-ui.
   syntax highlighting and chat context. The assistant receives declaration,
   import, `sorry`/`admit`, axiom, `native_decide`, and unsafe/partial
   summaries through `inspect_lean_sources`; no Lean compiler is bundled.
-- **Lean Lake bridge** — optional local API connection to a Lake project:
-  project status, `.lean` source manifest, read-only file access, and
-  `lake build`; sources can be imported into the browser project for chat.
-  The bridge accepts no arbitrary commands or paths and never writes local files.
+- **Lean Lake bridge** — optional local API connection to discovered or
+  user-supplied Lake projects: project status, `.lean` source manifest,
+  read-only file access, and `lake build`; sources can be imported into the
+  browser project for chat. Installed Elan toolchains are listed and the user
+  chooses a Lean version when more than one is available. The bridge accepts no
+  arbitrary commands or paths and never writes local files.
 - **Markdown preview** — `.md`/`.markdown` files use Markdown editing with a
   Preview toggle for GFM tables, task lists, math, links, code, and images;
   Markdown headings populate the outline. Chat surfaces render GFM and math.

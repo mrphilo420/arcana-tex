@@ -11,7 +11,14 @@ import {
 import type { FC } from "react";
 import { z } from "zod";
 
-import { isLeanFile, summarizeLeanFiles } from "@/lib/lean";
+import {
+  isLeanFile,
+  LEAN_PROJECT_STORAGE_KEY,
+  LEAN_TOOLCHAIN_STORAGE_KEY,
+  summarizeLeanFiles,
+} from "@/lib/lean";
+import { DEV_PANEL_ENABLED } from "@/lib/dev-panel";
+import { useDevPanelStore } from "@/stores/dev-panel-store";
 import { useDocumentStore } from "@/stores/document-store";
 
 const REVIEW_EXTENSIONS = new Set([
@@ -129,7 +136,26 @@ export const ResearchTools: FC = () => {
     parameters: z.object({}),
     execute: async () => {
       try {
-        const response = await fetch("/api/lean/build", { method: "POST" });
+        if (DEV_PANEL_ENABLED && !useDevPanelStore.getState().flags.leanLake) {
+          return {
+            success: false,
+            error: "Lean Lake is disabled in the developer control panel.",
+          };
+        }
+        const projectPath = window.localStorage.getItem(
+          LEAN_PROJECT_STORAGE_KEY,
+        );
+        const toolchain = window.localStorage.getItem(
+          LEAN_TOOLCHAIN_STORAGE_KEY,
+        );
+        const response = await fetch("/api/lean/build", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            path: projectPath || undefined,
+            toolchain: toolchain || undefined,
+          }),
+        });
         const result = (await response.json()) as Record<string, unknown>;
         if (!response.ok) {
           return {

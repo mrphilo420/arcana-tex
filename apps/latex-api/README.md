@@ -50,17 +50,20 @@ Requires a TeX distribution installed locally (TeX Live, or MiKTeX on macOS). On
 
 ## Lean Lake bridge
 
-The same server can expose a local, read-only Lean project bridge when
-`LEAN_PROJECT_DIR` is set:
+The same server exposes a local, read-only Lean project bridge. It discovers
+Lake projects from Elan's known-project registry and common document folders;
+set an optional default with `LEAN_PROJECT_DIR`:
 
 ```bash
 LEAN_PROJECT_DIR="/absolute/path/to/lake-project" pnpm dev
 ```
 
-- `GET /lean/status` — project name, path, Lake version, and configuration status
-- `GET /lean/files` — `.lean` files outside ignored build directories
-- `GET /lean/file?path=...` — read one `.lean` file
-- `POST /lean/build` — run `lake build` in the project root
+- `GET /lean/projects` — discovered Lake projects and their `lean-toolchain` pins
+- `GET /lean/toolchains` — installed Elan toolchains
+- `GET /lean/status?path=...` — project name, path, pin, Lake version, and configuration status
+- `GET /lean/files?path=...` — `.lean` files outside ignored build directories
+- `GET /lean/file?project=...&path=...` — read one `.lean` file
+- `POST /lean/build` — run `lake build`; body: `{ "path": "...", "toolchain": "..." }`
 
 The bridge accepts no arbitrary commands or paths and never writes to the Lean
 project. Only configure trusted projects: `lake build` executes the project's

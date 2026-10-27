@@ -32,6 +32,7 @@ import { isLeanFile } from "@/lib/lean";
 import { leanLanguage } from "@/lib/lean-language";
 import { cn } from "@/lib/utils";
 import { useDocumentStore } from "@/stores/document-store";
+import { useDevFeatureFlag } from "@/stores/dev-panel-store";
 import { compileProject } from "@/lib/compile-project";
 import { claudeEditorTheme, claudeHighlightStyle } from "@/lib/editor-theme";
 import { EditorToolbar } from "./editor-toolbar";
@@ -175,6 +176,7 @@ export function LatexEditor() {
   const clearJumpRequest = useDocumentStore((s) => s.clearJumpRequest);
   const isLatexKeyboardOpen = useDocumentStore((s) => s.isLatexKeyboardOpen);
   const setLatexKeyboardOpen = useDocumentStore((s) => s.setLatexKeyboardOpen);
+  const markdownPreviewEnabled = useDevFeatureFlag("markdownPreview");
 
   const activeFile = files.find((f) => f.id === activeFileId);
   const isTexFile = activeFile?.type === "tex";
@@ -212,6 +214,10 @@ export function LatexEditor() {
   useEffect(() => {
     setMarkdownPreview(false);
   }, [activeFileId]);
+
+  useEffect(() => {
+    if (!markdownPreviewEnabled) setMarkdownPreview(false);
+  }, [markdownPreviewEnabled]);
 
   const compileRef = useRef<() => void>(() => {});
   const isSearchOpenRef = useRef(false);
@@ -550,6 +556,7 @@ export function LatexEditor() {
         editorView={viewRef}
         fileKind={isLean ? "lean" : isMarkdown ? "markdown" : "latex"}
         markdownPreview={markdownPreview}
+        markdownPreviewAvailable={markdownPreviewEnabled}
         onToggleMarkdownPreview={() => setMarkdownPreview((value) => !value)}
       />
       {isLatexKeyboardOpen && !isLean && !isMarkdown && (
@@ -574,7 +581,7 @@ export function LatexEditor() {
         <div
           className={cn(
             "absolute inset-0",
-            isMarkdown && markdownPreview && "hidden",
+            isMarkdown && markdownPreview && markdownPreviewEnabled && "hidden",
           )}
         >
           {stickyLines.length > 0 && (
@@ -618,7 +625,7 @@ export function LatexEditor() {
           )}
           <div ref={containerRef} className="absolute inset-0" />
         </div>
-        {isMarkdown && markdownPreview && (
+        {isMarkdown && markdownPreview && markdownPreviewEnabled && (
           <MarkdownPreview content={activeFileContent ?? ""} />
         )}
         <AIDrawer />

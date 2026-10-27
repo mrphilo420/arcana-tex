@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import packageJson from "@/package.json";
 import { ArcanaMark } from "@/components/brand/arcana-mark";
+import { DevPanelButton } from "@/components/dev/dev-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -1190,6 +1191,7 @@ export function HomePage() {
                   In this browser
                 </div>
               </div>
+              <DevPanelButton className="size-6 shrink-0 [&_svg]:size-3.5" />
               <Button
                 variant="ghost"
                 size="icon"

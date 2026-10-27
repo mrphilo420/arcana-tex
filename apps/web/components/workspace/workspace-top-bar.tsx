@@ -19,10 +19,12 @@ import {
   UsersIcon,
 } from "lucide-react";
 import { ArcanaMark } from "@/components/brand/arcana-mark";
+import { DevPanelButton } from "@/components/dev/dev-panel";
 import { getBeamerInfo } from "@/lib/beamer";
 import { Button } from "@/components/ui/button";
 import { useDocumentStore } from "@/stores/document-store";
 import { useSyncStore } from "@/stores/sync-store";
+import { useDevFeatureFlag } from "@/stores/dev-panel-store";
 
 export function WorkspaceTopBar() {
   const projectName = useDocumentStore((s) => s.projectName);
@@ -41,6 +43,7 @@ export function WorkspaceTopBar() {
   const setSubmissionOpen = useDocumentStore((s) => s.setSubmissionOpen);
   const isLeanOpen = useDocumentStore((s) => s.isLeanOpen);
   const setLeanOpen = useDocumentStore((s) => s.setLeanOpen);
+  const leanLakeEnabled = useDevFeatureFlag("leanLake");
   const isLatexKeyboardOpen = useDocumentStore((s) => s.isLatexKeyboardOpen);
   const setLatexKeyboardOpen = useDocumentStore((s) => s.setLatexKeyboardOpen);
   const setInspectorOpen = useDocumentStore((s) => s.setInspectorOpen);
@@ -243,17 +246,19 @@ export function WorkspaceTopBar() {
           </Button>
         )}
 
-        <Button
-          variant={isLeanOpen ? "secondary" : "ghost"}
-          size="sm"
-          className="h-9 gap-1.5 px-2"
-          onClick={() => setLeanOpen(true)}
-          title="Connect a local Lean Lake project"
-          aria-label="Lean Lake"
-        >
-          <FileCodeIcon className="size-4" />
-          <span className="hidden lg:inline">Lean</span>
-        </Button>
+        {leanLakeEnabled && (
+          <Button
+            variant={isLeanOpen ? "secondary" : "ghost"}
+            size="sm"
+            className="h-9 gap-1.5 px-2"
+            onClick={() => setLeanOpen(true)}
+            title="Connect a local Lean Lake project"
+            aria-label="Lean Lake"
+          >
+            <FileCodeIcon className="size-4" />
+            <span className="hidden lg:inline">Lean</span>
+          </Button>
+        )}
 
         <Button
           variant={isSubmissionOpen ? "secondary" : "ghost"}
@@ -268,6 +273,8 @@ export function WorkspaceTopBar() {
         </Button>
 
         <div className="mx-1 hidden h-5 w-px bg-border sm:block" />
+
+        <DevPanelButton />
 
         <Button
           variant="ghost"
