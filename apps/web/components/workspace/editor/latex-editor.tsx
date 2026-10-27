@@ -392,6 +392,7 @@ export function LatexEditor() {
   };
 
   compileRef.current = async () => {
+    if (!isLatex) return;
     await compileProject();
   };
 
@@ -465,7 +466,7 @@ export function LatexEditor() {
               findNext(view);
               return true;
             }
-            if (isLean || isMarkdown) return false;
+            if (!isLatex) return false;
             compileRef.current();
             return true;
           },

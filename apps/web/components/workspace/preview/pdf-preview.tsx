@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { LATEX_COMPILERS, type LatexCompiler } from "@/lib/latex-compiler";
 import { compileProject } from "@/lib/compile-project";
+import { isLatexRelatedFile } from "@/lib/file-kind";
 import { cn } from "@/lib/utils";
 
 const ZOOM_OPTIONS = [
@@ -65,6 +66,10 @@ export function PdfPreview() {
   );
   const autoCompile = useDocumentStore((s) => s.autoCompile);
   const setAutoCompile = useDocumentStore((s) => s.setAutoCompile);
+  const canCompile = useDocumentStore((s) => {
+    const file = s.files.find((candidate) => candidate.id === s.activeFileId);
+    return file ? isLatexRelatedFile(file) : false;
+  });
   const compileDiagnostics = useDocumentStore((s) => s.compileDiagnostics);
   const setInspectorTab = useDocumentStore((s) => s.setInspectorTab);
 
@@ -110,31 +115,40 @@ export function PdfPreview() {
   );
 
   const handleCompile = useCallback(async () => {
+    if (!canCompile) return;
     setPdfError(null);
     await compileProject();
-  }, []);
+  }, [canCompile]);
 
   useEffect(() => {
     if (hasInitialCompile.current) return;
-    if (!initialized) return;
+    if (!initialized || !canCompile) return;
     if (pdfData || isCompiling || compileError) return;
 
     hasInitialCompile.current = true;
     void handleCompile();
-  }, [initialized, pdfData, isCompiling, compileError, handleCompile]);
+  }, [
+    canCompile,
+    initialized,
+    pdfData,
+    isCompiling,
+    compileError,
+    handleCompile,
+  ]);
 
   const lastCompileRequest = useRef(compileRequestId);
 
   useEffect(() => {
     if (compileRequestId === lastCompileRequest.current) return;
     lastCompileRequest.current = compileRequestId;
+    if (!canCompile) return;
 
     const timer = setTimeout(() => {
       void handleCompile();
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [compileRequestId, handleCompile]);
+  }, [canCompile, compileRequestId, handleCompile]);
 
   const zoomIn = () => setScale((s) => Math.min(4, s + 0.1));
   const zoomOut = () => setScale((s) => Math.max(0.25, s - 0.1));
@@ -166,6 +180,21 @@ export function PdfPreview() {
   };
 
   const renderContent = () => {
+    if (!canCompile) {
+      return (
+        <div className="flex flex-1 flex-col items-center justify-center bg-muted/30 p-8">
+          <FileTextIcon className="mb-4 size-12 text-muted-foreground/50" />
+          <h2 className="mb-2 font-medium text-lg text-muted-foreground">
+            Compiler disabled for this file
+          </h2>
+          <p className="max-w-md text-center text-muted-foreground text-sm">
+            The LaTeX compiler is enabled only while editing LaTeX files. Open a
+            .tex, .ltx, .bib, .sty, .cls, .tikz, or .pgf file to compile.
+          </p>
+        </div>
+      );
+    }
+
     if (compileError) {
       return (
         <div className="flex flex-1 flex-col items-center justify-center bg-muted/30 p-8">
@@ -240,7 +269,12 @@ export function PdfPreview() {
             <SelectTrigger
               size="sm"
               className="h-6! w-auto text-xs"
-              title="LaTeX compiler"
+              title={
+                canCompile
+                  ? "LaTeX compiler"
+                  : "Compiler is available for LaTeX files only"
+              }
+              disabled={!canCompile}
             >
               <SelectValue>{compilerLabel}</SelectValue>
             </SelectTrigger>
@@ -258,12 +292,15 @@ export function PdfPreview() {
             size="sm"
             className="h-6 gap-1 px-1.5 text-[0.75rem]"
             onClick={() => setAutoCompile(!autoCompile)}
+            disabled={!canCompile}
             title={
-              autoCompile
-                ? "Auto-compile is on · click to pause"
-                : "Auto-compile is paused · click to enable"
+              !canCompile
+                ? "Auto-compile is available for LaTeX files only"
+                : autoCompile
+                  ? "Auto-compile is on · click to pause"
+                  : "Auto-compile is paused · click to enable"
             }
-            aria-pressed={autoCompile}
+            aria-pressed={autoCompile && canCompile}
           >
             <ZapIcon
               className={cn(
@@ -315,6 +352,7 @@ export function PdfPreview() {
                 size="icon"
                 className="size-6"
                 onClick={handleCompile}
+                disabled={!canCompile}
               >
                 <RefreshCwIcon className="size-3.5" />
               </Button>
@@ -328,6 +366,7 @@ export function PdfPreview() {
                 size="icon"
                 className="size-6"
                 onClick={handleCompile}
+                disabled={!canCompile}
               >
                 <RefreshCwIcon className="size-3.5" />
               </Button>

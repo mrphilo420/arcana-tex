@@ -1,3 +1,4 @@
+import { isLatexRelatedFile } from "@/lib/file-kind";
 import { useDocumentStore } from "@/stores/document-store";
 import {
   LatexCompileError,
@@ -11,6 +12,13 @@ let activeRuns = 0;
 
 export async function compileProject(): Promise<void> {
   const state = useDocumentStore.getState();
+  const activeFile = state.files.find(
+    (file) => file.id === state.activeFileId,
+  );
+
+  // The compiler belongs to the LaTeX workspace. Lean, Python, R, Markdown,
+  // data, and other files must not trigger it through a shortcut or command.
+  if (activeFile && !isLatexRelatedFile(activeFile)) return;
   const runId = ++latestRun;
   const startedAt = performance.now();
   const fileCount = state.files.length;
