@@ -11,6 +11,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 interface PdfViewerProps {
   data: Uint8Array;
   scale: number;
+  fit?: "width" | "contain";
   onError?: (error: string) => void;
   onLoadSuccess?: (numPages: number) => void;
   onScaleChange?: (scale: number) => void;
@@ -20,6 +21,7 @@ interface PdfViewerProps {
 export function PdfViewer({
   data,
   scale,
+  fit = "width",
   onError,
   onLoadSuccess,
   onScaleChange,
@@ -45,16 +47,24 @@ export function PdfViewer({
   );
 
   const handlePageLoadSuccess = useCallback(
-    ({ width }: { width: number }) => {
+    (page: { view: number[] }) => {
       if (hasSetInitialScale.current) return;
       if (containerRef.current && onScaleChange) {
         hasSetInitialScale.current = true;
+        const view = page.view;
+        const width = Math.max(1, (view[2] ?? 0) - (view[0] ?? 0));
+        const height = Math.max(1, (view[3] ?? 0) - (view[1] ?? 0));
         const containerWidth = containerRef.current.clientWidth - 32;
-        const fitScale = containerWidth / width;
-        onScaleChange(Math.min(fitScale, 2));
+        const containerHeight = containerRef.current.clientHeight - 32;
+        const widthScale = containerWidth / width;
+        const fitScale =
+          fit === "contain"
+            ? Math.min(widthScale, containerHeight / height)
+            : widthScale;
+        onScaleChange(Math.min(Math.max(fitScale, 0.15), 2));
       }
     },
-    [onScaleChange],
+    [fit, onScaleChange],
   );
 
   const handleLoadError = useCallback(

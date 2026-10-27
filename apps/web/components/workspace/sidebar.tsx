@@ -1,31 +1,81 @@
 "use client";
 
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { UIMessage } from "ai";
 import {
+  CheckIcon,
+  ChevronDownIcon,
   FileTextIcon,
   FolderIcon,
-  ImageIcon,
-  PlusIcon,
-  MoreHorizontalIcon,
-  Trash2Icon,
-  PencilIcon,
-  UploadIcon,
-  SunIcon,
-  MoonIcon,
-  MonitorIcon,
-  ListIcon,
-  HashIcon,
+  FolderKanbanIcon,
+  FolderUpIcon,
   GithubIcon,
+  HashIcon,
+  ListIcon,
+  Loader2Icon,
+  MessageCircleIcon,
+  MessagesSquareIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  UploadIcon,
 } from "lucide-react";
-import { useTheme } from "next-themes";
-import { useDocumentStore, type ProjectFile } from "@/stores/document-store";
-import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import packageJson from "@/package.json";
+import {
+  isPristineProject,
+  useDocumentStore,
+  type ProjectFile,
+} from "@/stores/document-store";
+import { loadChatMessages } from "@/lib/projects/chat-history";
+import { listProjects } from "@/lib/projects/repository";
+import { getSyncUserName } from "@/lib/sync/settings";
+import type { ProjectMeta } from "@/lib/storage/schema";
+import {
+  type ImportedProject,
+  importProjectFromDataTransfer,
+  importProjectFromFileList,
+} from "@/lib/project-import";
 import { Button } from "@/components/ui/button";
+import { FileTree } from "./file-tree";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+
+const DIRECTORY_INPUT_PROPS: Record<string, string> = {
+  webkitdirectory: "",
+  directory: "",
+};
 
 interface TocItem {
   level: number;
   title: string;
   line: number;
+}
+
+function messageText(message: UIMessage): string {
+  return message.parts
+    .map((part) =>
+      "text" in part && typeof part.text === "string" ? part.text : "",
+    )
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function parseTableOfContents(content: string): TocItem[] {
@@ -57,38 +107,101 @@ function parseTableOfContents(content: string): TocItem[] {
 
   return toc;
 }
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import packageJson from "@/package.json";
 
 export function Sidebar() {
   const files = useDocumentStore((s) => s.files);
   const activeFileId = useDocumentStore((s) => s.activeFileId);
+  const mainFileId = useDocumentStore((s) => s.mainFileId);
   const setActiveFile = useDocumentStore((s) => s.setActiveFile);
   const addFile = useDocumentStore((s) => s.addFile);
+  const addFiles = useDocumentStore((s) => s.addFiles);
+  const importProject = useDocumentStore((s) => s.importProject);
+  const setMainFile = useDocumentStore((s) => s.setMainFile);
   const deleteFile = useDocumentStore((s) => s.deleteFile);
   const renameFile = useDocumentStore((s) => s.renameFile);
-  const content = useDocumentStore((s) => s.content);
+  const content = useDocumentStore(
+    (s) => s.files.find((file) => file.id === s.activeFileId)?.content ?? "",
+  );
   const requestJumpToPosition = useDocumentStore(
     (s) => s.requestJumpToPosition,
   );
-  const { theme, setTheme } = useTheme();
+  const projectId = useDocumentStore((s) => s.projectId);
+  const projectName = useDocumentStore((s) => s.projectName);
+  const setThreadOpen = useDocumentStore((s) => s.setThreadOpen);
+  const router = useRouter();
+
+  const [activeTab, setActiveTab] = useState<"files" | "chats">("files");
+  const [projects, setProjects] = useState<ProjectMeta[]>([]);
+  const [chatMessages, setChatMessages] = useState<UIMessage[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [userName, setUserName] = useState("Guest");
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [renameFileId, setRenameFileId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [newFileName, setNewFileName] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [pendingImport, setPendingImport] = useState<ImportedProject | null>(
+    null,
+  );
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
+  const dragDepth = useRef(0);
 
   const toc = useMemo(() => parseTableOfContents(content), [content]);
+  const userInitials =
+    userName
+      .split(/\s+/)
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "G";
+  const projectInitials =
+    projectName
+      .split(/\s+/)
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "P";
+
+  const refreshChats = useCallback(async () => {
+    if (!projectId) return;
+    setChatLoading(true);
+    try {
+      setChatMessages((await loadChatMessages(projectId)) ?? []);
+    } catch (error) {
+      console.error("Failed to load project chat", error);
+    } finally {
+      setChatLoading(false);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    setUserName(getSyncUserName());
+  }, []);
+
+  useEffect(() => {
+    listProjects()
+      .then(setProjects)
+      .catch((error) => console.error("Failed to load projects", error));
+  }, [projectId]);
+
+  useEffect(() => {
+    setProjects((current) =>
+      current.map((project) =>
+        project.id === projectId ? { ...project, name: projectName } : project,
+      ),
+    );
+  }, [projectId, projectName]);
+
+  useEffect(() => {
+    if (activeTab === "chats") void refreshChats();
+  }, [activeTab, refreshChats]);
 
   const handleTocClick = useCallback(
     (line: number) => {
@@ -101,13 +214,38 @@ export function Sidebar() {
     },
     [content, requestJumpToPosition],
   );
-  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  const [renameFileId, setRenameFileId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState("");
-  const [newFileName, setNewFileName] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const applyProjectImport = useCallback(
+    (project: ImportedProject) => {
+      importProject(project.projectName, project.files);
+
+      const skipped = project.skipped.length
+        ? ` · ${project.skipped.length} file${project.skipped.length === 1 ? "" : "s"} skipped`
+        : "";
+
+      toast.success(`Opened “${project.projectName}”`, {
+        description: `${project.files.length} file${project.files.length === 1 ? "" : "s"}${skipped}`,
+      });
+    },
+    [importProject],
+  );
+
+  const requestProjectImport = useCallback(
+    (project: ImportedProject) => {
+      if (project.files.length === 0) {
+        toast.error("No supported files found in that folder");
+        return;
+      }
+
+      if (isPristineProject(useDocumentStore.getState().files)) {
+        applyProjectImport(project);
+        return;
+      }
+
+      setPendingImport(project);
+    },
+    [applyProjectImport],
+  );
 
   const handleAddTexFile = () => {
     const name = newFileName.trim() || "untitled.tex";
@@ -121,55 +259,101 @@ export function Sidebar() {
     setAddDialogOpen(false);
   };
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
   const handleFileUpload = useCallback(
-    (uploadedFiles: FileList | null) => {
-      if (!uploadedFiles) return;
+    async (uploadedFiles: File[] | FileList | null) => {
+      if (!uploadedFiles || uploadedFiles.length === 0) return;
 
-      Array.from(uploadedFiles).forEach((file) => {
-        const reader = new FileReader();
-
-        if (file.type.startsWith("image/")) {
-          reader.onload = () => {
-            addFile({
-              name: file.name,
-              type: "image",
-              dataUrl: reader.result as string,
-            });
-          };
-          reader.readAsDataURL(file);
-        } else if (file.name.endsWith(".tex")) {
-          reader.onload = () => {
-            addFile({
-              name: file.name,
-              type: "tex",
-              content: reader.result as string,
-            });
-          };
-          reader.readAsText(file);
+      setIsImporting(true);
+      try {
+        const result = await importProjectFromFileList(uploadedFiles);
+        if (result.files.length === 0) {
+          toast.error("No supported files found");
+          return;
         }
-      });
+
+        const count = addFiles(result.files);
+        toast.success(`Added ${count} file${count === 1 ? "" : "s"}`, {
+          description: result.skipped.length
+            ? `${result.skipped.length} file${result.skipped.length === 1 ? "" : "s"} skipped`
+            : undefined,
+        });
+      } catch {
+        toast.error("Could not read those files");
+      } finally {
+        setIsImporting(false);
+      }
     },
-    [addFile],
+    [addFiles],
   );
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
+  const handleFolderUpload = useCallback(
+    async (uploadedFiles: File[] | FileList | null) => {
+      if (!uploadedFiles || uploadedFiles.length === 0) return;
+
+      setIsImporting(true);
+      try {
+        const project = await importProjectFromFileList(uploadedFiles, {
+          stripRoot: true,
+        });
+        requestProjectImport(project);
+      } catch {
+        toast.error("Could not read that folder");
+      } finally {
+        setIsImporting(false);
+      }
+    },
+    [requestProjectImport],
+  );
+
+  const handleDragEnter = (event: React.DragEvent) => {
+    event.preventDefault();
+    if (!Array.from(event.dataTransfer.types).includes("Files")) return;
+    dragDepth.current += 1;
     setIsDragging(true);
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+  const handleDragLeave = (event: React.DragEvent) => {
+    event.preventDefault();
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = async (event: React.DragEvent) => {
+    event.preventDefault();
+    dragDepth.current = 0;
     setIsDragging(false);
-    handleFileUpload(e.dataTransfer.files);
+
+    if (isImporting) return;
+    setIsImporting(true);
+
+    try {
+      const result = await importProjectFromDataTransfer(event.dataTransfer);
+
+      if (result.isProject) {
+        requestProjectImport(result);
+        return;
+      }
+
+      if (result.files.length === 0) {
+        toast.error("No supported files found");
+        return;
+      }
+
+      const count = addFiles(result.files);
+      toast.success(`Added ${count} file${count === 1 ? "" : "s"}`, {
+        description: result.skipped.length
+          ? `${result.skipped.length} file${result.skipped.length === 1 ? "" : "s"} skipped`
+          : undefined,
+      });
+    } catch {
+      toast.error("Could not read the dropped items");
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const openRenameDialog = (file: ProjectFile) => {
@@ -187,191 +371,328 @@ export function Sidebar() {
     setRenameValue("");
   };
 
-  const getFileIcon = (file: ProjectFile) => {
-    if (file.type === "image") {
-      return <ImageIcon className="size-4" />;
-    }
-    return <FileTextIcon className="size-4" />;
-  };
-
   return (
     <div
-      className={cn(
-        "flex h-full flex-col bg-sidebar text-sidebar-foreground",
-        isDragging && "ring-2 ring-primary ring-inset",
-      )}
-      onDragOver={handleDragOver}
+      data-testid="sidebar-dropzone"
+      className="relative flex h-full flex-col bg-sidebar text-sidebar-foreground"
+      onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <div className="flex h-12 items-center border-sidebar-border border-b px-3">
-        <div className="flex flex-col">
-          <span className="font-semibold text-sm">OpenPrism</span>
-          <span className="text-muted-foreground text-xs">
-            By{" "}
-            <a
-              href="https://www.assistant-ui.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-foreground"
-            >
-              assistant-ui
-            </a>
-          </span>
-        </div>
-      </div>
-
-      <div className="flex h-9 items-center justify-between border-sidebar-border border-b px-3">
-        <div className="flex items-center gap-2">
-          <FolderIcon className="size-4 text-muted-foreground" />
-          <span className="font-medium text-xs">Files</span>
-        </div>
+      <div className="flex h-12 items-center border-sidebar-border border-b px-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-6" title="Add">
-              <PlusIcon className="size-3.5" />
-            </Button>
+            <button
+              type="button"
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-sidebar-accent/70"
+              title="Switch project"
+            >
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary font-medium text-[10px] text-primary-foreground">
+                {projectInitials}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium text-[12px]">
+                  {projectName}
+                </span>
+                <span className="block font-medium text-[8px] text-muted-foreground uppercase tracking-[0.16em]">
+                  Local project
+                </span>
+              </span>
+              <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setAddDialogOpen(true)}>
-              <FileTextIcon className="mr-2 size-4" />
-              New LaTeX File
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleUploadClick}>
-              <UploadIcon className="mr-2 size-4" />
-              Upload File
+          <DropdownMenuContent align="start" className="w-64">
+            <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-[0.14em]">
+              Switch project
+            </DropdownMenuLabel>
+            {projects.slice(0, 10).map((project) => (
+              <DropdownMenuItem
+                key={project.id}
+                onClick={() => router.push(`/project/${project.id}`)}
+              >
+                <FolderIcon className="mr-2 size-4 text-muted-foreground" />
+                <span className="min-w-0 flex-1 truncate">{project.name}</span>
+                {project.id === projectId && (
+                  <CheckIcon className="size-3.5 text-primary" />
+                )}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/">
+                <FolderKanbanIcon className="mr-2 size-4" />
+                All projects
+              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
+
+      <div className="flex h-9 shrink-0 items-center gap-0 border-sidebar-border border-b px-2">
+        <button
+          type="button"
+          className={cn(
+            "relative flex h-full items-center gap-1.5 px-2 text-[11px] transition-colors",
+            activeTab === "files"
+              ? "font-medium text-foreground"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+          onClick={() => setActiveTab("files")}
+        >
+          <FolderIcon className="size-3.5" />
+          Files
+          <span className="text-[9px] text-muted-foreground">
+            {files.length}
+          </span>
+          {activeTab === "files" && (
+            <span className="absolute inset-x-1 bottom-0 h-0.5 rounded-full bg-primary" />
+          )}
+        </button>
+        <button
+          type="button"
+          className={cn(
+            "relative flex h-full items-center gap-1.5 px-2 text-[11px] transition-colors",
+            activeTab === "chats"
+              ? "font-medium text-foreground"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+          onClick={() => setActiveTab("chats")}
+        >
+          <MessagesSquareIcon className="size-3.5" />
+          Chats
+          {activeTab === "chats" && (
+            <span className="absolute inset-x-1 bottom-0 h-0.5 rounded-full bg-primary" />
+          )}
+        </button>
+
+        <div className="ml-auto flex items-center gap-0.5">
+          {activeTab === "files" ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-6 shrink-0"
+                  title="Add or import files"
+                >
+                  {isImporting ? (
+                    <Loader2Icon className="size-3.5 animate-spin" />
+                  ) : (
+                    <PlusIcon className="size-3.5" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setAddDialogOpen(true)}>
+                  <FileTextIcon className="mr-2 size-4" />
+                  New LaTeX File
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                  <UploadIcon className="mr-2 size-4" />
+                  Upload Files
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => folderInputRef.current?.click()}
+                >
+                  <FolderUpIcon className="mr-2 size-4" />
+                  Import Folder…
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-6"
+              onClick={() => void refreshChats()}
+              disabled={chatLoading}
+              title="Refresh chats"
+            >
+              <RefreshCwIcon
+                className={cn("size-3.5", chatLoading && "animate-spin")}
+              />
+            </Button>
+          )}
+        </div>
       </div>
 
       <input
         ref={fileInputRef}
         type="file"
         className="hidden"
-        accept=".tex,image/*"
         multiple
-        onChange={(e) => handleFileUpload(e.target.files)}
+        onChange={(event) => {
+          const selected = Array.from(event.target.files ?? []);
+          event.target.value = "";
+          handleFileUpload(selected);
+        }}
       />
 
-      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
-        {isDragging && (
-          <div className="mb-2 flex items-center justify-center rounded-md border-2 border-primary border-dashed p-4">
-            <span className="text-muted-foreground text-xs">
-              Drop files here
-            </span>
-          </div>
-        )}
-        {files.map((file) => (
-          <div
-            key={file.id}
-            className={cn(
-              "group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-              file.id === activeFileId
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "hover:bg-sidebar-accent/50",
-            )}
-          >
-            <button
-              className="flex flex-1 items-center gap-2 overflow-hidden"
-              onClick={() => setActiveFile(file.id)}
-            >
-              {getFileIcon(file)}
-              <span className="truncate">{file.name}</span>
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-6 opacity-0 group-hover:opacity-100"
-                >
-                  <MoreHorizontalIcon className="size-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => openRenameDialog(file)}>
-                  <PencilIcon className="mr-2 size-4" />
-                  Rename
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => deleteFile(file.id)}
-                  disabled={files.length <= 1}
-                >
-                  <Trash2Icon className="mr-2 size-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ))}
-      </div>
+      <input
+        {...DIRECTORY_INPUT_PROPS}
+        ref={folderInputRef}
+        type="file"
+        className="hidden"
+        multiple
+        onChange={(event) => {
+          const selected = Array.from(event.target.files ?? []);
+          event.target.value = "";
+          handleFolderUpload(selected);
+        }}
+      />
 
-      <div className="flex h-9 items-center gap-2 border-sidebar-border border-t px-3">
-        <ListIcon className="size-4 text-muted-foreground" />
-        <span className="font-medium text-xs">Outline</span>
-      </div>
-      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
-        {toc.length > 0 ? (
-          toc.map((item, index) => (
-            <button
-              key={index}
-              className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-sidebar-accent/50"
-              style={{ paddingLeft: `${(item.level - 1) * 12 + 8}px` }}
-              onClick={() => handleTocClick(item.line)}
-            >
-              <HashIcon className="size-3 shrink-0 text-muted-foreground" />
-              <span className="truncate">{item.title}</span>
-            </button>
-          ))
-        ) : (
-          <div className="px-2 py-1 text-muted-foreground text-xs">
-            No sections found
+      {activeTab === "files" ? (
+        <>
+          <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            <FileTree
+              files={files}
+              activeFileId={activeFileId}
+              mainFileId={mainFileId}
+              onSelect={setActiveFile}
+              onRename={openRenameDialog}
+              onDelete={deleteFile}
+              onSetMain={setMainFile}
+            />
           </div>
-        )}
-      </div>
 
-      <div className="flex items-center justify-between border-sidebar-border border-t px-3 py-2 text-muted-foreground text-xs">
-        <span>OpenPrism v{packageJson.version}</span>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="size-6" asChild>
-            <a
-              href="https://github.com/assistant-ui/open-prism"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="GitHub"
-            >
-              <GithubIcon className="size-3.5" />
-            </a>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6"
-            onClick={() => {
-              if (theme === "system") setTheme("light");
-              else if (theme === "light") setTheme("dark");
-              else setTheme("system");
-            }}
-            title={
-              theme === "system"
-                ? "System theme"
-                : theme === "light"
-                  ? "Light mode"
-                  : "Dark mode"
-            }
-          >
-            {theme === "system" ? (
-              <MonitorIcon className="size-3.5" />
-            ) : theme === "light" ? (
-              <SunIcon className="size-3.5" />
+          <div className="flex h-9 items-center gap-2 border-sidebar-border border-t px-3">
+            <ListIcon className="size-4 text-muted-foreground" />
+            <span className="font-medium text-xs">Outline</span>
+          </div>
+          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
+            {toc.length > 0 ? (
+              toc.map((item, index) => (
+                <button
+                  key={index}
+                  className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-sidebar-accent/50"
+                  style={{ paddingLeft: `${(item.level - 1) * 12 + 8}px` }}
+                  onClick={() => handleTocClick(item.line)}
+                >
+                  <HashIcon className="size-3 shrink-0 text-muted-foreground" />
+                  <span className="truncate">{item.title}</span>
+                </button>
+              ))
             ) : (
-              <MoonIcon className="size-3.5" />
+              <div className="px-2 py-1 text-muted-foreground text-xs">
+                No sections found
+              </div>
             )}
-          </Button>
+          </div>
+        </>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+          {chatLoading ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground text-xs">
+              <Loader2Icon className="size-4 animate-spin" />
+              Loading conversation…
+            </div>
+          ) : chatMessages.length === 0 ? (
+            <div className="rounded-lg border border-dashed p-5 text-center">
+              <MessageCircleIcon className="mx-auto mb-2 size-7 text-muted-foreground/50" />
+              <p className="font-medium text-sm">No conversation yet</p>
+              <p className="mt-1 text-muted-foreground text-xs leading-relaxed">
+                Ask the assistant about this project. The thread is saved here.
+              </p>
+              <Button
+                size="sm"
+                className="mt-3"
+                onClick={() => setThreadOpen(true)}
+              >
+                <MessageCircleIcon className="size-3.5" />
+                Open assistant
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between rounded-md border border-hairline bg-card/45 px-2.5 py-2">
+                <div>
+                  <div className="font-medium text-[11px]">
+                    Project conversation
+                  </div>
+                  <div className="mt-0.5 text-[9px] text-muted-foreground uppercase tracking-[0.12em]">
+                    Saved with this project
+                  </div>
+                </div>
+                <span className="font-mono text-[9px] text-muted-foreground">
+                  {chatMessages.length}
+                </span>
+              </div>
+
+              {chatMessages
+                .filter((message) => messageText(message).length > 0)
+                .slice(-5)
+                .map((message) => (
+                  <div
+                    key={message.id}
+                    className="rounded-lg border border-hairline bg-card/35 p-2.5"
+                  >
+                    <div className="mb-1 flex items-center gap-1.5">
+                      <span
+                        className={cn(
+                          "font-medium text-[9px] uppercase tracking-[0.14em]",
+                          message.role === "user"
+                            ? "text-primary"
+                            : "text-[#2a8f83]",
+                        )}
+                      >
+                        {message.role === "user" ? "You" : "Assistant"}
+                      </span>
+                    </div>
+                    <p className="line-clamp-3 text-[11px] text-muted-foreground leading-relaxed">
+                      {messageText(message)}
+                    </p>
+                  </div>
+                ))}
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setThreadOpen(true)}
+              >
+                <MessageCircleIcon className="size-3.5" />
+                Open assistant
+              </Button>
+              <p className="px-1 pb-2 text-[9px] text-muted-foreground leading-relaxed">
+                The assistant can read your project files and edit the document.
+              </p>
+            </div>
+          )}
         </div>
+      )}
+
+      <div className="flex h-14 items-center gap-2 border-sidebar-border border-t px-3">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-foreground font-medium text-[10px] text-background">
+          {userInitials}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-medium text-[11px]">{userName}</div>
+          <div className="text-[8px] text-muted-foreground uppercase tracking-[0.14em]">
+            Personal workspace
+          </div>
+        </div>
+        <Button variant="ghost" size="icon" className="size-6" asChild>
+          <a
+            href="https://github.com/assistant-ui/open-prism"
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`OpenPrism v${packageJson.version}`}
+          >
+            <GithubIcon className="size-3.5" />
+          </a>
+        </Button>
       </div>
+
+      {isDragging && (
+        <div className="pointer-events-none absolute inset-2 z-20 flex flex-col items-center justify-center rounded-lg border-2 border-primary border-dashed bg-background/90 p-4 text-center">
+          <FolderUpIcon className="mb-3 size-10 text-primary" />
+          <p className="font-medium text-sm">Drop folder to open project</p>
+          <p className="mt-1 text-muted-foreground text-xs">
+            or drop files to add them to this project
+          </p>
+        </div>
+      )}
 
       {/* Add File Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
@@ -421,6 +742,43 @@ export function Sidebar() {
               Cancel
             </Button>
             <Button onClick={handleRename}>Rename</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Project Dialog */}
+      <Dialog
+        open={pendingImport !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingImport(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Open “{pendingImport?.projectName}”?</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-muted-foreground text-sm">
+            Importing this folder replaces your current project and its{" "}
+            {files.length} file{files.length === 1 ? "" : "s"} with{" "}
+            {pendingImport?.files.length ?? 0} file
+            {pendingImport?.files.length === 1 ? "" : "s"}.
+            <br />
+            <br />
+            Everything is stored locally in your browser.
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingImport(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!pendingImport) return;
+                applyProjectImport(pendingImport);
+                setPendingImport(null);
+              }}
+            >
+              Import Project
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,11 +1,5 @@
-"use client";
+import { HomePage } from "@/components/home/home-page";
 
-import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
-
-export default function Home() {
-  return (
-    <main className="h-full">
-      <WorkspaceLayout />
-    </main>
-  );
+export default function Page() {
+  return <HomePage />;
 }

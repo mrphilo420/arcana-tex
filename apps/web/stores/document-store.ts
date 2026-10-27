@@ -1,8 +1,17 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import { indexedDBStorage } from "@/lib/storage/indexeddb-storage";
+import {
+  type ProjectFile,
+  detectMainFile,
+  getBaseName,
+  getParentPath,
+  isLatexDocumentFile,
+  normalizeProjectFiles,
+} from "@/lib/project-files";
+import type { LatexCompiler } from "@/lib/latex-compiler";
+import type { CompileDiagnostic } from "@/lib/compile-diagnostics";
+import type { ProjectComment, StoredProject } from "@/lib/storage/schema";
 
-const DEFAULT_TEX_CONTENT = `\\documentclass[11pt]{article}
+export const DEFAULT_TEX_CONTENT = `\\documentclass[11pt]{article}
 \\usepackage[margin=1in]{geometry}
 \\usepackage{amsmath}
 \\usepackage{graphicx}
@@ -93,17 +102,48 @@ Press \\textbf{Enter} to compile your document. Use \\textbf{Shift+Enter} for a 
 \\end{document}
 `;
 
-export interface ProjectFile {
+export type { ProjectFile } from "@/lib/project-files";
+
+type NewProjectFile = Omit<ProjectFile, "id" | "path"> & { path?: string };
+
+export const DEFAULT_PROJECT_NAME = "Untitled Project";
+
+export type InspectorTab = "project" | "versions" | "comments" | "logs";
+
+export interface CompileLogEntry {
   id: string;
-  name: string;
-  type: "tex" | "image";
-  content?: string;
-  dataUrl?: string;
+  at: number;
+  status: "success" | "error";
+  compiler: LatexCompiler;
+  durationMs: number;
+  fileCount: number;
+  message: string;
+  details?: string;
 }
 
 interface DocumentState {
+  projectId: string | null;
+  projectName: string;
+  createdAt: number | null;
   files: ProjectFile[];
   activeFileId: string;
+  mainFileId: string | null;
+  compiler: LatexCompiler;
+  compileRequestId: number;
+  comments: ProjectComment[];
+  isCommentsOpen: boolean;
+  isLiteratureOpen: boolean;
+  isSyncOpen: boolean;
+  isTikzOpen: boolean;
+  isBeamerOpen: boolean;
+  isSubmissionOpen: boolean;
+  isLatexKeyboardOpen: boolean;
+  isInspectorOpen: boolean;
+  inspectorTab: InspectorTab;
+  compileLogs: CompileLogEntry[];
+  compileDiagnostics: CompileDiagnostic[];
+  lastCompileLog: string | null;
+  autoCompile: boolean;
   cursorPosition: number;
   selectionRange: { start: number; end: number } | null;
   jumpToPosition: number | null;
@@ -113,9 +153,47 @@ interface DocumentState {
   isCompiling: boolean;
   isSaving: boolean;
   initialized: boolean;
+  isHydrated: boolean;
 
+  hydrateProject: (project: StoredProject) => void;
+  applyRemoteSnapshot: (snapshot: {
+    projectName: string;
+    files: ProjectFile[];
+    mainFileId: string | null;
+    compiler: LatexCompiler;
+    comments?: ProjectComment[];
+  }) => void;
+  setProjectName: (name: string) => void;
   setActiveFile: (id: string) => void;
-  addFile: (file: Omit<ProjectFile, "id">) => string;
+  addFile: (file: NewProjectFile) => string;
+  addFiles: (files: Omit<ProjectFile, "id">[]) => number;
+  importProject: (name: string, files: Omit<ProjectFile, "id">[]) => void;
+  setMainFile: (id: string) => void;
+  setCompiler: (compiler: LatexCompiler) => void;
+  requestCompile: () => void;
+  setCommentsOpen: (open: boolean) => void;
+  setLiteratureOpen: (open: boolean) => void;
+  setSyncOpen: (open: boolean) => void;
+  setTikzOpen: (open: boolean) => void;
+  setBeamerOpen: (open: boolean) => void;
+  setSubmissionOpen: (open: boolean) => void;
+  setLatexKeyboardOpen: (open: boolean) => void;
+  setInspectorOpen: (open: boolean) => void;
+  setInspectorTab: (tab: InspectorTab) => void;
+  appendCompileLog: (entry: Omit<CompileLogEntry, "id" | "at">) => void;
+  clearCompileLogs: () => void;
+  setCompileDiagnostics: (diagnostics: CompileDiagnostic[]) => void;
+  setLastCompileLog: (log: string | null) => void;
+  setAutoCompile: (enabled: boolean) => void;
+  addComment: (input: {
+    fileId?: string;
+    line?: number;
+    selectedText?: string;
+    body: string;
+    author?: string;
+  }) => ProjectComment | null;
+  deleteComment: (id: string) => void;
+  toggleCommentResolved: (id: string) => void;
   deleteFile: (id: string) => void;
   renameFile: (id: string, name: string) => void;
   updateFileContent: (id: string, content: string) => void;
@@ -133,9 +211,6 @@ interface DocumentState {
   findAndReplace: (find: string, replace: string) => boolean;
   setInitialized: () => void;
 
-  get fileName(): string;
-  get content(): string;
-  setFileName: (name: string) => void;
   setContent: (content: string) => void;
 }
 
@@ -147,18 +222,83 @@ function getActiveFile(state: { files: ProjectFile[]; activeFileId: string }) {
   return state.files.find((f) => f.id === state.activeFileId);
 }
 
-export const useDocumentStore = create<DocumentState>()(
-  persist(
-    (set, get) => ({
-      files: [
-        {
-          id: "default-tex",
-          name: "document.tex",
-          type: "tex",
-          content: DEFAULT_TEX_CONTENT,
-        },
-      ],
-      activeFileId: "default-tex",
+function withId(file: Omit<ProjectFile, "id">): ProjectFile {
+  return {
+    ...file,
+    id: generateId(),
+    name: getBaseName(file.path),
+    path: file.path.replace(/^\/+/, ""),
+  };
+}
+
+function isTextFile(file: ProjectFile): boolean {
+  return file.type === "tex";
+}
+
+export const useDocumentStore = create<DocumentState>()((set, get) => ({
+  projectId: null,
+  projectName: DEFAULT_PROJECT_NAME,
+  createdAt: null,
+  files: [
+    {
+      id: "default-tex",
+      name: "document.tex",
+      path: "document.tex",
+      type: "tex",
+      content: DEFAULT_TEX_CONTENT,
+    },
+  ],
+  activeFileId: "default-tex",
+  mainFileId: "default-tex",
+  compiler: "pdflatex",
+  compileRequestId: 0,
+  comments: [],
+  isCommentsOpen: false,
+  isLiteratureOpen: false,
+  isSyncOpen: false,
+  isTikzOpen: false,
+  isBeamerOpen: false,
+  isSubmissionOpen: false,
+  isLatexKeyboardOpen: false,
+  isInspectorOpen: false,
+  inspectorTab: "project",
+  compileLogs: [],
+  compileDiagnostics: [],
+  lastCompileLog: null,
+  autoCompile: true,
+  cursorPosition: 0,
+  selectionRange: null,
+  jumpToPosition: null,
+  isThreadOpen: false,
+  pdfData: null,
+  compileError: null,
+  isCompiling: false,
+  isSaving: false,
+  initialized: false,
+  isHydrated: false,
+
+  hydrateProject: (project) => {
+    set({
+      projectId: project.id,
+      projectName: project.name,
+      createdAt: project.createdAt,
+      files: project.files,
+      activeFileId: project.activeFileId,
+      mainFileId: project.mainFileId,
+      compiler: project.compiler,
+      compileRequestId: 0,
+      comments: project.comments ?? [],
+      isCommentsOpen: false,
+      isLiteratureOpen: false,
+      isSyncOpen: false,
+      isTikzOpen: false,
+      isBeamerOpen: false,
+      isSubmissionOpen: false,
+      isInspectorOpen: false,
+      inspectorTab: "project",
+      compileLogs: [],
+      compileDiagnostics: [],
+      lastCompileLog: null,
       cursorPosition: 0,
       selectionRange: null,
       jumpToPosition: null,
@@ -168,160 +308,400 @@ export const useDocumentStore = create<DocumentState>()(
       isCompiling: false,
       isSaving: false,
       initialized: false,
+      isHydrated: true,
+    });
+  },
 
-      setActiveFile: (id) =>
-        set({ activeFileId: id, cursorPosition: 0, selectionRange: null }),
+  setProjectName: (name) => {
+    const nextName = name.trim();
+    if (!nextName) return;
+    set({ projectName: nextName });
+  },
 
-      setSelectionRange: (range) => set({ selectionRange: range }),
+  applyRemoteSnapshot: (snapshot) => {
+    const state = get();
+    const files = normalizeProjectFiles(snapshot.files);
+    if (files.length === 0) return;
 
-      requestJumpToPosition: (position) => set({ jumpToPosition: position }),
+    const mainFile =
+      files.find((file) => file.id === snapshot.mainFileId) ??
+      detectMainFile(files);
+    const currentActive = files.find((file) => file.id === state.activeFileId);
+    const activeFile = currentActive ?? mainFile ?? files[0];
 
-      clearJumpRequest: () => set({ jumpToPosition: null }),
+    set({
+      projectName: snapshot.projectName.trim() || state.projectName,
+      files,
+      mainFileId: mainFile?.id ?? null,
+      activeFileId: activeFile?.id ?? "",
+      compiler: snapshot.compiler,
+      comments: snapshot.comments ?? [],
+      compileError: null,
+      compileRequestId: state.compileRequestId + 1,
+    });
+  },
 
-      addFile: (file) => {
-        const id = generateId();
-        set((state) => ({
-          files: [...state.files, { ...file, id }],
-          activeFileId: id,
-        }));
-        return id;
-      },
+  setActiveFile: (id) =>
+    set({ activeFileId: id, cursorPosition: 0, selectionRange: null }),
 
-      deleteFile: (id) => {
-        const state = get();
-        if (state.files.length <= 1) return;
-        const newFiles = state.files.filter((f) => f.id !== id);
-        const newActiveId =
-          state.activeFileId === id ? newFiles[0].id : state.activeFileId;
-        set({ files: newFiles, activeFileId: newActiveId });
-      },
+  setSelectionRange: (range) => set({ selectionRange: range }),
 
-      renameFile: (id, name) => {
-        set((state) => ({
-          files: state.files.map((f) => (f.id === id ? { ...f, name } : f)),
-        }));
-      },
+  requestJumpToPosition: (position) => set({ jumpToPosition: position }),
 
-      updateFileContent: (id, content) => {
-        set((state) => ({
-          files: state.files.map((f) => (f.id === id ? { ...f, content } : f)),
-        }));
-      },
+  clearJumpRequest: () => set({ jumpToPosition: null }),
 
-      setThreadOpen: (open) => set({ isThreadOpen: open }),
+  addFile: (file) => {
+    const path = (file.path || file.name).replace(/^\/+/, "");
+    const existing = get().files.find((f) => f.path === path);
 
-      setPdfData: (data) => set({ pdfData: data, compileError: null }),
+    if (existing) {
+      set((state) => ({
+        files: state.files.map((f) =>
+          f.id === existing.id
+            ? {
+                ...f,
+                content: file.content,
+                dataUrl: file.dataUrl,
+                mimeType: file.mimeType,
+                type: file.type,
+              }
+            : f,
+        ),
+        activeFileId: existing.id,
+      }));
+      return existing.id;
+    }
 
-      setCompileError: (error) => set({ compileError: error, pdfData: null }),
+    const id = generateId();
+    set((state) => ({
+      files: [...state.files, { ...file, name: getBaseName(path), path, id }],
+      activeFileId: id,
+    }));
+    return id;
+  },
 
-      setIsCompiling: (isCompiling) => set({ isCompiling }),
+  addFiles: (incoming) => {
+    if (incoming.length === 0) return 0;
 
-      setIsSaving: (isSaving) => set({ isSaving }),
+    const state = get();
+    let addedCount = 0;
+    let firstAddedId: string | null = null;
+    const nextFiles = [...state.files];
 
-      setCursorPosition: (position) => set({ cursorPosition: position }),
+    for (const file of incoming) {
+      const path = file.path.replace(/^\/+/, "");
+      if (!path) continue;
 
-      insertAtCursor: (text) => {
-        const state = get();
-        const activeFile = getActiveFile(state);
-        if (!activeFile || activeFile.type !== "tex") return;
+      const existingIndex = nextFiles.findIndex((f) => f.path === path);
+      if (existingIndex !== -1) {
+        nextFiles[existingIndex] = {
+          ...nextFiles[existingIndex],
+          ...file,
+          path,
+          name: getBaseName(path),
+        };
+      } else {
+        const nextFile = withId({ ...file, path });
+        nextFiles.push(nextFile);
+        addedCount++;
+        firstAddedId ??= nextFile.id;
+      }
+    }
 
-        const content = activeFile.content ?? "";
-        const { cursorPosition } = state;
-        const newContent =
-          content.slice(0, cursorPosition) +
-          text +
-          content.slice(cursorPosition);
+    const mainFile =
+      nextFiles.find((f) => f.id === state.mainFileId) ??
+      detectMainFile(nextFiles);
 
-        set({
-          files: state.files.map((f) =>
-            f.id === activeFile.id ? { ...f, content: newContent } : f,
-          ),
-          cursorPosition: cursorPosition + text.length,
-        });
-      },
+    set({
+      files: nextFiles,
+      mainFileId: mainFile?.id ?? null,
+      activeFileId: firstAddedId ?? state.activeFileId,
+      compileRequestId: state.compileRequestId + 1,
+    });
 
-      replaceSelection: (start, end, text) => {
-        const state = get();
-        const activeFile = getActiveFile(state);
-        if (!activeFile || activeFile.type !== "tex") return;
+    return addedCount;
+  },
 
-        const content = activeFile.content ?? "";
-        const newContent = content.slice(0, start) + text + content.slice(end);
+  importProject: (name, incoming) => {
+    const seenPaths = new Set<string>();
+    const files: ProjectFile[] = [];
 
-        set({
-          files: state.files.map((f) =>
-            f.id === activeFile.id ? { ...f, content: newContent } : f,
-          ),
-          cursorPosition: start + text.length,
-        });
-      },
+    for (const file of incoming) {
+      const path = file.path.replace(/^\/+/, "");
+      if (!path || seenPaths.has(path)) continue;
+      seenPaths.add(path);
+      files.push(withId({ ...file, path }));
+    }
 
-      findAndReplace: (find, replace) => {
-        const state = get();
-        const activeFile = getActiveFile(state);
-        if (!activeFile || activeFile.type !== "tex") return false;
+    const mainFile = detectMainFile(files);
+    const firstText = files.find(isTextFile);
 
-        const content = activeFile.content ?? "";
-        if (!content.includes(find)) return false;
+    set({
+      projectName: name.trim() || "Imported Project",
+      files,
+      mainFileId: mainFile?.id ?? null,
+      activeFileId: mainFile?.id ?? firstText?.id ?? files[0]?.id ?? "",
+      comments: [],
+      isCommentsOpen: false,
+      isLiteratureOpen: false,
+      isSyncOpen: false,
+      isTikzOpen: false,
+      isBeamerOpen: false,
+      isSubmissionOpen: false,
+      isInspectorOpen: false,
+      inspectorTab: "project",
+      compileLogs: [],
+      compileDiagnostics: [],
+      lastCompileLog: null,
+      cursorPosition: 0,
+      selectionRange: null,
+      jumpToPosition: null,
+      pdfData: null,
+      compileError: null,
+      compileRequestId: get().compileRequestId + 1,
+    });
+  },
 
-        const newContent = content.replace(find, replace);
-        set({
-          files: state.files.map((f) =>
-            f.id === activeFile.id ? { ...f, content: newContent } : f,
-          ),
-        });
-        return true;
-      },
+  setMainFile: (id) => {
+    const file = get().files.find((f) => f.id === id);
+    if (!file || !isLatexDocumentFile(file) || get().mainFileId === id) return;
+    set((state) => ({
+      mainFileId: id,
+      compileRequestId: state.compileRequestId + 1,
+    }));
+  },
 
-      setInitialized: () => set({ initialized: true }),
+  setCompiler: (compiler) => {
+    if (get().compiler === compiler) return;
+    set((state) => ({
+      compiler,
+      compileRequestId: state.compileRequestId + 1,
+    }));
+  },
 
-      get fileName() {
-        const activeFile = getActiveFile(get());
-        return activeFile?.name ?? "document.tex";
-      },
+  requestCompile: () =>
+    set((state) => ({ compileRequestId: state.compileRequestId + 1 })),
 
-      get content() {
-        const activeFile = getActiveFile(get());
-        return activeFile?.content ?? "";
-      },
+  setCommentsOpen: (open) => set({ isCommentsOpen: open }),
 
-      setFileName: (name) => {
-        const state = get();
-        set({
-          files: state.files.map((f) =>
-            f.id === state.activeFileId ? { ...f, name } : f,
-          ),
-        });
-      },
+  setLiteratureOpen: (open) => set({ isLiteratureOpen: open }),
 
-      setContent: (content) => {
-        const state = get();
-        set({
-          files: state.files.map((f) =>
-            f.id === state.activeFileId ? { ...f, content } : f,
-          ),
-        });
-      },
+  setSyncOpen: (open) => set({ isSyncOpen: open }),
+
+  setTikzOpen: (open) => set({ isTikzOpen: open }),
+
+  setBeamerOpen: (open) => set({ isBeamerOpen: open }),
+
+  setSubmissionOpen: (open) => set({ isSubmissionOpen: open }),
+
+  setLatexKeyboardOpen: (open) => set({ isLatexKeyboardOpen: open }),
+
+  setInspectorOpen: (open) => set({ isInspectorOpen: open }),
+
+  setInspectorTab: (tab) => set({ inspectorTab: tab, isInspectorOpen: true }),
+
+  appendCompileLog: (entry) => {
+    const log: CompileLogEntry = {
+      ...entry,
+      id: generateId(),
+      at: Date.now(),
+    };
+
+    set((state) => ({
+      compileLogs: [log, ...state.compileLogs].slice(0, 80),
+    }));
+  },
+
+  clearCompileLogs: () =>
+    set({
+      compileLogs: [],
+      compileDiagnostics: [],
+      lastCompileLog: null,
     }),
-    {
-      name: "open-prism-document",
-      storage: createJSONStorage(() => indexedDBStorage),
-      partialize: (state) => ({
-        files: state.files,
-        activeFileId: state.activeFileId,
-        pdfData: state.pdfData,
+
+  setCompileDiagnostics: (compileDiagnostics) => set({ compileDiagnostics }),
+
+  setLastCompileLog: (lastCompileLog) => set({ lastCompileLog }),
+
+  setAutoCompile: (autoCompile) => set({ autoCompile }),
+
+  addComment: (input) => {
+    const state = get();
+    const fileId = input.fileId ?? state.activeFileId;
+    const file = state.files.find((candidate) => candidate.id === fileId);
+    const body = input.body.trim();
+
+    if (!file || file.type !== "tex" || !body) return null;
+
+    const lines = (file.content ?? "").split("\n").length;
+    const line = Math.min(Math.max(input.line ?? 1, 1), Math.max(lines, 1));
+    const comment: ProjectComment = {
+      id: generateId(),
+      fileId: file.id,
+      filePath: file.path,
+      line,
+      selectedText: input.selectedText?.trim() || undefined,
+      body,
+      author: input.author?.trim() || "You",
+      createdAt: Date.now(),
+      resolved: false,
+    };
+
+    set((current) => ({ comments: [...current.comments, comment] }));
+    return comment;
+  },
+
+  deleteComment: (id) => {
+    set((state) => ({
+      comments: state.comments.filter((comment) => comment.id !== id),
+    }));
+  },
+
+  toggleCommentResolved: (id) => {
+    set((state) => ({
+      comments: state.comments.map((comment) =>
+        comment.id === id
+          ? { ...comment, resolved: !comment.resolved }
+          : comment,
+      ),
+    }));
+  },
+
+  deleteFile: (id) => {
+    const state = get();
+    if (state.files.length <= 1) return;
+
+    const newFiles = state.files.filter((f) => f.id !== id);
+    const mainFile =
+      newFiles.find((f) => f.id === state.mainFileId) ??
+      detectMainFile(newFiles);
+    const newActiveId =
+      state.activeFileId === id
+        ? (mainFile?.id ?? newFiles[0].id)
+        : state.activeFileId;
+
+    set({
+      files: newFiles,
+      mainFileId: mainFile?.id ?? null,
+      activeFileId: newActiveId,
+      comments: state.comments.filter((comment) => comment.fileId !== id),
+      pdfData: null,
+      compileError: null,
+      compileRequestId: state.compileRequestId + 1,
+    });
+  },
+
+  renameFile: (id, name) => {
+    const cleanName = getBaseName(name.trim());
+    if (!cleanName) return;
+
+    set((state) => ({
+      files: state.files.map((f) => {
+        if (f.id !== id) return f;
+        const parent = getParentPath(f.path);
+        const path = parent ? `${parent}/${cleanName}` : cleanName;
+        return { ...f, name: cleanName, path };
       }),
-      merge: (persisted, current) => {
-        const merged = { ...current, ...(persisted as object) };
-        const files = merged.files as ProjectFile[];
-        const docTex = files.find((f) => f.name === "document.tex");
-        if (docTex) {
-          merged.activeFileId = docTex.id;
-        } else if (files.length > 0) {
-          merged.activeFileId = files[0].id;
-        }
-        return merged;
-      },
-    },
-  ),
-);
+      comments: state.comments.map((comment) => {
+        if (comment.fileId !== id) return comment;
+        const renamed = state.files.find((f) => f.id === id);
+        if (!renamed) return comment;
+        const parent = getParentPath(renamed.path);
+        return {
+          ...comment,
+          filePath: parent ? `${parent}/${cleanName}` : cleanName,
+        };
+      }),
+    }));
+  },
+
+  updateFileContent: (id, content) => {
+    set((state) => ({
+      files: state.files.map((f) => (f.id === id ? { ...f, content } : f)),
+    }));
+  },
+
+  setThreadOpen: (open) => set({ isThreadOpen: open }),
+
+  setPdfData: (data) => set({ pdfData: data, compileError: null }),
+
+  setCompileError: (error) => set({ compileError: error, pdfData: null }),
+
+  setIsCompiling: (isCompiling) => set({ isCompiling }),
+
+  setIsSaving: (isSaving) => set({ isSaving }),
+
+  setCursorPosition: (position) => set({ cursorPosition: position }),
+
+  insertAtCursor: (text) => {
+    const state = get();
+    const activeFile = getActiveFile(state);
+    if (!activeFile || activeFile.type !== "tex") return;
+
+    const content = activeFile.content ?? "";
+    const { cursorPosition } = state;
+    const newContent =
+      content.slice(0, cursorPosition) + text + content.slice(cursorPosition);
+
+    set({
+      files: state.files.map((f) =>
+        f.id === activeFile.id ? { ...f, content: newContent } : f,
+      ),
+      cursorPosition: cursorPosition + text.length,
+    });
+  },
+
+  replaceSelection: (start, end, text) => {
+    const state = get();
+    const activeFile = getActiveFile(state);
+    if (!activeFile || activeFile.type !== "tex") return;
+
+    const content = activeFile.content ?? "";
+    const newContent = content.slice(0, start) + text + content.slice(end);
+
+    set({
+      files: state.files.map((f) =>
+        f.id === activeFile.id ? { ...f, content: newContent } : f,
+      ),
+      cursorPosition: start + text.length,
+    });
+  },
+
+  findAndReplace: (find, replace) => {
+    const state = get();
+    const activeFile = getActiveFile(state);
+    if (!activeFile || activeFile.type !== "tex") return false;
+
+    const content = activeFile.content ?? "";
+    if (!content.includes(find)) return false;
+
+    const newContent = content.replace(find, replace);
+    set({
+      files: state.files.map((f) =>
+        f.id === activeFile.id ? { ...f, content: newContent } : f,
+      ),
+    });
+    return true;
+  },
+
+  setInitialized: () => set({ initialized: true }),
+
+  setContent: (content) => {
+    const state = get();
+    set({
+      files: state.files.map((f) =>
+        f.id === state.activeFileId ? { ...f, content } : f,
+      ),
+    });
+  },
+}));
+
+export function isPristineProject(files: ProjectFile[]): boolean {
+  const doc = files.find((file) => file.id === "default-tex");
+  if (!doc || doc.path !== "document.tex") return false;
+  if (doc.content !== DEFAULT_TEX_CONTENT) return false;
+
+  return files.every(
+    (file) => file.id === "default-tex" || file.path === "hand-write.jpg",
+  );
+}

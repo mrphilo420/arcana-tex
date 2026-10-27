@@ -32,8 +32,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { resources } = (await req.json()) as {
+    const {
+      resources,
+      compiler,
+      includeLog = false,
+    } = (await req.json()) as {
       resources: CompileResource[];
+      compiler?: string;
+      includeLog?: boolean;
     };
 
     if (!resources || resources.length === 0) {
@@ -42,6 +48,9 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+
+    const latexCompiler =
+      compiler === "xelatex" || compiler === "lualatex" ? compiler : "pdflatex";
 
     const apiResources = resources.map((r) => {
       const resource: Record<string, unknown> = {
@@ -75,16 +84,23 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        compiler: "pdflatex",
+        compiler: latexCompiler,
         resources: apiResources,
+        includeLog,
       }),
     });
 
     const contentType = response.headers.get("content-type") ?? "";
 
-    if (!response.ok || contentType.includes("application/json")) {
-      const errorData = await response.json();
-      const logContent = errorData.log_files?.["__main_document__.log"] ?? "";
+    if (
+      !response.ok ||
+      (includeLog && !contentType.includes("application/json"))
+    ) {
+      const errorData = contentType.includes("application/json")
+        ? await response.json()
+        : { error: "Compilation failed" };
+      const logContent =
+        errorData.log_files?.["__main_document__.log"] ?? errorData.log ?? "";
       const errorLines = logContent
         .split("\n")
         .filter(
@@ -99,9 +115,29 @@ export async function POST(req: Request) {
         {
           error: `Compilation failed: ${errorData.error || "Unknown error"}`,
           details: errorLines || logContent.slice(-1000),
+          log: logContent.slice(-200_000),
         },
         { status: 500 },
       );
+    }
+
+    if (includeLog) {
+      const result = (await response.json()) as {
+        pdf?: string;
+        log?: string;
+      };
+
+      if (!result.pdf) {
+        return NextResponse.json(
+          { error: "Compilation returned no PDF", log: result.log ?? "" },
+          { status: 500 },
+        );
+      }
+
+      return NextResponse.json({
+        pdf: result.pdf,
+        log: result.log ?? "",
+      });
     }
 
     const pdfBuffer = await response.arrayBuffer();

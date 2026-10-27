@@ -46,7 +46,7 @@ export function SearchPanel({
   };
 
   return (
-    <div className="flex h-9 items-center gap-2 border-border border-b bg-[#282c34] px-2">
+    <div className="flex h-9 items-center gap-2 border-white/10 border-b bg-[#181715] px-2">
       <Input
         ref={inputRef}
         type="text"
@@ -54,13 +54,13 @@ export function SearchPanel({
         onChange={(e) => onSearchQueryChange(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Search..."
-        className="h-6 w-48 bg-[#1e2127] text-[#abb2bf] text-sm placeholder:text-[#636d83]"
+        className="h-6 w-48 bg-[#252320] text-[#a09d96] text-sm placeholder:text-[#6c6a64]"
       />
       <div className="flex items-center gap-0.5">
         <Button
           variant="ghost"
           size="icon"
-          className="size-6 text-[#abb2bf] hover:bg-white/10 hover:text-[#abb2bf]"
+          className="size-6 text-[#a09d96] hover:bg-white/10 hover:text-[#a09d96]"
           onClick={onFindPrevious}
           disabled={!searchQuery || matchCount === 0}
         >
@@ -69,7 +69,7 @@ export function SearchPanel({
         <Button
           variant="ghost"
           size="icon"
-          className="size-6 text-[#abb2bf] hover:bg-white/10 hover:text-[#abb2bf]"
+          className="size-6 text-[#a09d96] hover:bg-white/10 hover:text-[#a09d96]"
           onClick={onFindNext}
           disabled={!searchQuery || matchCount === 0}
         >
@@ -77,7 +77,7 @@ export function SearchPanel({
         </Button>
       </div>
       {searchQuery && (
-        <span className="text-[#636d83] text-xs">
+        <span className="text-[#6c6a64] text-xs">
           {matchCount === 0 ? "No results" : `${currentMatch} of ${matchCount}`}
         </span>
       )}
@@ -85,7 +85,7 @@ export function SearchPanel({
       <Button
         variant="ghost"
         size="icon"
-        className="size-6 text-[#abb2bf] hover:bg-white/10 hover:text-[#abb2bf]"
+        className="size-6 text-[#a09d96] hover:bg-white/10 hover:text-[#a09d96]"
         onClick={onClose}
       >
         <XIcon className="size-4" />

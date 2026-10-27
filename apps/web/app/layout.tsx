@@ -1,23 +1,34 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Cormorant_Garamond, Inter, JetBrains_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { RootProvider } from "./provider";
 import { cn } from "@/lib/utils";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Open-Prism | LaTeX Writing Workspace",
-  description: "AI-powered LaTeX writing workspace inspired by OpenAI Prism",
+  title: "OpenPrism — Local-first LaTeX workspace",
+  description:
+    "A local-first AI LaTeX writing workspace inspired by OpenAI Prism.",
 };
 
 export default function RootLayout({
@@ -26,7 +37,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
+    <html
+      lang="en"
+      className="h-full"
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <head>
         {process.env.NODE_ENV === "development" && (
           <Script
@@ -38,9 +54,10 @@ export default function RootLayout({
       </head>
       <body
         className={cn(
-          geistSans.className,
-          geistMono.variable,
-          "h-full antialiased",
+          inter.variable,
+          cormorant.variable,
+          jetbrains.variable,
+          "h-full font-sans antialiased",
         )}
       >
         <RootProvider>{children}</RootProvider>

@@ -45,8 +45,9 @@ const DEFAULT_HEIGHT = 180;
 export function AIDrawer() {
   useDocumentContext();
   const threadRuntime = useThreadRuntime();
+  const isOpen = useDocumentStore((s) => s.isThreadOpen);
+  const setIsOpen = useDocumentStore((s) => s.setThreadOpen);
 
-  const [isOpen, setIsOpen] = useState(false);
   const [height, setHeight] = useState(DEFAULT_HEIGHT);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -114,20 +115,22 @@ export function AIDrawer() {
         type="button"
         onClick={() => setIsOpen(true)}
         className={cn(
-          "pointer-events-auto absolute right-4 bottom-6 flex size-12 items-center justify-center rounded-full border border-border bg-background shadow-lg transition-all duration-300 ease-out hover:scale-105 hover:shadow-xl",
+          "pointer-events-auto absolute right-4 bottom-6 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_12px_32px_rgba(204,120,92,0.35)] transition-all duration-300 ease-out hover:scale-105 hover:bg-[#b96a50] hover:shadow-xl",
           isOpen
             ? "pointer-events-none scale-50 opacity-0"
             : "scale-100 opacity-100",
         )}
         aria-label="Open AI Assistant"
       >
-        <MessageCircleIcon className="size-5 text-foreground" />
+        <span className="size-5 text-primary-foreground">
+          <MessageCircleIcon className="size-5" />
+        </span>
       </button>
 
       <ThreadPrimitive.Root
         ref={panelRef}
         className={cn(
-          "aui-root pointer-events-auto flex w-full max-w-2xl origin-bottom flex-col overflow-hidden rounded-3xl border border-border bg-background shadow-2xl transition-all duration-300 ease-out",
+          "aui-root dark pointer-events-auto flex w-full max-w-2xl origin-bottom flex-col overflow-hidden rounded-2xl border border-white/10 bg-surface-dark text-on-dark shadow-[0_28px_90px_rgba(0,0,0,0.35)] transition-all duration-300 ease-out",
           isOpen
             ? "scale-100 opacity-100"
             : "pointer-events-none scale-95 opacity-0",
@@ -205,7 +208,7 @@ const ThreadScrollToBottom: FC = () => {
 const Composer: FC = () => {
   return (
     <ComposerPrimitive.Root className="shrink-0 p-3">
-      <div className="flex w-full flex-col rounded-2xl border border-input bg-muted/30 transition-colors focus-within:border-ring focus-within:bg-background">
+      <div className="flex w-full flex-col rounded-xl border border-input bg-muted/30 transition-colors focus-within:border-ring focus-within:bg-background">
         <ComposerPrimitive.Input
           placeholder="Ask about LaTeX..."
           className="max-h-40 min-h-10 w-full resize-none bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted-foreground"

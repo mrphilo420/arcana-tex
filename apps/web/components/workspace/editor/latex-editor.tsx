@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { EditorState, Prec } from "@codemirror/state";
 import {
   EditorView,
@@ -17,7 +17,6 @@ import {
   insertNewlineAndIndent,
 } from "@codemirror/commands";
 import { syntaxHighlighting } from "@codemirror/language";
-import { oneDark, oneDarkHighlightStyle } from "@codemirror/theme-one-dark";
 import {
   search,
   highlightSelectionMatches,
@@ -27,12 +26,14 @@ import {
   findPrevious,
 } from "@codemirror/search";
 import { latex } from "codemirror-lang-latex";
-import { useDocumentStore, type ProjectFile } from "@/stores/document-store";
-import { compileLatex, type CompileResource } from "@/lib/latex-compiler";
+import { FileIcon } from "lucide-react";
+import { useDocumentStore } from "@/stores/document-store";
+import { compileProject } from "@/lib/compile-project";
+import { claudeEditorTheme, claudeHighlightStyle } from "@/lib/editor-theme";
 import { EditorToolbar } from "./editor-toolbar";
+import { type LatexInsertion, TikzLatexRibbon } from "../tikz-latex-ribbon";
 import { AIDrawer } from "./ai-drawer";
 import { ImagePreview } from "./image-preview";
-import { LatexTools } from "./latex-tools";
 import { SearchPanel } from "./search-panel";
 
 interface StickyItem {
@@ -150,25 +151,6 @@ function getStickyLines(
   return stack;
 }
 
-function gatherResources(files: ProjectFile[]): CompileResource[] {
-  return files.map((f) => {
-    if (f.type === "tex") {
-      return {
-        path: f.name,
-        content: f.content ?? "",
-        main: f.name === "document.tex",
-      };
-    }
-    const dataUrl = f.dataUrl ?? "";
-    let base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
-    base64 = base64.replace(/\s/g, "");
-    return {
-      path: f.name,
-      file: base64,
-    };
-  });
-}
-
 function getActiveFileContent(): string {
   const state = useDocumentStore.getState();
   const activeFile = state.files.find((f) => f.id === state.activeFileId);
@@ -186,10 +168,8 @@ export function LatexEditor() {
   const setSelectionRange = useDocumentStore((s) => s.setSelectionRange);
   const jumpToPosition = useDocumentStore((s) => s.jumpToPosition);
   const clearJumpRequest = useDocumentStore((s) => s.clearJumpRequest);
-  const isCompiling = useDocumentStore((s) => s.isCompiling);
-  const setIsCompiling = useDocumentStore((s) => s.setIsCompiling);
-  const setPdfData = useDocumentStore((s) => s.setPdfData);
-  const setCompileError = useDocumentStore((s) => s.setCompileError);
+  const isLatexKeyboardOpen = useDocumentStore((s) => s.isLatexKeyboardOpen);
+  const setLatexKeyboardOpen = useDocumentStore((s) => s.setLatexKeyboardOpen);
 
   const activeFile = files.find((f) => f.id === activeFileId);
   const isTexFile = activeFile?.type === "tex";
@@ -222,6 +202,30 @@ export function LatexEditor() {
   const compileRef = useRef<() => void>(() => {});
   const isSearchOpenRef = useRef(false);
 
+  const insertFromKeyboard = useCallback((insertion: LatexInsertion) => {
+    const view = viewRef.current;
+    if (!view) return;
+
+    const { from, to } = view.state.selection.main;
+    const selected = view.state.sliceDoc(from, to);
+    const text = `${insertion.before}${selected}${insertion.after ?? ""}`;
+    const caret = insertion.after
+      ? selected.length > 0
+        ? from +
+          insertion.before.length +
+          selected.length +
+          insertion.after.length
+        : from + insertion.before.length
+      : from + insertion.before.length + selected.length;
+
+    view.dispatch({
+      changes: { from, to, insert: text },
+      selection: { anchor: caret, head: caret },
+      scrollIntoView: true,
+    });
+    view.focus();
+  }, []);
+
   useEffect(() => {
     isSearchOpenRef.current = isSearchOpen;
   }, [isSearchOpen]);
@@ -251,12 +255,22 @@ export function LatexEditor() {
       if ((e.metaKey || e.ctrlKey) && e.key === "f") {
         e.preventDefault();
         setIsSearchOpen(true);
+        return;
+      }
+
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "k"
+      ) {
+        e.preventDefault();
+        setLatexKeyboardOpen(!isLatexKeyboardOpen);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [isLatexKeyboardOpen, setLatexKeyboardOpen]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -292,20 +306,7 @@ export function LatexEditor() {
   };
 
   compileRef.current = async () => {
-    if (isCompiling) return;
-    setIsCompiling(true);
-    try {
-      const currentFiles = useDocumentStore.getState().files;
-      const resources = gatherResources(currentFiles);
-      const data = await compileLatex(resources);
-      setPdfData(data);
-    } catch (error) {
-      setCompileError(
-        error instanceof Error ? error.message : "Compilation failed",
-      );
-    } finally {
-      setIsCompiling(false);
-    }
+    await compileProject();
   };
 
   useEffect(() => {
@@ -415,8 +416,8 @@ export function LatexEditor() {
         history(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         latex(),
-        oneDark,
-        syntaxHighlighting(oneDarkHighlightStyle),
+        claudeEditorTheme,
+        syntaxHighlighting(claudeHighlightStyle),
         search(),
         highlightSelectionMatches(),
         updateListener,
@@ -441,21 +442,6 @@ export function LatexEditor() {
           ".cm-content": {
             paddingLeft: "8px",
             paddingRight: "12px",
-          },
-          ".cm-searchMatch": {
-            backgroundColor: "#facc15 !important",
-            color: "#000 !important",
-            borderRadius: "2px",
-            boxShadow: "0 0 0 1px #eab308",
-          },
-          ".cm-searchMatch-selected": {
-            backgroundColor: "#f97316 !important",
-            color: "#fff !important",
-            borderRadius: "2px",
-            boxShadow: "0 0 0 2px #ea580c",
-          },
-          "&.cm-focused .cm-selectionBackground, .cm-selectionBackground": {
-            backgroundColor: "rgba(100, 150, 255, 0.3)",
           },
         }),
       ],
@@ -510,16 +496,29 @@ export function LatexEditor() {
   }, [jumpToPosition, clearJumpRequest]);
 
   if (!isTexFile && activeFile) {
+    const isImage = activeFile.type === "image";
+
     return (
       <div className="flex h-full flex-col bg-background">
         <EditorToolbar
           editorView={viewRef}
-          fileType="image"
+          fileType={isImage ? "image" : "binary"}
           imageScale={imageScale}
           onImageScaleChange={setImageScale}
         />
         <div className="relative min-h-0 flex-1 overflow-hidden">
-          <ImagePreview file={activeFile} scale={imageScale} />
+          {isImage ? (
+            <ImagePreview file={activeFile} scale={imageScale} />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center bg-muted/30 p-8 text-center">
+              <FileIcon className="mb-3 size-10 text-muted-foreground/60" />
+              <p className="font-medium text-sm">{activeFile.path}</p>
+              <p className="mt-1 max-w-sm text-muted-foreground text-xs">
+                This binary file is included when the project compiles, but it
+                cannot be edited as text.
+              </p>
+            </div>
+          )}
           <AIDrawer />
         </div>
       </div>
@@ -529,6 +528,9 @@ export function LatexEditor() {
   return (
     <div className="flex h-full flex-col bg-background">
       <EditorToolbar editorView={viewRef} />
+      {isLatexKeyboardOpen && (
+        <TikzLatexRibbon scope="workspace" onInsert={insertFromKeyboard} />
+      )}
       {isSearchOpen && (
         <SearchPanel
           searchQuery={searchQuery}
@@ -546,7 +548,7 @@ export function LatexEditor() {
       )}
       <div className="relative min-h-0 flex-1 overflow-hidden">
         {stickyLines.length > 0 && (
-          <div className="absolute inset-x-0 top-0 z-10 border-border border-b bg-[#282c34] font-mono text-[14px] leading-[1.4] shadow-md">
+          <div className="absolute inset-x-0 top-0 z-10 border-white/10 border-b bg-[#181715] font-mono text-[14px] leading-[1.4] shadow-md">
             {stickyLines.map((section) => (
               <div
                 key={section.line}
@@ -565,7 +567,7 @@ export function LatexEditor() {
                 }}
               >
                 <span
-                  className="shrink-0 bg-[#282c34] py-px text-right text-[#636d83]"
+                  className="shrink-0 bg-[#181715] py-px text-right text-[#6c6a64]"
                   style={{ width: gutterWidth ? gutterWidth - 8 : 32 }}
                 >
                   {section.line}
@@ -576,7 +578,7 @@ export function LatexEditor() {
                     dangerouslySetInnerHTML={{ __html: section.html }}
                   />
                 ) : (
-                  <span className="py-px pl-5.5 text-[#abb2bf]">
+                  <span className="py-px pl-5.5 text-[#a09d96]">
                     {section.content}
                   </span>
                 )}
@@ -587,7 +589,6 @@ export function LatexEditor() {
         <div ref={containerRef} className="absolute inset-0" />
         <AIDrawer />
       </div>
-      <LatexTools />
     </div>
   );
 }

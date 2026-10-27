@@ -12,6 +12,7 @@ import {
   FunctionSquareIcon,
   FileTextIcon,
   ImageIcon,
+  KeyboardIcon,
   MinusIcon,
   PlusIcon,
 } from "lucide-react";
@@ -39,7 +40,7 @@ const ZOOM_OPTIONS = [
 
 interface EditorToolbarProps {
   editorView: RefObject<EditorView | null>;
-  fileType?: "tex" | "image";
+  fileType?: "tex" | "image" | "binary";
   imageScale?: number;
   onImageScaleChange?: (scale: number) => void;
 }
@@ -52,8 +53,10 @@ export function EditorToolbar({
 }: EditorToolbarProps) {
   const fileName = useDocumentStore((s) => {
     const activeFile = s.files.find((f) => f.id === s.activeFileId);
-    return activeFile?.name ?? "document.tex";
+    return activeFile?.path ?? "document.tex";
   });
+  const isLatexKeyboardOpen = useDocumentStore((s) => s.isLatexKeyboardOpen);
+  const setLatexKeyboardOpen = useDocumentStore((s) => s.setLatexKeyboardOpen);
 
   const insertText = (before: string, after: string = "") => {
     const view = editorView.current;
@@ -83,61 +86,70 @@ export function EditorToolbar({
   const zoomIn = () => onImageScaleChange?.(Math.min(4, imageScale + 0.25));
   const zoomOut = () => onImageScaleChange?.(Math.max(0.25, imageScale - 0.25));
 
-  if (fileType === "image") {
+  if (fileType === "image" || fileType === "binary") {
     return (
-      <div className="flex h-9 items-center justify-between border-border border-b bg-muted/30 px-2">
+      <div className="flex h-9 items-center justify-between border-white/10 border-b bg-[#252320] px-2 text-[#a09d96] [&_button:hover]:bg-white/10 [&_button:hover]:text-[#faf9f5]">
         <div className="flex items-center gap-1">
-          <ImageIcon className="size-4 text-muted-foreground" />
-          <span className="font-medium text-muted-foreground text-sm">
+          {fileType === "image" ? (
+            <ImageIcon className="size-4 text-muted-foreground" />
+          ) : (
+            <FileTextIcon className="size-4 text-muted-foreground" />
+          )}
+          <span className="font-medium font-mono text-[#faf9f5] text-[11px]">
             {fileName}
           </span>
         </div>
-        <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6"
-            onClick={zoomOut}
-            disabled={imageScale <= 0.25}
-          >
-            <MinusIcon className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6"
-            onClick={zoomIn}
-            disabled={imageScale >= 4}
-          >
-            <PlusIcon className="size-3.5" />
-          </Button>
-          <Select
-            value={imageScale.toString()}
-            onValueChange={(v) => onImageScaleChange?.(Number(v))}
-          >
-            <SelectTrigger size="sm" className="h-6! w-auto text-xs">
-              <SelectValue>{Math.round(imageScale * 100)}%</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {ZOOM_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {fileType === "image" && (
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-6"
+              onClick={zoomOut}
+              disabled={imageScale <= 0.25}
+            >
+              <MinusIcon className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-6"
+              onClick={zoomIn}
+              disabled={imageScale >= 4}
+            >
+              <PlusIcon className="size-3.5" />
+            </Button>
+            <Select
+              value={imageScale.toString()}
+              onValueChange={(v) => onImageScaleChange?.(Number(v))}
+            >
+              <SelectTrigger size="sm" className="h-6! w-auto text-xs">
+                <SelectValue>{Math.round(imageScale * 100)}%</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {ZOOM_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {fileType === "binary" && (
+          <span className="text-muted-foreground text-xs">binary</span>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex h-9 items-center gap-1 border-border border-b bg-muted/30 px-2">
+    <div className="flex h-9 items-center gap-1 border-white/10 border-b bg-[#252320] px-2 text-[#a09d96] [&_button:hover]:bg-white/10 [&_button:hover]:text-[#faf9f5]">
       <FileTextIcon className="size-4 text-muted-foreground" />
-      <span className="mr-2 font-medium text-muted-foreground text-sm">
+      <span className="mr-2 font-medium font-mono text-[#faf9f5] text-[11px]">
         {fileName}
       </span>
-      <div className="mx-2 h-4 w-px bg-border" />
+      <div className="mx-2 h-4 w-px bg-white/10" />
       <TooltipIconButton
         tooltip="Bold (\\textbf)"
         onClick={() => insertText("\\textbf{", "}")}
@@ -156,7 +168,7 @@ export function EditorToolbar({
       >
         <CodeIcon className="size-4" />
       </TooltipIconButton>
-      <div className="mx-2 h-4 w-px bg-border" />
+      <div className="mx-2 h-4 w-px bg-white/10" />
       <TooltipIconButton
         tooltip="Section"
         onClick={() => insertText("\\section{", "}")}
@@ -175,7 +187,7 @@ export function EditorToolbar({
       >
         <ListIcon className="size-4" />
       </TooltipIconButton>
-      <div className="mx-2 h-4 w-px bg-border" />
+      <div className="mx-2 h-4 w-px bg-white/10" />
       <TooltipIconButton
         tooltip="Inline math ($...$)"
         onClick={() => wrapSelection("$")}
@@ -187,6 +199,17 @@ export function EditorToolbar({
         onClick={() => insertText("\\[\n  ", "\n\\]")}
       >
         <span className="font-mono text-xs">∫</span>
+      </TooltipIconButton>
+      <div className="mx-2 h-4 w-px bg-white/10" />
+      <TooltipIconButton
+        tooltip="LaTeX keyboard (⌘/Ctrl+Shift+K)"
+        onClick={() => setLatexKeyboardOpen(!isLatexKeyboardOpen)}
+        className={
+          isLatexKeyboardOpen ? "bg-white/10 text-[#faf9f5]" : undefined
+        }
+        aria-pressed={isLatexKeyboardOpen}
+      >
+        <KeyboardIcon className="size-4" />
       </TooltipIconButton>
     </div>
   );

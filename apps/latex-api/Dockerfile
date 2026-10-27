@@ -12,11 +12,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile || pnpm install
+COPY package.json ./
+RUN pnpm install --no-frozen-lockfile
 
 COPY . .
 RUN pnpm build
+
+ENV SYNC_DATA_DIR=/data
+VOLUME ["/data"]
 
 EXPOSE 3001
 

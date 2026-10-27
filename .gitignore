@@ -18,6 +18,9 @@ coverage
 # Turbo
 .turbo
 
+# Live sync snapshots
+.open-prism-sync/
+
 # Vercel
 .vercel
 

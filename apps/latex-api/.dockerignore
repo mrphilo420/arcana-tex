@@ -1,0 +1,5 @@
+node_modules
+dist
+.open-prism-sync
+*.log
+.DS_Store

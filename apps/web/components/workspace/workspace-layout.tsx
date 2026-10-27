@@ -3,39 +3,60 @@
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { Sidebar } from "./sidebar";
 import { LatexEditor } from "./editor/latex-editor";
+import { LatexTools } from "./editor/latex-tools";
 import { PdfPreview } from "./preview/pdf-preview";
+import { BeamerPanel } from "./beamer-panel";
+import { CommentsPanel } from "./comments-panel";
+import { LiteraturePanel } from "./literature-panel";
+import { ProjectInspector } from "./project-inspector";
+import { SubmissionPanel } from "./submission-panel";
+import { SyncDialog } from "./sync-dialog";
+import { TikzStudio } from "./tikz-studio";
+import { WorkspaceTopBar } from "./workspace-top-bar";
+import { useAutoCompile } from "@/hooks/use-auto-compile";
 import { useProjectInit } from "@/hooks/use-project-init";
-import { useStorageReady } from "@/hooks/use-storage-ready";
+import { useProjectSync } from "@/hooks/use-project-sync";
+import { useDocumentStore } from "@/stores/document-store";
 
 export function WorkspaceLayout() {
-  const storageReady = useStorageReady();
   useProjectInit();
+  useAutoCompile();
 
-  if (!storageReady) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
+  const projectId = useDocumentStore((s) => s.projectId);
+  const isSyncOpen = useDocumentStore((s) => s.isSyncOpen);
+  const setSyncOpen = useDocumentStore((s) => s.setSyncOpen);
+
+  useProjectSync(projectId ?? "");
 
   return (
-    <PanelGroup direction="horizontal" className="h-full">
-      <Panel defaultSize={15} minSize={10} maxSize={25}>
-        <Sidebar />
-      </Panel>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+      <WorkspaceTopBar />
+      <LatexTools />
+      <BeamerPanel />
+      <CommentsPanel />
+      <LiteraturePanel />
+      <ProjectInspector />
+      <SubmissionPanel />
+      <SyncDialog open={isSyncOpen} onOpenChange={setSyncOpen} />
+      <TikzStudio />
 
-      <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-ring" />
+      <PanelGroup direction="horizontal" className="min-h-0 flex-1">
+        <Panel defaultSize={16} minSize={11} maxSize={26}>
+          <Sidebar />
+        </Panel>
 
-      <Panel defaultSize={42.5} minSize={25}>
-        <LatexEditor />
-      </Panel>
+        <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-primary/50" />
 
-      <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-ring" />
+        <Panel defaultSize={42} minSize={25}>
+          <LatexEditor />
+        </Panel>
 
-      <Panel defaultSize={42.5} minSize={25}>
-        <PdfPreview />
-      </Panel>
-    </PanelGroup>
+        <PanelResizeHandle className="w-px bg-border transition-colors hover:bg-primary/50" />
+
+        <Panel defaultSize={42} minSize={25}>
+          <PdfPreview />
+        </Panel>
+      </PanelGroup>
+    </div>
   );
 }

@@ -18,15 +18,24 @@ importers:
   apps/latex-api:
     dependencies:
       '@hono/node-server':
-        specifier: ^1.13.8
-        version: 1.19.9(hono@4.11.7)
+        specifier: ^1.19.17
+        version: 1.19.17(hono@4.11.7)
+      '@hono/node-ws':
+        specifier: ^1.3.1
+        version: 1.3.1(@hono/node-server@1.19.17(hono@4.11.7))(hono@4.11.7)
       hono:
         specifier: ^4.6.0
         version: 4.11.7
+      ws:
+        specifier: ^8.22.0
+        version: 8.22.0
     devDependencies:
       '@types/node':
         specifier: ^22.14.0
         version: 22.19.7
+      '@types/ws':
+        specifier: ^8.18.2
+        version: 8.18.2
       tsup:
         specifier: ^8.4.0
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)
@@ -78,6 +87,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.1(react@19.2.3))
+      '@lezer/highlight':
+        specifier: ^1.2.5
+        version: 1.2.5
       '@radix-ui/react-slot':
         specifier: ^1.2.4
         version: 1.2.4(@types/react@19.2.10)(react@19.2.3)
@@ -101,7 +113,7 @@ importers:
         version: 1.1.1(@types/react-dom@19.2.3(@types/react@19.2.10))(@types/react@19.2.10)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       codemirror-lang-latex:
         specifier: ^0.2.0
-        version: 0.2.0(@codemirror/autocomplete@6.20.0)(@codemirror/language@6.12.1)(@codemirror/lint@6.9.3)(@codemirror/state@6.5.4)(@codemirror/view@6.39.11)(@lezer/common@1.5.0)(@lezer/generator@1.8.0)(@lezer/highlight@1.2.3)(@lezer/lr@1.4.8)
+        version: 0.2.0(@codemirror/autocomplete@6.20.0)(@codemirror/language@6.12.1)(@codemirror/lint@6.9.3)(@codemirror/state@6.5.4)(@codemirror/view@6.39.11)(@lezer/common@1.5.0)(@lezer/generator@1.8.0)(@lezer/highlight@1.2.5)(@lezer/lr@1.4.8)
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -564,11 +576,18 @@ packages:
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
 
-  '@hono/node-server@1.19.9':
-    resolution: {integrity: sha512-vHL6w3ecZsky+8P5MD+eFfaGTyCeOHUIFYMGpQGbrBTSmNNoxv0if69rEZ5giu36weC5saFuznL411gRX7bJDw==}
+  '@hono/node-server@1.19.17':
+    resolution: {integrity: sha512-dSneS5qhiauZWGDCeK4o695Xd9nUNjviSZCMQrj10eetr8Uln1ucn6bbphOM6UynAMMtNIzZNSpL9vnASJwrPQ==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
+
+  '@hono/node-ws@1.3.1':
+    resolution: {integrity: sha512-vo/MwCnpJAVHBkGzWjCJ28wF45fYHAfbPZcH2rodZODHtch2GHA94KtMfusmVycTUtsLAsaNsHhtY6P8X3RQsA==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      '@hono/node-server': ^1.19.11
+      hono: ^4.6.0
 
   '@hookform/resolvers@5.2.2':
     resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
@@ -754,8 +773,8 @@ packages:
     resolution: {integrity: sha512-/SF4EDWowPqV1jOgoGSGTIFsE7Ezdr7ZYxyihl5eMKVO5tlnpIhFcDavgm1hHY5GEonoOAEnJ0CU0x+tvuAuUg==}
     hasBin: true
 
-  '@lezer/highlight@1.2.3':
-    resolution: {integrity: sha512-qXdH7UqTvGfdVBINrgKhDsVTJTxactNNxLk7+UMwZhU13lMHaOBlJe9Vqp907ya56Y3+ed2tlqzys7jDkTmW0g==}
+  '@lezer/highlight@1.2.5':
+    resolution: {integrity: sha512-O1GMVKgtf5YspFaRzpmqkVgMtIk2HG9uMAbH6wdAIdNh3TVzCsch/+cRi+6l2//UGDKe6NB9BW3cvuR5ezMQ0w==}
 
   '@lezer/html@1.3.13':
     resolution: {integrity: sha512-oI7n6NJml729m7pjm9lvLvmXbdoMoi2f+1pwSDJkl9d68zGr7a9Btz8NdHTGQZtW2DA25ybeuv/SyDb9D5tseg==}
@@ -1933,6 +1952,9 @@ packages:
 
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
+
+  '@types/ws@8.18.2':
+    resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
@@ -3128,6 +3150,18 @@ packages:
   web-namespaces@2.0.1:
     resolution: {integrity: sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ==}
 
+  ws@8.22.0:
+    resolution: {integrity: sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
@@ -3352,7 +3386,7 @@ snapshots:
       '@codemirror/state': 6.5.4
       '@codemirror/view': 6.39.11
       '@lezer/common': 1.5.0
-      '@lezer/highlight': 1.2.3
+      '@lezer/highlight': 1.2.5
       '@lezer/lr': 1.4.8
       style-mod: 4.1.3
 
@@ -3377,7 +3411,7 @@ snapshots:
       '@codemirror/language': 6.12.1
       '@codemirror/state': 6.5.4
       '@codemirror/view': 6.39.11
-      '@lezer/highlight': 1.2.3
+      '@lezer/highlight': 1.2.5
 
   '@codemirror/view@6.39.11':
     dependencies:
@@ -3488,9 +3522,18 @@ snapshots:
 
   '@floating-ui/utils@0.2.10': {}
 
-  '@hono/node-server@1.19.9(hono@4.11.7)':
+  '@hono/node-server@1.19.17(hono@4.11.7)':
     dependencies:
       hono: 4.11.7
+
+  '@hono/node-ws@1.3.1(@hono/node-server@1.19.17(hono@4.11.7))(hono@4.11.7)':
+    dependencies:
+      '@hono/node-server': 1.19.17(hono@4.11.7)
+      hono: 4.11.7
+      ws: 8.22.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.71.1(react@19.2.3))':
     dependencies:
@@ -3618,7 +3661,7 @@ snapshots:
   '@lezer/css@1.3.0':
     dependencies:
       '@lezer/common': 1.5.0
-      '@lezer/highlight': 1.2.3
+      '@lezer/highlight': 1.2.5
       '@lezer/lr': 1.4.8
 
   '@lezer/generator@1.8.0':
@@ -3626,20 +3669,20 @@ snapshots:
       '@lezer/common': 1.5.0
       '@lezer/lr': 1.4.8
 
-  '@lezer/highlight@1.2.3':
+  '@lezer/highlight@1.2.5':
     dependencies:
       '@lezer/common': 1.5.0
 
   '@lezer/html@1.3.13':
     dependencies:
       '@lezer/common': 1.5.0
-      '@lezer/highlight': 1.2.3
+      '@lezer/highlight': 1.2.5
       '@lezer/lr': 1.4.8
 
   '@lezer/javascript@1.5.4':
     dependencies:
       '@lezer/common': 1.5.0
-      '@lezer/highlight': 1.2.3
+      '@lezer/highlight': 1.2.5
       '@lezer/lr': 1.4.8
 
   '@lezer/lr@1.4.8':
@@ -3649,7 +3692,7 @@ snapshots:
   '@lezer/markdown@1.6.3':
     dependencies:
       '@lezer/common': 1.5.0
-      '@lezer/highlight': 1.2.3
+      '@lezer/highlight': 1.2.5
 
   '@marijn/find-cluster-break@1.0.2': {}
 
@@ -4716,6 +4759,10 @@ snapshots:
 
   '@types/unist@3.0.3': {}
 
+  '@types/ws@8.18.2':
+    dependencies:
+      '@types/node': 25.0.10
+
   '@ungap/structured-clone@1.3.0': {}
 
   '@upstash/core-analytics@0.0.10':
@@ -4808,7 +4855,7 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  codemirror-lang-latex@0.2.0(@codemirror/autocomplete@6.20.0)(@codemirror/language@6.12.1)(@codemirror/lint@6.9.3)(@codemirror/state@6.5.4)(@codemirror/view@6.39.11)(@lezer/common@1.5.0)(@lezer/generator@1.8.0)(@lezer/highlight@1.2.3)(@lezer/lr@1.4.8):
+  codemirror-lang-latex@0.2.0(@codemirror/autocomplete@6.20.0)(@codemirror/language@6.12.1)(@codemirror/lint@6.9.3)(@codemirror/state@6.5.4)(@codemirror/view@6.39.11)(@lezer/common@1.5.0)(@lezer/generator@1.8.0)(@lezer/highlight@1.2.5)(@lezer/lr@1.4.8):
     dependencies:
       '@codemirror/autocomplete': 6.20.0
       '@codemirror/language': 6.12.1
@@ -4817,7 +4864,7 @@ snapshots:
       '@codemirror/view': 6.39.11
       '@lezer/common': 1.5.0
       '@lezer/generator': 1.8.0
-      '@lezer/highlight': 1.2.3
+      '@lezer/highlight': 1.2.5
       '@lezer/lr': 1.4.8
 
   comma-separated-tokens@2.0.3: {}
@@ -6267,6 +6314,8 @@ snapshots:
       loose-envify: 1.4.0
 
   web-namespaces@2.0.1: {}
+
+  ws@8.22.0: {}
 
   zod@4.3.6: {}
 

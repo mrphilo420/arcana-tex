@@ -28,8 +28,14 @@ export function useProjectInit() {
   useEffect(() => {
     if (initialized) return;
 
+    const isDemoProject = files.some((file) => file.id === "default-tex");
+    if (!isDemoProject) {
+      setInitialized();
+      return;
+    }
+
     const existingImage = files.find(
-      (f) => f.type === "image" && f.name === DEFAULT_IMAGE_FILE.name,
+      (f) => f.type === "image" && f.path === DEFAULT_IMAGE_FILE.name,
     );
 
     if (existingImage?.dataUrl) {
@@ -41,15 +47,31 @@ export function useProjectInit() {
 
     loadImageAsDataUrl(DEFAULT_IMAGE_FILE.path)
       .then((dataUrl) => {
-        if (existingImage) {
-          useDocumentStore.setState((state) => ({
-            files: state.files.map((f) =>
-              f.id === existingImage.id ? { ...f, dataUrl } : f,
+        const state = useDocumentStore.getState();
+        const isStillDemo = state.files.some(
+          (file) => file.id === "default-tex",
+        );
+
+        if (!isStillDemo) {
+          setInitialized();
+          return;
+        }
+
+        const currentImage = state.files.find(
+          (file) =>
+            file.type === "image" && file.path === DEFAULT_IMAGE_FILE.name,
+        );
+
+        if (currentImage) {
+          useDocumentStore.setState((current) => ({
+            files: current.files.map((file) =>
+              file.id === currentImage.id ? { ...file, dataUrl } : file,
             ),
           }));
         } else {
           addFile({
             name: DEFAULT_IMAGE_FILE.name,
+            path: DEFAULT_IMAGE_FILE.name,
             type: "image",
             dataUrl,
           });

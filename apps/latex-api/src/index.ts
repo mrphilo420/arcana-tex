@@ -1,19 +1,89 @@
 import { serve } from "@hono/node-server";
+import { createNodeWebSocket } from "@hono/node-ws";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { bodyLimit } from "hono/body-limit";
+import { existsSync, mkdirSync, symlinkSync } from "node:fs";
 import { mkdir, rm, writeFile, readFile, access } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { delimiter, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
+import { registerSyncRoutes } from "./sync";
 
 const app = new Hono();
+const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
 const MAX_CONCURRENT = 3;
 const COMPILE_TIMEOUT_MS = 30000;
 
 let activeCompilations = 0;
+
+type CompilerName = "pdflatex" | "xelatex" | "lualatex" | "bibtex";
+
+const COMPILER_NAMES: CompilerName[] = [
+  "pdflatex",
+  "xelatex",
+  "lualatex",
+  "bibtex",
+];
+
+const MIKTEX_BIN_DIR = "/Applications/MiKTeX Console.app/Contents/bin";
+const MIKTEX_ENGINES: Record<CompilerName, string> = {
+  pdflatex: "miktex-pdftex",
+  xelatex: "miktex-xetex",
+  lualatex: "miktex-luahbtex",
+  bibtex: "miktex-bibtex",
+};
+
+function isOnPath(command: string): boolean {
+  const path = process.env.PATH ?? "";
+  return path
+    .split(delimiter)
+    .some((directory) => directory && existsSync(join(directory, command)));
+}
+
+function ensureMiktexFallbackBin(): string | null {
+  if (!existsSync(MIKTEX_BIN_DIR)) return null;
+
+  const userSuffix =
+    typeof process.getuid === "function" ? process.getuid() : "user";
+  const binDir = join(tmpdir(), `open-prism-tex-bin-${userSuffix}`);
+  mkdirSync(binDir, { recursive: true, mode: 0o700 });
+
+  let hasLinks = false;
+
+  for (const name of COMPILER_NAMES) {
+    const target = join(MIKTEX_BIN_DIR, MIKTEX_ENGINES[name]);
+    if (!existsSync(target)) continue;
+
+    const link = join(binDir, name);
+    if (!existsSync(link)) {
+      try {
+        symlinkSync(target, link);
+      } catch {
+        // Another process may have created the link.
+      }
+    }
+
+    if (existsSync(link)) hasLinks = true;
+  }
+
+  return hasLinks ? binDir : null;
+}
+
+const miktexFallbackBin = ensureMiktexFallbackBin();
+
+function resolveCompilerCommand(name: CompilerName): string {
+  if (isOnPath(name)) return name;
+
+  if (miktexFallbackBin) {
+    const fallback = join(miktexFallbackBin, name);
+    if (existsSync(fallback)) return fallback;
+  }
+
+  return name;
+}
 
 function sanitizePath(workDir: string, filePath: string): string | null {
   if (filePath.includes("..")) return null;
@@ -25,7 +95,9 @@ function sanitizePath(workDir: string, filePath: string): string | null {
 }
 
 app.use("/*", cors());
-app.use("/*", bodyLimit({ maxSize: 10 * 1024 * 1024 }));
+app.use("/*", bodyLimit({ maxSize: 50 * 1024 * 1024 }));
+
+registerSyncRoutes(app, upgradeWebSocket);
 
 interface Resource {
   path?: string;
@@ -37,6 +109,7 @@ interface Resource {
 interface CompileRequest {
   compiler?: string;
   resources: Resource[];
+  includeLog?: boolean;
 }
 
 interface CompileError {
@@ -57,7 +130,7 @@ app.post("/builds/sync", async (c) => {
   }
 
   const body = await c.req.json<CompileRequest>();
-  const { compiler = "pdflatex", resources } = body;
+  const { compiler = "pdflatex", resources, includeLog = false } = body;
 
   if (!resources || resources.length === 0) {
     return c.json(
@@ -99,7 +172,7 @@ app.post("/builds/sync", async (c) => {
       }
     }
 
-    const compilerCmd =
+    const compilerName: CompilerName =
       compiler === "xelatex"
         ? "xelatex"
         : compiler === "lualatex"
@@ -131,7 +204,11 @@ app.post("/builds/sync", async (c) => {
       });
     };
 
-    const latexCmd = [compilerCmd, "-interaction=nonstopmode", mainPath];
+    const latexCmd = [
+      resolveCompilerCommand(compilerName),
+      "-interaction=nonstopmode",
+      mainPath,
+    ];
 
     if (hasBib) {
       let result = await runWithTimeout(latexCmd);
@@ -147,7 +224,10 @@ app.post("/builds/sync", async (c) => {
         .then(() => true)
         .catch(() => false);
       if (auxExists) {
-        result = await runWithTimeout(["bibtex", mainFileName]);
+        result = await runWithTimeout([
+          resolveCompilerCommand("bibtex"),
+          mainFileName,
+        ]);
         if (result.timedOut) {
           return c.json(
             { error: "BibTeX timed out" } satisfies CompileError,
@@ -187,6 +267,15 @@ app.post("/builds/sync", async (c) => {
 
     try {
       const pdfBuffer = await readFile(pdfPath);
+      const log = logContent.slice(-200_000);
+
+      if (includeLog) {
+        return c.json({
+          pdf: pdfBuffer.toString("base64"),
+          log,
+        });
+      }
+
       return new Response(pdfBuffer, {
         headers: {
           "Content-Type": "application/pdf",
@@ -212,9 +301,14 @@ app.post("/builds/sync", async (c) => {
 
 const port = parseInt(process.env.PORT || "3001", 10);
 
-serve({
-  fetch: app.fetch,
-  port,
-});
+const server = serve(
+  {
+    fetch: app.fetch,
+    port,
+  },
+  () => {
+    console.log(`LaTeX API server running on port ${port}`);
+  },
+);
 
-console.log(`LaTeX API server running on port ${port}`);
+injectWebSocket(server);

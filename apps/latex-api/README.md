@@ -45,4 +45,18 @@ curl -X POST http://localhost:3001/builds/sync \
   -d '{"compiler":"pdflatex","resources":[{"main":true,"content":"\\documentclass{article}\\begin{document}Hello\\end{document}"}]}'
 ```
 
-Requires TeX Live installed locally for development.
+Requires a TeX distribution installed locally (TeX Live, or MiKTeX on macOS). On macOS the API will automatically use the MiKTeX binaries bundled with `/Applications/MiKTeX Console.app` when `pdflatex` is not on `PATH`.
+
+## Live sync
+
+The same server hosts a token-protected WebSocket sync service:
+
+- `GET /sync/ws/:projectId?token=...` — WebSocket room
+- `GET /sync/projects/:projectId?token=...` — latest project snapshot
+- `PUT /sync/projects/:projectId` — store a snapshot
+- `DELETE /sync/projects/:projectId?token=...` — remove a room
+
+Snapshots are stored as JSON under `.open-prism-sync/` by default. Set
+`SYNC_DATA_DIR` to change the location. The service is intentionally simple:
+it broadcasts full project snapshots (last-write-wins) and presence. Put it
+behind TLS and network access control for a public deployment.
