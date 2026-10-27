@@ -112,9 +112,28 @@ function macSandboxProfile(root: string): string {
     .join("\n");
 }
 
+const SAFE_ENV_KEYS = [
+  "NODE_ENV",
+  "PATH",
+  "LANG",
+  "LC_ALL",
+  "LC_CTYPE",
+  "TERM",
+  "TZ",
+  "SYSTEMROOT",
+];
+
 function shellEnvironment(root: string): NodeJS.ProcessEnv {
+  const safeEnvironment: NodeJS.ProcessEnv = {
+    NODE_ENV: process.env.NODE_ENV ?? "production",
+  };
+  for (const key of SAFE_ENV_KEYS) {
+    const value = process.env[key];
+    if (value) safeEnvironment[key] = value;
+  }
+
   return {
-    ...process.env,
+    ...safeEnvironment,
     HOME: root,
     TMPDIR: root,
     TMP: root,
@@ -335,6 +354,15 @@ export async function runLocalCode(input: {
 
     const useMacSandbox =
       process.platform === "darwin" && existsSync("/usr/bin/sandbox-exec");
+    const allowUnsandboxed =
+      process.env.ALLOW_UNSANDBOXED_CODE_EXECUTION === "true";
+
+    if (!useMacSandbox && !allowUnsandboxed) {
+      throw new Error(
+        "No supported local code sandbox is available on this platform. Install a sandboxed runtime or set ALLOW_UNSANDBOXED_CODE_EXECUTION=true to run trusted code without network isolation.",
+      );
+    }
+
     const command = useMacSandbox ? "/usr/bin/sandbox-exec" : binary;
     const commandArgs = useMacSandbox
       ? ["-p", macSandboxProfile(root), binary, ...args]
@@ -357,7 +385,7 @@ export async function runLocalCode(input: {
       sandboxed: useMacSandbox,
       warning: useMacSandbox
         ? undefined
-        : "No OS sandbox is available on this platform. Code ran in an isolated temporary directory with a timeout, but without network isolation.",
+        : "No OS sandbox is available on this platform. Code ran in an isolated temporary directory with a timeout, but without network isolation. Set ALLOW_UNSANDBOXED_CODE_EXECUTION=true only when you trust the code.",
     };
   } finally {
     await rm(root, { recursive: true, force: true }).catch(() => {});

@@ -32,8 +32,11 @@ raster substitute, unless the user asks for a raster image.
 - On macOS, `/usr/bin/sandbox-exec` is used to deny network access, writes
   outside the temporary directory, and reads under the user's home directory.
   Pass project data through the `files` input instead of reading it from the
-  home folder. Other platforms run in the isolated directory with a timeout
-  but without an OS network sandbox; the result says so explicitly.
+  home folder.
+- On platforms without a supported sandbox, execution fails closed by default.
+  Setting `ALLOW_UNSANDBOXED_CODE_EXECUTION=true` permits it in an isolated
+  directory with a timeout, but without network isolation; only do that for
+  trusted code.
 - The temporary directory is deleted after the result is read.
 
 The macOS sandbox is not a virtual machine. It limits network access and writes,
@@ -45,6 +48,7 @@ AI-generated code as you would any local script.
 | Variable | Default | Meaning |
 |---|---|---|
 | `ENABLE_LOCAL_CODE_EXECUTION` | enabled | Set to `false` to reject both Python and R runs. |
+| `ALLOW_UNSANDBOXED_CODE_EXECUTION` | disabled | Allow non-macOS execution without network isolation. |
 | `PYTHON_BIN` | `python3` | Python executable, if a specific interpreter is needed. |
 | `R_BIN` | `Rscript` | R executable, if a specific interpreter is needed. |
 

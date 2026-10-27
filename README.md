@@ -185,6 +185,7 @@ cp apps/web/.env.example apps/web/.env.local
 # - OPENAI_API_KEY: OpenAI-compatible fallback (server-side only)
 # - OPENAI_MODEL: Optional fallback model id (defaults to gpt-4o)
 # - ENABLE_LOCAL_CODE_EXECUTION: Set false to disable AI Python/R execution
+# - ALLOW_UNSANDBOXED_CODE_EXECUTION: Non-macOS escape hatch; keep false
 # - PYTHON_BIN / R_BIN: Optional interpreter paths for the code tools
 # - OPENAI_BASE_URL: Optional OpenAI-compatible endpoint
 # - LATEX_API_URL: URL to the LaTeX compilation service
