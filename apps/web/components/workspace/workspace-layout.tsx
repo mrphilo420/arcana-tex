@@ -7,6 +7,7 @@ import { LatexTools } from "./editor/latex-tools";
 import { ResearchTools } from "./editor/research-tools";
 import { PdfPreview } from "./preview/pdf-preview";
 import { BeamerPanel } from "./beamer-panel";
+import { LeanPanel } from "./lean-panel";
 import { CommentsPanel } from "./comments-panel";
 import { LiteraturePanel } from "./literature-panel";
 import { ProjectInspector } from "./project-inspector";
@@ -35,6 +36,7 @@ export function WorkspaceLayout() {
       <LatexTools />
       <ResearchTools />
       <BeamerPanel />
+      <LeanPanel />
       <CommentsPanel />
       <LiteraturePanel />
       <ProjectInspector />

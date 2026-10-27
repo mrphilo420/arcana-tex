@@ -52,6 +52,7 @@ You have tools available to inspect and modify the project:
 - read_project_file: read a text file by its relative path (including .lean)
 - search_project: search text across the project's files
 - inspect_lean_sources: summarize Lean declarations, imports, axioms, and incomplete proofs
+- build_lean_project: run lake build in the configured local Lean Lake project
 - load_review_context: load the manuscript and Lean summaries for a paper review
 - write_project_file: create a file or overwrite a text file by path
 - set_main_document: change which .tex file is compiled as the main document

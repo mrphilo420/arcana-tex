@@ -1,4 +1,4 @@
-# arcanaTeX LaTeX + sync API
+# arcanaTeX LaTeX + Lean + sync API
 
 LaTeX compilation and real-time project sync for arcanaTeX, built with Hono and
 Node.js.
@@ -47,6 +47,27 @@ curl -X POST http://localhost:3001/builds/sync \
 ```
 
 Requires a TeX distribution installed locally (TeX Live, or MiKTeX on macOS). On macOS the API will automatically use the MiKTeX binaries bundled with `/Applications/MiKTeX Console.app` when `pdflatex` is not on `PATH`.
+
+## Lean Lake bridge
+
+The same server can expose a local, read-only Lean project bridge when
+`LEAN_PROJECT_DIR` is set:
+
+```bash
+LEAN_PROJECT_DIR="/absolute/path/to/lake-project" pnpm dev
+```
+
+- `GET /lean/status` — project name, path, Lake version, and configuration status
+- `GET /lean/files` — `.lean` files outside ignored build directories
+- `GET /lean/file?path=...` — read one `.lean` file
+- `POST /lean/build` — run `lake build` in the project root
+
+The bridge accepts no arbitrary commands or paths and never writes to the Lean
+project. Only configure trusted projects: `lake build` executes the project's
+Lakefile and build scripts. `LEAN_PROJECT_DIR` supports `~`. Set `LAKE_BIN` if Lake is not on
+`PATH`, `LEAN_BUILD_TIMEOUT_MS` to change the 180-second build timeout, and
+`LEAN_BRIDGE_TOKEN` to require a bearer token. The web app must use the same
+token in `apps/web/.env.local`.
 
 ## Live sync
 

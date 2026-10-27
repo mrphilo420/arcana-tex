@@ -17,7 +17,14 @@ export function useAutoCompile() {
         return;
       }
 
-      if (state.files === previous.files) return;
+      const activeFileChanged = state.activeFileId !== previous.activeFileId;
+      if (state.files === previous.files && !activeFileChanged) return;
+      if (activeFileChanged) {
+        const activeFile = state.files.find(
+          (file) => file.id === state.activeFileId,
+        );
+        if (!activeFile || !/\.(tex|ltx)$/i.test(activeFile.name)) return;
+      }
       if (!state.autoCompile || !state.isHydrated || !state.initialized) {
         return;
       }

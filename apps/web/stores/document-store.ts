@@ -137,6 +137,7 @@ interface DocumentState {
   isTikzOpen: boolean;
   isBeamerOpen: boolean;
   isSubmissionOpen: boolean;
+  isLeanOpen: boolean;
   isLatexKeyboardOpen: boolean;
   isInspectorOpen: boolean;
   inspectorTab: InspectorTab;
@@ -177,6 +178,7 @@ interface DocumentState {
   setTikzOpen: (open: boolean) => void;
   setBeamerOpen: (open: boolean) => void;
   setSubmissionOpen: (open: boolean) => void;
+  setLeanOpen: (open: boolean) => void;
   setLatexKeyboardOpen: (open: boolean) => void;
   setInspectorOpen: (open: boolean) => void;
   setInspectorTab: (tab: InspectorTab) => void;
@@ -259,6 +261,7 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
   isTikzOpen: false,
   isBeamerOpen: false,
   isSubmissionOpen: false,
+  isLeanOpen: false,
   isLatexKeyboardOpen: false,
   isInspectorOpen: false,
   inspectorTab: "project",
@@ -294,6 +297,7 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
       isTikzOpen: false,
       isBeamerOpen: false,
       isSubmissionOpen: false,
+      isLeanOpen: false,
       isInspectorOpen: false,
       inspectorTab: "project",
       compileLogs: [],
@@ -448,6 +452,7 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
       isTikzOpen: false,
       isBeamerOpen: false,
       isSubmissionOpen: false,
+      isLeanOpen: false,
       isInspectorOpen: false,
       inspectorTab: "project",
       compileLogs: [],
@@ -493,6 +498,8 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
   setBeamerOpen: (open) => set({ isBeamerOpen: open }),
 
   setSubmissionOpen: (open) => set({ isSubmissionOpen: open }),
+
+  setLeanOpen: (open) => set({ isLeanOpen: open }),
 
   setLatexKeyboardOpen: (open) => set({ isLatexKeyboardOpen: open }),
 

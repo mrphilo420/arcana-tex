@@ -5,6 +5,7 @@ import {
   CheckIcon,
   FileCodeIcon,
   FileSearchIcon,
+  HammerIcon,
   LoaderIcon,
 } from "lucide-react";
 import type { FC } from "react";
@@ -115,6 +116,60 @@ export const ResearchTools: FC = () => {
             {isComplete
               ? "Loaded manuscript and formalization context"
               : "Loading manuscript context..."}
+          </span>
+        </div>
+      );
+    },
+  });
+
+  useAssistantTool({
+    toolName: "build_lean_project",
+    description:
+      "Run lake build in the local Lean Lake project configured for arcanaTeX. Returns the exit code, duration, stdout, and stderr. Use when the user asks to build, check, or verify a local Lean project. This never edits source files.",
+    parameters: z.object({}),
+    execute: async () => {
+      try {
+        const response = await fetch("/api/lean/build", { method: "POST" });
+        const result = (await response.json()) as Record<string, unknown>;
+        if (!response.ok) {
+          return {
+            success: false,
+            error:
+              typeof result.error === "string"
+                ? result.error
+                : "Lean build request failed",
+          };
+        }
+        return result;
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Lean bridge unavailable",
+        };
+      }
+    },
+    render: function BuildLeanProjectRender({ result }) {
+      const isComplete = result != null;
+      const success = result?.success === true;
+      return (
+        <div className="my-2 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm">
+          {isComplete ? (
+            success ? (
+              <CheckIcon className="size-4 text-green-600" />
+            ) : (
+              <FileCodeIcon className="size-4 text-destructive" />
+            )
+          ) : (
+            <LoaderIcon className="size-4 animate-spin text-muted-foreground" />
+          )}
+          <HammerIcon className="size-4 text-muted-foreground" />
+          <span className="text-muted-foreground">
+            {isComplete
+              ? success
+                ? "Lean build succeeded"
+                : "Lean build failed"
+              : "Building local Lean project..."}
           </span>
         </div>
       );

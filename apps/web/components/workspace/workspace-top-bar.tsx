@@ -7,6 +7,7 @@ import {
   BookOpenIcon,
   ChevronLeftIcon,
   FileCheck2Icon,
+  FileCodeIcon,
   KeyboardIcon,
   MessageSquareIcon,
   MonitorIcon,
@@ -38,6 +39,8 @@ export function WorkspaceTopBar() {
   const setBeamerOpen = useDocumentStore((s) => s.setBeamerOpen);
   const isSubmissionOpen = useDocumentStore((s) => s.isSubmissionOpen);
   const setSubmissionOpen = useDocumentStore((s) => s.setSubmissionOpen);
+  const isLeanOpen = useDocumentStore((s) => s.isLeanOpen);
+  const setLeanOpen = useDocumentStore((s) => s.setLeanOpen);
   const isLatexKeyboardOpen = useDocumentStore((s) => s.isLatexKeyboardOpen);
   const setLatexKeyboardOpen = useDocumentStore((s) => s.setLatexKeyboardOpen);
   const setInspectorOpen = useDocumentStore((s) => s.setInspectorOpen);
@@ -239,6 +242,18 @@ export function WorkspaceTopBar() {
             </span>
           </Button>
         )}
+
+        <Button
+          variant={isLeanOpen ? "secondary" : "ghost"}
+          size="sm"
+          className="h-9 gap-1.5 px-2"
+          onClick={() => setLeanOpen(true)}
+          title="Connect a local Lean Lake project"
+          aria-label="Lean Lake"
+        >
+          <FileCodeIcon className="size-4" />
+          <span className="hidden lg:inline">Lean</span>
+        </Button>
 
         <Button
           variant={isSubmissionOpen ? "secondary" : "ghost"}

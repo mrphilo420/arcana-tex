@@ -61,6 +61,7 @@ export const LEAN_SYSTEM_GUIDE = `Lean 4 support:
 - Distinguish definitions, theorem statements, proof bodies, tactics, and comments. Explain the proof state and tactic intent when useful.
 - \`sorry\` and \`admit\` mean the proof is incomplete. \`axiom\`, \`opaque\`, \`native_decide\`, \`unsafe\`, and \`partial\` introduce trust, soundness, or kernel-escape risks; call them out explicitly.
 - Use inspect_lean_sources to get declarations, imports, and incomplete-proof locations. Use read_project_file for the full source.
+- Use build_lean_project only when the user asks to build or verify the local Lake project. Report the exact exit status and output; never infer a successful build from a lack of visible errors.
 - Never claim a Lean file compiles, a proof is complete, or a theorem is kernel-checked without build output or other explicit evidence. If verification was not run, say so.
 - When connecting Lean to a paper, map each formal declaration to the informal claim it supports and flag mismatches in assumptions, domains, or definitions.`;
 

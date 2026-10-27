@@ -9,6 +9,7 @@ import { delimiter, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
+import { registerLeanRoutes } from "./lean";
 import { registerSyncRoutes } from "./sync";
 
 const app = new Hono();
@@ -98,6 +99,7 @@ app.use("/*", cors());
 app.use("/*", bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 
 registerSyncRoutes(app, upgradeWebSocket);
+registerLeanRoutes(app);
 
 interface Resource {
   path?: string;

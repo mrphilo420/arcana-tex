@@ -57,7 +57,9 @@ you configure.
   bibliography and class/style files, Lean 4 sources, Markdown notes,
   main-document selection, and pdfLaTeX/XeLaTeX/LuaLaTeX compilation.
 - **Live PDF preview** - Automatic compilation after edits settle, zoom and
-  page navigation, and a toggle to pause auto-compilation.
+  page navigation, and a toggle to pause auto-compilation. Clicking any
+  `.tex`/`.ltx` file opens it and refreshes the compiled preview when Auto is
+  on.
 - **AI-assisted writing** - A project-aware assistant built on assistant-ui.
   The model receives the project file list plus active and main documents, and
   can create/read/search files, set the main document, and edit the active
@@ -281,14 +283,40 @@ input. You can also type a command directly.
 
 - `.lean` files can be created in the file tree, imported with a folder, edited,
   and included in the project source bundle.
+- The **Lean** control in the workspace connects to a local Lake project through
+  the API bridge, lists its `.lean` sources, runs `lake build`, and can import
+  the sources into the browser project for chat context.
 - The editor uses Lean syntax highlighting and suppresses LaTeX-only shortcuts.
 - The chat receives Lean declarations, imports, and proof-health summaries; the
   `inspect_lean_sources` tool provides structured details.
 - `sorry` and `admit` are treated as incomplete proofs. `axiom`, `opaque`,
   `native_decide`, `unsafe`, and `partial` are surfaced as trust or soundness
   risks.
-- arcanaTeX does not bundle a Lean compiler. It understands and audits Lean
-  source, but it does not run `lake build` or claim kernel verification.
+- arcanaTeX does not bundle a Lean compiler. The optional local bridge can run
+  `lake build`; without it, the app only understands and audits Lean source. It
+  never claims kernel verification without build evidence.
+
+### Connect a local Lake project
+
+Start the web app locally and launch the LaTeX/Lean API with your project root:
+
+```bash
+LEAN_PROJECT_DIR="/absolute/path/to/lake-project" \
+  pnpm --filter @open-prism/latex-api dev
+```
+
+`LEAN_PROJECT_DIR` supports `~`; set `LAKE_BIN` if Lake is not on `PATH`. Then
+open **Lean** in the workspace top bar. You can build the project, inspect the
+file manifest, and import `.lean` sources into the current browser project.
+The bridge accepts only `.lean` reads and a fixed `lake build` command; it never
+writes to the local project.
+
+For a non-local deployment, set `LEAN_API_URL` and a matching
+`LEAN_BRIDGE_TOKEN` in the web app and API environments. The browser must be able
+to reach the bridge; for local-first use, keep both services on the same machine.
+Only point the bridge at trusted projects: `lake build` executes the project's
+Lakefile and build scripts. Do not expose the bridge without `LEAN_BRIDGE_TOKEN`
+and network access controls.
 
 ### Markdown
 
@@ -401,7 +429,7 @@ share link (which includes a random token) can join.
 arcana-tex/
 ├── apps/
 │   ├── web/          # Next.js application
-│   └── latex-api/    # LaTeX compilation API + WebSocket sync
+│   └── latex-api/    # LaTeX/Lean API + WebSocket sync
 ├── assets/
 │   └── screenshots/  # README images
 ├── packages/         # Shared packages (if any)

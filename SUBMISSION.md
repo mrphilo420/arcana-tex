@@ -66,6 +66,10 @@ and a self-hosted LaTeX/sync service, built with Next.js and assistant-ui.
   syntax highlighting and chat context. The assistant receives declaration,
   import, `sorry`/`admit`, axiom, `native_decide`, and unsafe/partial
   summaries through `inspect_lean_sources`; no Lean compiler is bundled.
+- **Lean Lake bridge** — optional local API connection to a Lake project:
+  project status, `.lean` source manifest, read-only file access, and
+  `lake build`; sources can be imported into the browser project for chat.
+  The bridge accepts no arbitrary commands or paths and never writes local files.
 - **Markdown preview** — `.md`/`.markdown` files use Markdown editing with a
   Preview toggle for GFM tables, task lists, math, links, code, and images;
   Markdown headings populate the outline. Chat surfaces render GFM and math.
@@ -196,8 +200,11 @@ See `README.md` for OpenAI, OpenRouter, Ollama, and sync deployment details.
 - Submission checks are local heuristics. The app does not upload to arXiv or a
   publisher and does not validate fonts, margins, or portal-specific policy.
 - TikZ library support is a curated set; arbitrary TikZ code is not parsed.
-- Lean 4 support is source understanding and auditing, not compilation. The app
-  does not run `lake build` or provide kernel verification.
+- Lean 4 support is source understanding and auditing. The optional local Lean
+  Lake bridge can run `lake build`; the app does not provide kernel verification.
+- The Lean bridge is intended for local-first use and must not be exposed
+  without `LEAN_BRIDGE_TOKEN` and network access controls. Only connect trusted
+  Lake projects; `lake build` executes their Lakefile and build scripts.
 - Paper reviews are model-generated editorial analysis; they are heuristic and
   do not replace human peer review. Review turns are read-only.
 - Markdown preview supports GFM plus math; arbitrary embedded HTML/scripts are
