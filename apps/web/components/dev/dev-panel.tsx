@@ -10,6 +10,7 @@ import {
   FolderGit2Icon,
   HardDriveIcon,
   Loader2Icon,
+  PaletteIcon,
   RefreshCwIcon,
   RotateCcwIcon,
   ServerIcon,
@@ -28,11 +29,20 @@ import {
   type DevFeatureFlags,
   normalizeDevFeatureFlags,
 } from "@/lib/dev-panel";
+import { TERMINAL_THEMES } from "@/lib/editor-theme";
 import { LEAN_PROJECT_STORAGE_KEY } from "@/lib/lean";
 import { cn } from "@/lib/utils";
 import { type DevPanelTab, useDevPanelStore } from "@/stores/dev-panel-store";
 import { useDocumentStore } from "@/stores/document-store";
+import { useEditorPreferencesStore } from "@/stores/editor-preferences-store";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -105,6 +115,10 @@ export function DevPanel() {
   const flags = useDevPanelStore((s) => s.flags);
   const setFlag = useDevPanelStore((s) => s.setFlag);
   const resetFlags = useDevPanelStore((s) => s.resetFlags);
+  const terminalThemeId = useEditorPreferencesStore((s) => s.terminalThemeId);
+  const setTerminalThemeId = useEditorPreferencesStore(
+    (s) => s.setTerminalThemeId,
+  );
 
   const projectId = useDocumentStore((s) => s.projectId);
   const projectName = useDocumentStore((s) => s.projectName);
@@ -355,6 +369,52 @@ export function DevPanel() {
                   onChange={(enabled) => updateFlag(feature.key, enabled)}
                 />
               ))}
+
+              <div className="rounded-lg border border-hairline bg-card/25 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-1.5 font-medium text-[11px]">
+                      <PaletteIcon className="size-3.5 text-primary" />
+                      Terminal theme
+                    </div>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      Preview editor palettes across the active workspace.
+                    </p>
+                  </div>
+                  <Select
+                    value={terminalThemeId}
+                    onValueChange={(value) =>
+                      setTerminalThemeId(
+                        value as (typeof TERMINAL_THEMES)[number]["id"],
+                      )
+                    }
+                  >
+                    <SelectTrigger
+                      className="h-7 w-[150px] text-[10px]"
+                      aria-label="Terminal theme"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TERMINAL_THEMES.map((theme) => (
+                        <SelectItem key={theme.id} value={theme.id}>
+                          {theme.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="mt-2 flex gap-1">
+                  {TERMINAL_THEMES.map((theme) => (
+                    <span
+                      key={theme.id}
+                      className="h-1.5 flex-1 rounded-full"
+                      style={{ backgroundColor: theme.colors.accent }}
+                      title={theme.label}
+                    />
+                  ))}
+                </div>
+              </div>
 
               <div className="rounded-lg border border-[#b9822f]/20 bg-[#b9822f]/5 p-3 text-[#8a6421] text-[10px] leading-relaxed">
                 <div className="flex items-center gap-1.5 font-medium">

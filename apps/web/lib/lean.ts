@@ -164,3 +164,5 @@ export function formatLeanSummaries(summaries: LeanFileSummary[]): string {
 
 export const LEAN_PROJECT_STORAGE_KEY = "open-prism:lean-project-path";
 export const LEAN_TOOLCHAIN_STORAGE_KEY = "open-prism:lean-toolchain";
+export const LEAN_TOOLCHAIN_LABEL_STORAGE_KEY =
+  "open-prism:lean-toolchain-label";

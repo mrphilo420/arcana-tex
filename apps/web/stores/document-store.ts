@@ -138,6 +138,8 @@ interface DocumentState {
   isBeamerOpen: boolean;
   isSubmissionOpen: boolean;
   isLeanOpen: boolean;
+  isLeanInfoviewOpen: boolean;
+  leanInfoviewDock: "left" | "right";
   isLatexKeyboardOpen: boolean;
   isInspectorOpen: boolean;
   inspectorTab: InspectorTab;
@@ -179,6 +181,8 @@ interface DocumentState {
   setBeamerOpen: (open: boolean) => void;
   setSubmissionOpen: (open: boolean) => void;
   setLeanOpen: (open: boolean) => void;
+  setLeanInfoviewOpen: (open: boolean) => void;
+  setLeanInfoviewDock: (dock: "left" | "right") => void;
   setLatexKeyboardOpen: (open: boolean) => void;
   setInspectorOpen: (open: boolean) => void;
   setInspectorTab: (tab: InspectorTab) => void;
@@ -262,6 +266,8 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
   isBeamerOpen: false,
   isSubmissionOpen: false,
   isLeanOpen: false,
+  isLeanInfoviewOpen: true,
+  leanInfoviewDock: "right",
   isLatexKeyboardOpen: false,
   isInspectorOpen: false,
   inspectorTab: "project",
@@ -298,6 +304,8 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
       isBeamerOpen: false,
       isSubmissionOpen: false,
       isLeanOpen: false,
+      isLeanInfoviewOpen: true,
+      leanInfoviewDock: "right",
       isInspectorOpen: false,
       inspectorTab: "project",
       compileLogs: [],
@@ -453,6 +461,8 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
       isBeamerOpen: false,
       isSubmissionOpen: false,
       isLeanOpen: false,
+      isLeanInfoviewOpen: true,
+      leanInfoviewDock: "right",
       isInspectorOpen: false,
       inspectorTab: "project",
       compileLogs: [],
@@ -500,6 +510,10 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
   setSubmissionOpen: (open) => set({ isSubmissionOpen: open }),
 
   setLeanOpen: (open) => set({ isLeanOpen: open }),
+
+  setLeanInfoviewOpen: (open) => set({ isLeanInfoviewOpen: open }),
+
+  setLeanInfoviewDock: (dock) => set({ leanInfoviewDock: dock }),
 
   setLatexKeyboardOpen: (open) => set({ isLatexKeyboardOpen: open }),
 

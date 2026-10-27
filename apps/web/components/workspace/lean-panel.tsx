@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import {
   LEAN_PROJECT_STORAGE_KEY,
+  LEAN_TOOLCHAIN_LABEL_STORAGE_KEY,
   LEAN_TOOLCHAIN_STORAGE_KEY,
 } from "@/lib/lean";
 import { useDocumentStore } from "@/stores/document-store";
@@ -185,6 +186,15 @@ export function LeanPanel() {
             LEAN_TOOLCHAIN_STORAGE_KEY,
             defaultToolchain,
           );
+          const selected = availableToolchains.find(
+            (toolchain) => toolchain.id === defaultToolchain,
+          );
+          if (selected) {
+            window.localStorage.setItem(
+              LEAN_TOOLCHAIN_LABEL_STORAGE_KEY,
+              selected.label,
+            );
+          }
         }
 
         const filesResponse = await fetch(`/api/lean/files?${query}`, {
@@ -292,6 +302,13 @@ export function LeanPanel() {
   const chooseToolchain = (id: string) => {
     setSelectedToolchain(id);
     window.localStorage.setItem(LEAN_TOOLCHAIN_STORAGE_KEY, id);
+    const toolchain = toolchains.find((entry) => entry.id === id);
+    if (toolchain) {
+      window.localStorage.setItem(
+        LEAN_TOOLCHAIN_LABEL_STORAGE_KEY,
+        toolchain.label,
+      );
+    }
   };
 
   const runBuild = async () => {

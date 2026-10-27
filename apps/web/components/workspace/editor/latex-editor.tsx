@@ -33,8 +33,9 @@ import { leanLanguage } from "@/lib/lean-language";
 import { cn } from "@/lib/utils";
 import { useDocumentStore } from "@/stores/document-store";
 import { useDevFeatureFlag } from "@/stores/dev-panel-store";
+import { useEditorPreferencesStore } from "@/stores/editor-preferences-store";
 import { compileProject } from "@/lib/compile-project";
-import { claudeEditorTheme, claudeHighlightStyle } from "@/lib/editor-theme";
+import { buildEditorTheme } from "@/lib/editor-theme";
 import { EditorToolbar } from "./editor-toolbar";
 import { type LatexInsertion, TikzLatexRibbon } from "../tikz-latex-ribbon";
 import { AIDrawer } from "./ai-drawer";
@@ -177,6 +178,13 @@ export function LatexEditor() {
   const isLatexKeyboardOpen = useDocumentStore((s) => s.isLatexKeyboardOpen);
   const setLatexKeyboardOpen = useDocumentStore((s) => s.setLatexKeyboardOpen);
   const markdownPreviewEnabled = useDevFeatureFlag("markdownPreview");
+  const terminalThemeId = useEditorPreferencesStore(
+    (state) => state.terminalThemeId,
+  );
+  const terminalTheme = useMemo(
+    () => buildEditorTheme(terminalThemeId),
+    [terminalThemeId],
+  );
 
   const activeFile = files.find((f) => f.id === activeFileId);
   const isTexFile = activeFile?.type === "tex";
@@ -210,6 +218,10 @@ export function LatexEditor() {
       html: lineHtmlCache[item.line] || "",
     }));
   }, [parsedLines, currentLine, lineHtmlCache]);
+
+  useEffect(() => {
+    useEditorPreferencesStore.getState().hydrate();
+  }, []);
 
   useEffect(() => {
     setMarkdownPreview(false);
@@ -438,8 +450,8 @@ export function LatexEditor() {
         history(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         isLean ? leanLanguage : isMarkdown ? markdown() : latex(),
-        claudeEditorTheme,
-        syntaxHighlighting(claudeHighlightStyle),
+        terminalTheme.theme,
+        syntaxHighlighting(terminalTheme.highlight),
         search(),
         highlightSelectionMatches(),
         updateListener,
@@ -485,6 +497,7 @@ export function LatexEditor() {
     isTexFile,
     isLean,
     isMarkdown,
+    terminalTheme,
     setContent,
     setCursorPosition,
     setSelectionRange,

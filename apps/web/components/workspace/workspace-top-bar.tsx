@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import {
   BookOpenIcon,
   ChevronLeftIcon,
+  CrosshairIcon,
   FileCheck2Icon,
   FileCodeIcon,
   KeyboardIcon,
@@ -21,6 +22,7 @@ import {
 import { ArcanaMark } from "@/components/brand/arcana-mark";
 import { DevPanelButton } from "@/components/dev/dev-panel";
 import { getBeamerInfo } from "@/lib/beamer";
+import { isLeanFile } from "@/lib/lean";
 import { Button } from "@/components/ui/button";
 import { useDocumentStore } from "@/stores/document-store";
 import { useSyncStore } from "@/stores/sync-store";
@@ -44,6 +46,8 @@ export function WorkspaceTopBar() {
   const isLeanOpen = useDocumentStore((s) => s.isLeanOpen);
   const setLeanOpen = useDocumentStore((s) => s.setLeanOpen);
   const leanLakeEnabled = useDevFeatureFlag("leanLake");
+  const isLeanInfoviewOpen = useDocumentStore((s) => s.isLeanInfoviewOpen);
+  const setLeanInfoviewOpen = useDocumentStore((s) => s.setLeanInfoviewOpen);
   const isLatexKeyboardOpen = useDocumentStore((s) => s.isLatexKeyboardOpen);
   const setLatexKeyboardOpen = useDocumentStore((s) => s.setLatexKeyboardOpen);
   const setInspectorOpen = useDocumentStore((s) => s.setInspectorOpen);
@@ -73,6 +77,9 @@ export function WorkspaceTopBar() {
   }, []);
 
   const mainFile = files.find((file) => file.id === mainFileId);
+  const activeFileId = useDocumentStore((s) => s.activeFileId);
+  const activeFile = files.find((file) => file.id === activeFileId);
+  const isLeanActive = activeFile ? isLeanFile(activeFile) : false;
   const beamerInfo = useMemo(
     () => getBeamerInfo(files, mainFileId),
     [files, mainFileId],
@@ -243,6 +250,20 @@ export function WorkspaceTopBar() {
             <span className="font-mono text-[9px] text-muted-foreground">
               {beamerInfo.frames.length}
             </span>
+          </Button>
+        )}
+
+        {isLeanActive && (
+          <Button
+            variant={isLeanInfoviewOpen ? "secondary" : "ghost"}
+            size="sm"
+            className="h-9 gap-1.5 px-2"
+            onClick={() => setLeanInfoviewOpen(!isLeanInfoviewOpen)}
+            title="Lean Infoview"
+            aria-label="Lean Infoview"
+          >
+            <CrosshairIcon className="size-4" />
+            <span className="hidden lg:inline">Infoview</span>
           </Button>
         )}
 

@@ -8,6 +8,7 @@ import {
   ListIcon,
   Heading1Icon,
   Heading2Icon,
+  CheckIcon,
   CodeIcon,
   EyeIcon,
   FileCodeIcon,
@@ -16,11 +17,20 @@ import {
   ImageIcon,
   KeyboardIcon,
   MinusIcon,
+  PaletteIcon,
   PencilIcon,
   PlusIcon,
 } from "lucide-react";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -28,7 +38,61 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TERMINAL_THEMES } from "@/lib/editor-theme";
+import { cn } from "@/lib/utils";
 import { useDocumentStore } from "@/stores/document-store";
+import { useEditorPreferencesStore } from "@/stores/editor-preferences-store";
+
+function TerminalThemeMenu({ className }: { className?: string }) {
+  const themeId = useEditorPreferencesStore((s) => s.terminalThemeId);
+  const setThemeId = useEditorPreferencesStore((s) => s.setTerminalThemeId);
+  const active =
+    TERMINAL_THEMES.find((theme) => theme.id === themeId) ?? TERMINAL_THEMES[0];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "size-7 text-[#a09d96] hover:bg-white/10 hover:text-[#faf9f5]",
+            className,
+          )}
+          title={`Terminal theme: ${active.label}`}
+          aria-label="Terminal theme"
+        >
+          <PaletteIcon className="size-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="text-[9px] text-muted-foreground uppercase tracking-[0.14em]">
+          Terminal theme
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {TERMINAL_THEMES.map((theme) => (
+          <DropdownMenuItem
+            key={theme.id}
+            onClick={() => setThemeId(theme.id)}
+            className="gap-2"
+          >
+            <span
+              className="size-3 shrink-0 rounded-full border"
+              style={{
+                backgroundColor: theme.colors.background,
+                borderColor: theme.colors.accent,
+              }}
+            />
+            <span className="flex-1 text-xs">{theme.label}</span>
+            {theme.id === themeId && (
+              <CheckIcon className="size-3.5 text-primary" />
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 const ZOOM_OPTIONS = [
   { value: "0.5", label: "50%" },
@@ -164,21 +228,24 @@ export function EditorToolbar({
         <span className="rounded border border-[#e8a55a]/30 bg-[#e8a55a]/10 px-1.5 py-0.5 font-mono text-[#e8a55a] text-[9px] uppercase tracking-[0.12em]">
           Markdown
         </span>
-        {markdownPreviewAvailable && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="ml-auto h-6 gap-1 text-[#a09d96] text-[10px] hover:bg-white/10 hover:text-[#faf9f5]"
-            onClick={onToggleMarkdownPreview}
-          >
-            {markdownPreview ? (
-              <PencilIcon className="size-3.5" />
-            ) : (
-              <EyeIcon className="size-3.5" />
-            )}
-            {markdownPreview ? "Edit" : "Preview"}
-          </Button>
-        )}
+        <div className="ml-auto flex items-center gap-1">
+          {markdownPreviewAvailable && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 gap-1 text-[#a09d96] text-[10px] hover:bg-white/10 hover:text-[#faf9f5]"
+              onClick={onToggleMarkdownPreview}
+            >
+              {markdownPreview ? (
+                <PencilIcon className="size-3.5" />
+              ) : (
+                <EyeIcon className="size-3.5" />
+              )}
+              {markdownPreview ? "Edit" : "Preview"}
+            </Button>
+          )}
+          <TerminalThemeMenu />
+        </div>
       </div>
     );
   }
@@ -193,6 +260,7 @@ export function EditorToolbar({
         <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1.5 py-0.5 font-mono text-[#5db8a6] text-[9px] uppercase tracking-[0.12em]">
           Lean 4
         </span>
+        <TerminalThemeMenu className="ml-auto" />
       </div>
     );
   }
@@ -265,6 +333,9 @@ export function EditorToolbar({
       >
         <KeyboardIcon className="size-4" />
       </TooltipIconButton>
+      <div className="ml-auto">
+        <TerminalThemeMenu />
+      </div>
     </div>
   );
 }

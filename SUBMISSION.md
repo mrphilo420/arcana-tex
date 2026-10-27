@@ -101,6 +101,8 @@ and a self-hosted LaTeX/sync service, built with Next.js and assistant-ui.
 | Paper review | `/paper-review` skill + read-only editorial panel + roadmap |
 | Lean 4 | Syntax highlighting + declarations/sorry/axiom audit |
 | Markdown | Markdown editing + GFM/math preview + outline |
+| Terminal themes | Arcana, Solarized, Dracula, Nord, Tokyo Night, Gruvbox |
+| Lean Infoview | Proof health, outline, messages, project; hide/dock |
 | Real-time errors | Auto compile + parsed log + line navigation |
 | Auto-fix | Deterministic repair engine + diff preview + version safety |
 | Beamer | Contextual panel + slide navigator + deck wizard + themes/overlays |

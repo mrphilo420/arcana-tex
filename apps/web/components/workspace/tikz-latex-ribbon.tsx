@@ -786,7 +786,7 @@ export function TikzLatexRibbon({
     availableTabs[1]?.id ?? availableTabs[0]?.id ?? "home",
   );
   const [floating, setFloating] = useState(false);
-  const [floatPos, setFloatPos] = useState({ x: 48, y: 112 });
+  const [floatPos, setFloatPos] = useState({ x: 16, y: 112 });
   const floatDragRef = useRef<{
     startX: number;
     startY: number;
@@ -1293,20 +1293,20 @@ export function TikzLatexRibbon({
       </div>
 
       {!collapsed && (
-        <div className="flex h-[64px] items-stretch gap-0 overflow-x-auto px-1.5 py-1">
+        <div className="flex min-h-[68px] items-stretch gap-0 overflow-x-auto px-2 py-1.5">
           {activeTab && activeGroups.length > 0 ? (
             activeGroups.map((group, index) => (
               <div
                 key={group.name}
                 className={cn(
-                  "flex shrink-0 flex-col justify-between px-2",
+                  "flex shrink-0 flex-col justify-between px-2.5",
                   index > 0 && "border-hairline/70 border-l",
                 )}
               >
                 <div className="flex items-center gap-0.5">
                   {group.items.map(renderItemButton)}
                 </div>
-                <div className="mt-0.5 text-center font-medium text-[8px] text-muted-foreground uppercase tracking-[0.14em]">
+                <div className="mt-0.5 whitespace-nowrap text-center font-medium text-[8px] text-muted-foreground uppercase tracking-[0.14em]">
                   {group.name}
                 </div>
               </div>
@@ -1484,27 +1484,12 @@ export function TikzLatexRibbon({
   return (
     <TooltipPrimitive.Provider delayDuration={650} skipDelayDuration={250}>
       {floating ? (
-        <>
-          <div className="flex h-8 shrink-0 items-center justify-between border-hairline border-b bg-[#f3eee4] px-2 dark:bg-[#1f1e1b]">
-            <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-[0.14em]">
-              LaTeX ribbon is floating
-            </span>
-            <button
-              type="button"
-              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-background hover:text-foreground"
-              onClick={() => setFloating(false)}
-            >
-              <PanelTopIcon className="size-3" />
-              Dock
-            </button>
-          </div>
-          <div
-            className="absolute z-[70] w-[840px] max-w-[calc(100vw-2rem)]"
-            style={{ left: floatPos.x, top: floatPos.y }}
-          >
-            {renderSurface(true)}
-          </div>
-        </>
+        <div
+          className="absolute z-[70] max-h-[calc(100vh-8rem)] w-[min(1180px,calc(100%-2rem))] overflow-y-auto"
+          style={{ left: floatPos.x, top: floatPos.y }}
+        >
+          {renderSurface(true)}
+        </div>
       ) : (
         renderSurface(false)
       )}

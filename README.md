@@ -97,8 +97,10 @@ you configure.
   Shift-click or marquee, grouping, alignment/distribution, layer order,
   copy/cut/paste/duplicate, arrow-key nudging, undo/redo, and grid snapping.
 - **Office-style ribbon** - Rich delayed tooltips, persistent tab/group
-  customization, and a tear-off floating ribbon with an AMOS-style tool palette
-  for selection, grouping, align/distribute, layer order, clipboard, and undo.
+  customization, and a responsive tear-off floating ribbon with an AMOS-style
+  tool palette for selection, grouping, align/distribute, layer order, clipboard,
+  and undo. Floating mode uses a bounded, scrollable layout instead of clipping
+  wide groups.
 - **TikZ library support** - Choose common `\usetikzlibrary` packages; preamble
   insertion is automatic. Arrowheads support basic, LaTeX, Stealth, Triangle,
   Circle, and Bar variants via `arrows.meta`.
@@ -112,6 +114,12 @@ you configure.
   to 30 local snapshots per project and restore them from the inspector.
 - **Workspace LaTeX keyboard** - Toggleable Text, Math, Greek, Symbols, and
   TikZ groups that insert at the CodeMirror caret with keyboard shortcuts.
+- **Terminal themes** - Seven editor palettes: Arcana, Solarized Dark, Dracula,
+  Nord, Tokyo Night, Gruvbox, and Solarized Light. Selection is available from
+  the editor toolbar and the developer panel, and persists across sessions.
+- **Lean Infoview** - Opens automatically for `.lean` files with proof health,
+  declarations, imports, local messages, and project details. Hide it or dock it
+  left/right, then reopen it from the top bar.
 - **Markdown chat rendering** - Chat renders GFM, math, tables, and fenced code
   blocks; review reports remain readable in the assistant and can be copied
   into a Markdown note.
@@ -287,6 +295,10 @@ input. You can also type a command directly.
   the API bridge, lists its `.lean` sources, runs `lake build`, and can import
   the sources into the browser project for chat context.
 - The editor uses Lean syntax highlighting and suppresses LaTeX-only shortcuts.
+- The **Lean Infoview** opens automatically for `.lean` files. It summarizes
+  declarations, proof markers, imports, and local messages, and can be hidden,
+  reopened from the top bar, or docked left/right. Interactive goal state still
+  requires a Lean language server.
 - The chat receives Lean declarations, imports, and proof-health summaries; the
   `inspect_lean_sources` tool provides structured details.
 - `sorry` and `admit` are treated as incomplete proofs. `axiom`, `opaque`,
@@ -501,6 +513,7 @@ Development builds expose a local-only control panel through the flask icon or
 - A workspace snapshot with compile actions, diagnostics, and inspector access.
 - Lean bridge diagnostics.
 - Local-storage inspection and workspace snapshot export.
+- A terminal-theme preview selector for checking editor palettes.
 
 Feature flags are persisted to `apps/web/.dev-panel.local.json` and mirrored in
 local storage. The configuration file and the `.dev-panel/` scratch directory
