@@ -28,7 +28,7 @@ import {
 import { markdown } from "@codemirror/lang-markdown";
 import { latex } from "codemirror-lang-latex";
 import { FileIcon } from "lucide-react";
-import { isLeanFile } from "@/lib/lean";
+import { fileKindForFile, languageForFileKind } from "@/lib/file-kind";
 import { leanLanguage } from "@/lib/lean-language";
 import { cn } from "@/lib/utils";
 import { useDocumentStore } from "@/stores/document-store";
@@ -198,9 +198,11 @@ export function LatexEditor() {
 
   const activeFile = files.find((f) => f.id === activeFileId);
   const isTexFile = activeFile?.type === "tex";
-  const isLean = activeFile ? isLeanFile(activeFile) : false;
-  const isMarkdown =
-    activeFile?.type === "tex" && /\.(?:md|markdown)$/i.test(activeFile.path);
+  const activeKind = activeFile ? fileKindForFile(activeFile) : "other";
+  const activeLanguage = languageForFileKind(activeKind);
+  const isLean = activeKind === "lean";
+  const isMarkdown = activeKind === "markdown";
+  const isLatex = activeKind === "latex";
   const activeFileContent = activeFile?.content;
   const activeFileMarks = useMemo(() => {
     if (!activeFile) return [];
@@ -342,6 +344,7 @@ export function LatexEditor() {
       }
 
       if (
+        isLatex &&
         (e.metaKey || e.ctrlKey) &&
         e.shiftKey &&
         e.key.toLowerCase() === "k"
@@ -353,7 +356,7 @@ export function LatexEditor() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isLatexKeyboardOpen, setLatexKeyboardOpen]);
+  }, [isLatex, isLatexKeyboardOpen, setLatexKeyboardOpen]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -516,7 +519,13 @@ export function LatexEditor() {
         highlightActiveLineGutter(),
         history(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
-        isLean ? leanLanguage : isMarkdown ? markdown() : latex(),
+        isLean
+          ? leanLanguage
+          : isMarkdown
+            ? markdown()
+            : isLatex
+              ? latex()
+              : [],
         terminalTheme.theme,
         syntaxHighlighting(terminalTheme.highlight),
         diagnosticHighlightExtension,
@@ -644,12 +653,12 @@ export function LatexEditor() {
     <div className="flex h-full flex-col bg-background">
       <EditorToolbar
         editorView={viewRef}
-        fileKind={isLean ? "lean" : isMarkdown ? "markdown" : "latex"}
+        fileKind={activeKind}
         markdownPreview={markdownPreview}
         markdownPreviewAvailable={markdownPreviewEnabled}
         onToggleMarkdownPreview={() => setMarkdownPreview((value) => !value)}
       />
-      {isLatexKeyboardOpen && !isLean && !isMarkdown && (
+      {isLatexKeyboardOpen && isLatex && (
         <TikzLatexRibbon scope="workspace" onInsert={insertFromKeyboard} />
       )}
       {isSearchOpen && (
@@ -736,7 +745,7 @@ export function LatexEditor() {
         <SelectionChat
           target={selectionChat}
           filePath={activeFile?.path ?? "document.tex"}
-          language={isLean ? "lean" : isMarkdown ? "markdown" : "latex"}
+          language={activeLanguage}
           onClose={() => setSelectionChat(null)}
         />
       </div>

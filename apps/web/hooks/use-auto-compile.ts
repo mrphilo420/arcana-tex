@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { compileProject } from "@/lib/compile-project";
+import { isLatexRelatedFile } from "@/lib/file-kind";
 import { useDocumentStore } from "@/stores/document-store";
 
 const AUTO_COMPILE_DELAY_MS = 1200;
@@ -19,12 +20,11 @@ export function useAutoCompile() {
 
       const activeFileChanged = state.activeFileId !== previous.activeFileId;
       if (state.files === previous.files && !activeFileChanged) return;
-      if (activeFileChanged) {
-        const activeFile = state.files.find(
-          (file) => file.id === state.activeFileId,
-        );
-        if (!activeFile || !/\.(tex|ltx)$/i.test(activeFile.name)) return;
-      }
+
+      const activeFile = state.files.find(
+        (file) => file.id === state.activeFileId,
+      );
+      if (!activeFile || !isLatexRelatedFile(activeFile)) return;
       if (!state.autoCompile || !state.isHydrated || !state.initialized) {
         return;
       }

@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TERMINAL_THEMES } from "@/lib/editor-theme";
+import { fileKindLabel, type FileKind } from "@/lib/file-kind";
 import { MONO_FONTS } from "@/lib/mono-fonts";
 import { TEXT_SCALES } from "@/lib/text-scale";
 import { cn } from "@/lib/utils";
@@ -189,7 +190,7 @@ const ZOOM_OPTIONS = [
 interface EditorToolbarProps {
   editorView: RefObject<EditorView | null>;
   fileType?: "tex" | "image" | "binary";
-  fileKind?: "latex" | "lean" | "markdown";
+  fileKind?: FileKind;
   imageScale?: number;
   markdownPreview?: boolean;
   markdownPreviewAvailable?: boolean;
@@ -295,6 +296,30 @@ export function EditorToolbar({
         {fileType === "binary" && (
           <span className="text-muted-foreground text-xs">binary</span>
         )}
+      </div>
+    );
+  }
+
+  if (fileKind !== "latex" && fileKind !== "markdown" && fileKind !== "lean") {
+    const isCode = fileKind === "python" || fileKind === "r";
+    return (
+      <div className="flex h-9 items-center gap-2 border-white/10 border-b bg-[#252320] px-2 text-[#a09d96]">
+        {isCode ? (
+          <FileCodeIcon className="size-4 text-[#5db8a6]" />
+        ) : (
+          <FileTextIcon className="size-4 text-[#e8a55a]" />
+        )}
+        <span className="font-medium font-mono text-[#faf9f5] text-[0.875rem]">
+          {fileName}
+        </span>
+        <span className="rounded border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[#a09d96] text-[0.75rem] uppercase tracking-[0.12em]">
+          {fileKindLabel(fileKind)}
+        </span>
+        <div className="ml-auto flex items-center gap-1">
+          <WorkspaceFontMenu />
+          <TextScaleButton />
+          <TerminalThemeMenu />
+        </div>
       </div>
     );
   }

@@ -74,6 +74,7 @@ you configure.
   chats and editor context are automatically compressed to fit the model's
   token budget.
 - **Python, R, and subagent figure tools** - The assistant can run local Python or R scripts in isolated temporary directories to compute geometry, fit data, or generate editable TikZ/PGF artifacts, then insert the checked result into the document. Up to four role-specific subagents can work on independent planning, Python, R, and TikZ-review tasks in parallel. See [docs/local-code-execution.md](./docs/local-code-execution.md).
+- **Language-aware workspace** - LaTeX files use compile diagnostics and LaTeX repair, Lean files use the Lean/Lake tools, and Python/R files use their own runners without invoking the LaTeX compiler. The editor toolbar and LaTeX keyboard follow the active file type; `.bib`, `.sty`, `.cls`, `.tikz`, and `.pgf` files remain part of the LaTeX family.
 - **Selection chat** - Select text in the editor to reveal **Ask AI**. A small
   pop-up chat sends the file path, line range, selected source, and your
   question to the main assistant thread.

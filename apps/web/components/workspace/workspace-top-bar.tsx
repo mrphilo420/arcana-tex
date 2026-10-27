@@ -22,6 +22,7 @@ import {
 import { ArcanaMark } from "@/components/brand/arcana-mark";
 import { DevPanelButton } from "@/components/dev/dev-panel";
 import { getBeamerInfo } from "@/lib/beamer";
+import { isLatexRelatedFile } from "@/lib/file-kind";
 import { isLeanFile } from "@/lib/lean";
 import { Button } from "@/components/ui/button";
 import { useDocumentStore } from "@/stores/document-store";
@@ -82,6 +83,7 @@ export function WorkspaceTopBar() {
   const activeFileId = useDocumentStore((s) => s.activeFileId);
   const activeFile = files.find((file) => file.id === activeFileId);
   const isLeanActive = activeFile ? isLeanFile(activeFile) : false;
+  const isLatexActive = activeFile ? isLatexRelatedFile(activeFile) : false;
   const beamerInfo = useMemo(
     () => getBeamerInfo(files, mainFileId),
     [files, mainFileId],
@@ -228,12 +230,19 @@ export function WorkspaceTopBar() {
           variant="ghost"
           size="icon"
           className={
-            isLatexKeyboardOpen ? "size-9 bg-accent text-foreground" : "size-9"
+            isLatexKeyboardOpen && isLatexActive
+              ? "size-9 bg-accent text-foreground"
+              : "size-9"
           }
           onClick={() => setLatexKeyboardOpen(!isLatexKeyboardOpen)}
-          title="LaTeX keyboard (⌘/Ctrl+Shift+K)"
+          disabled={!isLatexActive}
+          title={
+            isLatexActive
+              ? "LaTeX keyboard (⌘/Ctrl+Shift+K)"
+              : "The LaTeX keyboard is available for LaTeX files"
+          }
           aria-label="LaTeX keyboard"
-          aria-pressed={isLatexKeyboardOpen}
+          aria-pressed={isLatexKeyboardOpen && isLatexActive}
         >
           <KeyboardIcon className="size-4" />
         </Button>

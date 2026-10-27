@@ -3,6 +3,7 @@ import { generateObject } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { DEFAULT_GROQ_MODEL_ID, isGroqModelId } from "@/lib/chat-models";
+import { isLatexPatchableFile } from "@/lib/file-kind";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -180,10 +181,10 @@ function validatePatches(
       });
       continue;
     }
-    if (!file || !file.path.endsWith(".tex")) {
+    if (!file || !isLatexPatchableFile(file.path)) {
       rejected.push({
         diagnosticId: patch.diagnosticId,
-        reason: "Patch references an unknown or non-TeX file.",
+        reason: "Patch references an unknown or non-LaTeX file.",
       });
       continue;
     }
