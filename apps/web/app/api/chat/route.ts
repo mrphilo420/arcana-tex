@@ -17,6 +17,7 @@ import {
   MATHEMATICAL_PROVER_SKILL,
 } from "@/lib/chat-skills/mathematical-prover";
 import { createServerTools } from "@/lib/ai/server-tools";
+import { chatErrorMessage } from "@/lib/ai/chat-errors";
 import { resolveChatModel } from "@/lib/ai/llm-providers";
 import { chatRatelimit, getIP } from "@/lib/ratelimit";
 
@@ -299,8 +300,9 @@ export async function POST(req: Request) {
       if (statusCode === 413) {
         return "The model provider rejected this request as too large for the current token limit. The editor context was compacted automatically; try sending the message again or choose a model with a larger context window.";
       }
+      const message = chatErrorMessage(error);
       console.error("Chat stream error", error);
-      return "Chat failed while contacting the model. Check the server logs and the selected provider configuration.";
+      return message;
     },
   });
 }
