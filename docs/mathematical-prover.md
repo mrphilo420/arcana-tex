@@ -129,6 +129,9 @@ The current SteinGate checkout already has the required shape:
   technique or source used.
 - The checker rejects execution directives (`#eval`, `run_cmd`, `#exec`,
   `IO.Process`, `System.Command`); it accepts declaration-only proof code.
+- `run_python` may compute numerical evidence, but a numerical check is not a
+  proof and Python never mutates source. Final edits still go through
+  `propose_patch`.
 
 ## Local workspace note
 

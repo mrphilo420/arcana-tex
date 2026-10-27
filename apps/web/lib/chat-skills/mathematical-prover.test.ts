@@ -93,6 +93,7 @@ describe("MATHEMATICAL_PROVER_SKILL", () => {
       "build_lean_project",
       "propose_patch",
       "spawn_subagents",
+      "run_python",
     ]) {
       expect(MATHEMATICAL_PROVER_SKILL).toContain(marker);
     }
