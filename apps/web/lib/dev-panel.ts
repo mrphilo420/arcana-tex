@@ -1,6 +1,7 @@
 export type DevFeatureFlag =
   | "leanLake"
   | "paperReview"
+  | "prove"
   | "leanAudit"
   | "markdownPreview";
 
@@ -24,6 +25,11 @@ export const DEV_FEATURE_FLAGS: DevFeatureMeta[] = [
     description: "Show the /paper-review quick action in the chat composer.",
   },
   {
+    key: "prove",
+    label: "Mathematical prover action",
+    description: "Show the /prove quick action in the chat composer.",
+  },
+  {
     key: "leanAudit",
     label: "Lean audit action",
     description: "Show the Lean audit quick action in the chat composer.",
@@ -38,6 +44,7 @@ export const DEV_FEATURE_FLAGS: DevFeatureMeta[] = [
 export const DEFAULT_DEV_FEATURE_FLAGS: DevFeatureFlags = {
   leanLake: true,
   paperReview: true,
+  prove: true,
   leanAudit: true,
   markdownPreview: true,
 };

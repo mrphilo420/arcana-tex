@@ -4,12 +4,19 @@ import { useAssistantTool } from "@assistant-ui/react";
 import {
   CheckIcon,
   FileSearchIcon,
+  HammerIcon,
   LoaderIcon,
   PenLineIcon,
 } from "lucide-react";
 import type { FC } from "react";
 import { z } from "zod";
+import { DEV_PANEL_ENABLED } from "@/lib/dev-panel";
+import {
+  LEAN_PROJECT_STORAGE_KEY,
+  LEAN_TOOLCHAIN_STORAGE_KEY,
+} from "@/lib/lean";
 import { retrieveProjectContext } from "@/lib/rag";
+import { useDevPanelStore } from "@/stores/dev-panel-store";
 import { useDocumentStore } from "@/stores/document-store";
 import { usePatchStore } from "@/stores/patch-store";
 
@@ -36,6 +43,49 @@ const patchParameters = z.object({
   replacement: z.string().max(40_000),
   explanation: z.string().min(1).max(3_000),
   summary: z.string().max(300).optional(),
+});
+
+const mathlibSearchParameters = z.object({
+  query: z
+    .string()
+    .min(1)
+    .max(200)
+    .describe(
+      "Declaration name, concept, or Mathlib-relative file path, for example QuadraticForm or Probability/Kernel.lean",
+    ),
+  mode: z
+    .enum(["identifier", "keyword", "file"])
+    .optional()
+    .describe(
+      "identifier by default; keyword searches bodies/comments; file extracts signatures",
+    ),
+  limit: z.number().int().min(1).max(80).optional(),
+});
+
+const candidateParameters = z.object({
+  code: z
+    .string()
+    .min(1)
+    .max(200_000)
+    .describe(
+      "Complete Lean candidate declaration(s), including any local context it needs",
+    ),
+  imports: z
+    .array(z.string().min(1).max(240))
+    .max(20)
+    .optional()
+    .describe(
+      "Imports to prepend, for example Mathlib.Tactic, Mathlib, or SteinGate.LinearSystems; defaults to Mathlib.Tactic",
+    ),
+  declarationName: z
+    .string()
+    .min(1)
+    .max(240)
+    .optional()
+    .describe(
+      "Fully qualified declaration name to check with #print axioms, for example SteinGate.foo",
+    ),
+  timeoutMs: z.number().int().min(10_000).max(300_000).optional(),
 });
 
 export const ProofTools: FC = () => {
@@ -83,6 +133,187 @@ export const ProofTools: FC = () => {
             {isComplete
               ? `Retrieved ${count} project context${count === 1 ? "" : "s"}`
               : "Retrieving project context..."}
+          </span>
+        </div>
+      );
+    },
+  });
+
+  useAssistantTool({
+    toolName: "search_mathlib",
+    description:
+      "Search the pinned mathlib4 source tree (.lake/packages/mathlib/Mathlib) read-only. Use identifier mode for declaration names, keyword mode for concepts that may live under unexpected names, and file mode to extract the declaration signatures from a promising file. Report FOUND, NOT FOUND, or PARTIAL against this exact revision. This tool never modifies the project or mathlib.",
+    parameters: mathlibSearchParameters,
+    execute: async (input: z.infer<typeof mathlibSearchParameters>) => {
+      if (DEV_PANEL_ENABLED && !useDevPanelStore.getState().flags.leanLake) {
+        return {
+          success: false,
+          error: "Lean Lake is disabled in the developer control panel.",
+        };
+      }
+      const projectPath = window.localStorage
+        .getItem(LEAN_PROJECT_STORAGE_KEY)
+        ?.trim();
+      if (!projectPath) {
+        return {
+          success: false,
+          error:
+            "Choose a Lake project in the Lean panel before searching mathlib.",
+        };
+      }
+
+      const params = new URLSearchParams({
+        path: projectPath,
+        mode: input.mode ?? "identifier",
+        query: input.query,
+        limit: String(input.limit ?? 40),
+      });
+
+      try {
+        const response = await fetch(`/api/lean/mathlib/search?${params}`, {
+          cache: "no-store",
+        });
+        const result = (await response.json()) as Record<string, unknown>;
+        if (!response.ok) {
+          return {
+            ...result,
+            success: false,
+            error:
+              typeof result.error === "string"
+                ? result.error
+                : "Mathlib search failed.",
+          };
+        }
+        return result;
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Lean bridge unavailable",
+        };
+      }
+    },
+    render: function SearchMathlibRender({ result }) {
+      const isComplete = result != null;
+      const success = result?.success !== false;
+      const count = typeof result?.total === "number" ? result.total : 0;
+      const error = typeof result?.error === "string" ? result.error : null;
+      return (
+        <div className="my-2 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm">
+          {isComplete ? (
+            success ? (
+              <CheckIcon className="size-4 text-green-600" />
+            ) : (
+              <FileSearchIcon className="size-4 text-amber-600" />
+            )
+          ) : (
+            <LoaderIcon className="size-4 animate-spin text-muted-foreground" />
+          )}
+          <FileSearchIcon className="size-4 text-muted-foreground" />
+          <span className="text-muted-foreground">
+            {isComplete
+              ? success
+                ? `Found ${count} mathlib match${count === 1 ? "" : "es"}`
+                : error || "Mathlib search failed"
+              : "Searching pinned mathlib..."}
+          </span>
+        </div>
+      );
+    },
+  });
+
+  useAssistantTool({
+    toolName: "check_lean_candidate",
+    description:
+      "Elaborate a complete Lean 4 candidate in an isolated temporary file inside the configured Lake project and return elaborated, proved, errors, warnings, sorries, and axioms. Pass declarationName to run #print axioms and reject sorryAx. Use this as the only ground truth for a proof candidate before proposing a patch. proved=true means the candidate elaborated, contains a declaration, has no sorry/admit, and does not depend on sorryAx. This tool does not modify project files.",
+    parameters: candidateParameters,
+    execute: async (input: z.infer<typeof candidateParameters>) => {
+      if (DEV_PANEL_ENABLED && !useDevPanelStore.getState().flags.leanLake) {
+        return {
+          success: false,
+          error: "Lean Lake is disabled in the developer control panel.",
+        };
+      }
+      const projectPath = window.localStorage
+        .getItem(LEAN_PROJECT_STORAGE_KEY)
+        ?.trim();
+      if (!projectPath) {
+        return {
+          success: false,
+          error:
+            "Choose a Lake project in the Lean panel before checking a candidate.",
+        };
+      }
+      const toolchain = window.localStorage
+        .getItem(LEAN_TOOLCHAIN_STORAGE_KEY)
+        ?.trim();
+
+      try {
+        const response = await fetch("/api/lean/check", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            path: projectPath,
+            code: input.code,
+            imports: input.imports?.length ? input.imports : ["Mathlib.Tactic"],
+            declarationName: input.declarationName,
+            timeoutMs: input.timeoutMs,
+            toolchain: toolchain || undefined,
+          }),
+        });
+        const result = (await response.json()) as Record<string, unknown>;
+        if (!response.ok) {
+          return {
+            ...result,
+            success: false,
+            error:
+              typeof result.error === "string"
+                ? result.error
+                : "Lean candidate check failed.",
+          };
+        }
+        return result;
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Lean bridge unavailable",
+        };
+      }
+    },
+    render: function CheckLeanCandidateRender({ result }) {
+      const isComplete = result != null;
+      const proved = result?.proved === true;
+      const elaborated = result?.elaborated === true;
+      const hasSorryAx = result?.hasSorryAx === true;
+      const success = result?.success !== false;
+      const error = typeof result?.error === "string" ? result.error : null;
+      return (
+        <div className="my-2 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm">
+          {isComplete ? (
+            proved ? (
+              <CheckIcon className="size-4 text-green-600" />
+            ) : elaborated && !hasSorryAx ? (
+              <CheckIcon className="size-4 text-amber-600" />
+            ) : (
+              <HammerIcon className="size-4 text-destructive" />
+            )
+          ) : (
+            <LoaderIcon className="size-4 animate-spin text-muted-foreground" />
+          )}
+          <HammerIcon className="size-4 text-muted-foreground" />
+          <span className="text-muted-foreground">
+            {isComplete
+              ? proved
+                ? "Candidate proved: elaborated, sorry-free, and axiom-checked"
+                : hasSorryAx
+                  ? "Candidate uses sorryAx; not a proof"
+                  : elaborated
+                    ? "Candidate elaborates but is still partial"
+                    : success
+                      ? "Candidate failed elaboration"
+                      : error || "Lean candidate check failed"
+              : "Elaborating Lean candidate..."}
           </span>
         </div>
       );

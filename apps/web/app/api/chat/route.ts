@@ -13,11 +13,15 @@ import {
   LEAN_SYSTEM_GUIDE,
   PAPER_REVIEW_SKILL,
 } from "@/lib/chat-skills/paper-review";
+import {
+  getMathematicalProverInvocation,
+  MATHEMATICAL_PROVER_SKILL,
+} from "@/lib/chat-skills/mathematical-prover";
 import { createServerTools } from "@/lib/ai/server-tools";
 import { DEFAULT_GROQ_MODEL_ID, isGroqModelId } from "@/lib/chat-models";
 import { chatRatelimit, getIP } from "@/lib/ratelimit";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 const groqApiKey = process.env.GROQ_API_KEY?.trim();
 const useGroq = Boolean(groqApiKey);
@@ -75,6 +79,10 @@ You have tools available to inspect and modify the project:
 - run_python: run a Python script for computation and TikZ/PGF generation
 - run_r: run an R script for computation and TikZ/PGF generation
 - spawn_subagents: delegate independent planning, Python, R, or review work to parallel subagents
+- retrieve_context: retrieve ranked project context for RAG-style proof golf and editing
+- search_mathlib: search the pinned mathlib4 source tree for declarations and concepts
+- check_lean_candidate: elaborate an isolated Lean proof candidate without editing project files
+- propose_patch: propose an exact line-range edit for side-by-side review with Keep and Undo
 
 When the user asks you to add, insert, or write LaTeX code to their active document, use insert_latex.
 When the user asks you to replace or modify selected text, use replace_selection.
@@ -89,6 +97,12 @@ Paper reviews:
 - In review mode, never modify the manuscript or Lean files. Return the review in chat.
 - If the user types /paper-review, follow the skill instructions appended below.
 
+Mathematical proving:
+- The built-in /prove skill (alias /mathematical-prover) constructs and verifies Lean 4 / mathlib4 proofs, closes sorry goals, and golf existing proof bodies.
+- Use search_mathlib against the pinned .lake/packages/mathlib tree, check_lean_candidate for elaboration ground truth, and propose_patch for the final user-approved edit.
+- Never report PROVED without check_lean_candidate returning proved=true. Never use direct edit tools in prover mode.
+- If the user types /prove or /mathematical-prover, follow the skill instructions appended below.
+
 Common tasks you help with:
 - Writing and reviewing mathematical equations
 - Document structure (sections, chapters)
@@ -98,9 +112,10 @@ Common tasks you help with:
 - Package recommendations
 - Debugging LaTeX errors
 - Paper reviews and referee reports
+- Lean 4 proof construction, sorry closure, and proof golf
 - Understanding Lean 4 statements, proofs, and formalization gaps`;
 
-const REVIEW_EDIT_TOOLS = new Set([
+const DIRECT_EDIT_TOOLS = new Set([
   "insert_latex",
   "replace_selection",
   "find_and_replace",
@@ -191,11 +206,15 @@ function latestUserText(messages: ChatMessageLike[]): string {
   return latest ? messageText(latest) : "";
 }
 
-function readOnlyTools(tools: unknown): unknown {
+function withoutTools(tools: unknown, blocked: ReadonlySet<string>): unknown {
   if (!tools || typeof tools !== "object") return tools;
   return Object.fromEntries(
-    Object.entries(tools).filter(([name]) => !REVIEW_EDIT_TOOLS.has(name)),
+    Object.entries(tools).filter(([name]) => !blocked.has(name)),
   );
+}
+
+function readOnlyTools(tools: unknown): unknown {
+  return withoutTools(tools, DIRECT_EDIT_TOOLS);
 }
 
 export async function POST(req: Request) {
@@ -240,7 +259,13 @@ export async function POST(req: Request) {
     useGroq && isGroqModelId(requestedModel) ? requestedModel : chatModel;
   const latestText = latestUserText(messages);
   const review = getPaperReviewInvocation(latestText);
-  const activeTools = review ? readOnlyTools(tools) : tools;
+  const prover = review ? null : getMathematicalProverInvocation(latestText);
+  const readOnly = Boolean(review);
+  const activeTools = prover
+    ? withoutTools(tools, DIRECT_EDIT_TOOLS)
+    : readOnly
+      ? readOnlyTools(tools)
+      : tools;
 
   const systemParts = [SYSTEM_PROMPT, LEAN_SYSTEM_GUIDE];
   if (system) systemParts.push(system);
@@ -257,6 +282,19 @@ export async function POST(req: Request) {
     );
   }
 
+  if (prover) {
+    systemParts.push(
+      MATHEMATICAL_PROVER_SKILL,
+      `Prover invocation: mode=${prover.mode}; explicit=${
+        prover.explicit ? "true" : "false"
+      }; focus=${prover.focus || "none"}. ${
+        prover.explicit
+          ? "The user invoked /prove."
+          : "The user asked for proof work in natural language."
+      } Direct edit tools are disabled for this turn. Use check_lean_candidate for evidence and propose_patch for the final change; the user must approve it.`,
+    );
+  }
+
   const selectedModelInstance = modelProvider.chat(selectedModel);
   const serverTools = createServerTools(selectedModelInstance);
   const clientTools = activeTools
@@ -268,8 +306,8 @@ export async function POST(req: Request) {
     model: selectedModelInstance,
     system: systemParts.join("\n\n"),
     messages: await convertToModelMessages(messages as unknown as UIMessage[]),
-    maxOutputTokens: 2048,
-    stopWhen: stepCountIs(review ? 16 : 10),
+    maxOutputTokens: prover ? 4096 : 2048,
+    stopWhen: stepCountIs(prover ? 18 : readOnly ? 16 : 10),
     tools: allTools,
   });
 

@@ -1,7 +1,15 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { readFile, readdir, realpath, stat } from "node:fs/promises";
-import { homedir } from "node:os";
+import {
+  mkdtemp,
+  readFile,
+  readdir,
+  realpath,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
+import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import type { Context, Hono } from "hono";
 
@@ -20,6 +28,15 @@ const MAX_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_FILES = 1000;
 const MAX_DEPTH = 8;
 const MAX_DISCOVERED_PROJECTS = 50;
+const MAX_MATHLIB_QUERY_CHARS = 200;
+const MAX_MATHLIB_RESULTS = 80;
+const MAX_CANDIDATE_CHARS = 200_000;
+const MAX_CANDIDATE_TIMEOUT_MS = 300_000;
+const MAX_ACTIVE_CANDIDATE_CHECKS = 2;
+const CANDIDATE_EXECUTION_PATTERN =
+  /(?:#eval\b|\brun_cmd\b|#exec\b|\bIO\.Process\b|\bSystem\.Command\b)/;
+const MATHLIB_GUIDE_URL =
+  "https://github.com/leanprover-community/mathlib4/wiki/Using-mathlib4-as-a-dependency";
 
 const ELAN_HOME = join(homedir(), ".elan");
 const KNOWN_PROJECTS_FILE = join(ELAN_HOME, "known-projects");
@@ -48,6 +65,7 @@ function resolveDefaultLakeCommand(): string {
 const DEFAULT_LAKE_COMMAND = resolveDefaultLakeCommand();
 
 let activeBuilds = 0;
+let activeCandidateChecks = 0;
 let toolchainCache: LeanToolchainInfo[] | null = null;
 
 interface LeanProjectInfo {
@@ -485,6 +503,371 @@ async function lakeCommandForToolchain(
   return { command: DEFAULT_LAKE_COMMAND, toolchain: null };
 }
 
+type MathlibSearchMode = "identifier" | "keyword" | "file";
+
+interface MathlibMatch {
+  file: string;
+  line: number;
+  kind: string;
+  name: string | null;
+  statement: string;
+}
+
+const DECLARATION_LINE =
+  /^\s*(?:@\[[^\]]*\]\s*)?(?:(?:private|protected|noncomputable|partial|unsafe|scoped)\s+)*(theorem|lemma|def|abbrev|instance|class|structure|inductive|opaque|axiom)\b\s*([A-Za-z0-9_'.]*)/;
+
+function parseDeclaration(line: string): { kind: string; name: string } | null {
+  if (/^\s*--/.test(line)) return null;
+  const match = DECLARATION_LINE.exec(line);
+  if (!match) return null;
+  return {
+    kind: match[1],
+    name: match[2] || "(anonymous)",
+  };
+}
+
+function declarationPatternFor(query: string): string {
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return `^[[:space:]]*(@\\[[^]]*\\][[:space:]]*)?((private|protected|noncomputable|partial|unsafe|scoped)[[:space:]]+)*(theorem|lemma|def|abbrev|instance|class|structure|inductive|opaque|axiom)[[:space:]]+[A-Za-z0-9_'.]*${escaped}`;
+}
+
+function mathlibRootFor(project: LeanProjectInfo): string {
+  return join(project.path, ".lake", "packages", "mathlib", "Mathlib");
+}
+
+function mathlibUnavailable(project: LeanProjectInfo) {
+  return {
+    success: false,
+    error: `The pinned mathlib source tree was not found at ${mathlibRootFor(project)}.`,
+    hint: "Fetch the dependency and its cache first: lake exe cache get, then lake build. Do not run lake update unless you intend to change the pin.",
+    guide: MATHLIB_GUIDE_URL,
+  };
+}
+
+function parseGrepMatches(output: string, root: string): MathlibMatch[] {
+  const matches: MathlibMatch[] = [];
+  for (const raw of output.split("\n")) {
+    const match = /^(.*?):(\d+):(.*)$/.exec(raw);
+    if (!match) continue;
+    const lineNumber = Number.parseInt(match[2], 10);
+    if (!Number.isFinite(lineNumber)) continue;
+    const content = match[3];
+    const declaration = parseDeclaration(content);
+    const rawPath = match[1];
+    const filePath = rawPath.startsWith(root)
+      ? rawPath
+      : resolve(root, rawPath);
+    matches.push({
+      file: relative(root, filePath).split(sep).join("/"),
+      line: lineNumber,
+      kind: declaration?.kind ?? "reference",
+      name: declaration?.name ?? null,
+      statement: content.trim(),
+    });
+  }
+  return matches;
+}
+
+async function searchMathlib(
+  project: LeanProjectInfo,
+  mode: MathlibSearchMode,
+  query: string,
+  limit: number,
+): Promise<Record<string, unknown>> {
+  const root = mathlibRootFor(project);
+  if (!existsSync(root)) return mathlibUnavailable(project);
+
+  if (mode === "file") {
+    const requested = query
+      .replace(/\\/g, "/")
+      .replace(/^\/+/, "")
+      .replace(/^Mathlib\//, "");
+    if (
+      !requested ||
+      requested.includes("..") ||
+      !requested.endsWith(".lean")
+    ) {
+      return {
+        success: false,
+        error: "File mode expects a path like Probability/Kernel.lean.",
+      };
+    }
+
+    const rootReal = await realpath(root).catch(() => null);
+    const filePath = rootReal
+      ? await realpath(resolve(rootReal, requested)).catch(() => null)
+      : null;
+    if (!rootReal || !filePath || !filePath.startsWith(`${rootReal}${sep}`)) {
+      return { success: false, error: `Mathlib file not found: ${requested}` };
+    }
+
+    const content = await readFile(filePath, "utf-8");
+    const lines = content.split("\n");
+    const declarations: MathlibMatch[] = [];
+    for (let index = 0; index < lines.length; index++) {
+      const declaration = parseDeclaration(lines[index]);
+      if (!declaration) continue;
+      const signature: string[] = [lines[index].trim()];
+      for (let cursor = index + 1; cursor < lines.length; cursor++) {
+        const line = lines[cursor].trim();
+        if (signature.length >= 8 || line === "") break;
+        const boundary = line.search(/:=|\bwhere\b/);
+        if (boundary >= 0) {
+          const head = line.slice(0, boundary).trimEnd();
+          if (head) signature.push(head);
+          break;
+        }
+        signature.push(line);
+      }
+      declarations.push({
+        file: relative(root, filePath).split(sep).join("/"),
+        line: index + 1,
+        kind: declaration.kind,
+        name: declaration.name,
+        statement: signature.join("\n"),
+      });
+      if (declarations.length >= limit) break;
+    }
+
+    return {
+      success: true,
+      mode,
+      query: requested,
+      mathlibPath: root,
+      matches: declarations,
+      total: declarations.length,
+      truncated: declarations.length >= limit,
+      note:
+        declarations.length === 0
+          ? "No declarations were extracted from that file."
+          : "Signatures are truncated at the declaration/proof boundary.",
+    };
+  }
+
+  const result = await runCommand(
+    "grep",
+    mode === "identifier"
+      ? [
+          "-RInE",
+          "--include=*.lean",
+          "-m",
+          "8",
+          declarationPatternFor(query),
+          root,
+        ]
+      : ["-RIn", "--include=*.lean", "--fixed-strings", "-m", "4", query, root],
+    {
+      cwd: root,
+      timeoutMs: 30_000,
+      maxOutputChars: 400_000,
+    },
+  );
+
+  if (result.timedOut) {
+    return {
+      success: false,
+      error: "Mathlib search timed out. Use a shorter, more specific query.",
+      timedOut: true,
+    };
+  }
+  if (result.error) {
+    return { success: false, error: `Mathlib search failed: ${result.error}` };
+  }
+
+  const parsed = parseGrepMatches(result.stdout, root);
+  const declarations = parsed.filter((match) => match.kind !== "reference");
+  const references = parsed.filter((match) => match.kind === "reference");
+  const normalizedQuery = query.toLowerCase();
+  const namedDeclarations =
+    mode === "identifier"
+      ? declarations
+          .filter((match) =>
+            (match.name ?? "").toLowerCase().includes(normalizedQuery),
+          )
+          .sort((a, b) => {
+            const aName = (a.name ?? "").toLowerCase();
+            const bName = (b.name ?? "").toLowerCase();
+            const aExact = aName === normalizedQuery ? 0 : 1;
+            const bExact = bName === normalizedQuery ? 0 : 1;
+            if (aExact !== bExact) return aExact - bExact;
+            return aName.length - bName.length;
+          })
+      : [];
+  const primary =
+    mode === "identifier"
+      ? namedDeclarations.length > 0
+        ? namedDeclarations
+        : declarations
+      : parsed;
+  const matches = primary.slice(0, limit);
+
+  return {
+    success: true,
+    mode,
+    query,
+    mathlibPath: root,
+    matches,
+    references: mode === "identifier" ? references.slice(0, 10) : undefined,
+    total: matches.length,
+    truncated: primary.length > limit,
+    note:
+      mode === "identifier"
+        ? namedDeclarations.length > 0
+          ? "Declaration-name matches, ranked by exact and short names. Use file mode on a result to read the full API surface."
+          : "No declaration names matched. Try keyword mode, a shorter identifier, or a different namespace."
+        : "Keyword matches include declarations, references, and comments.",
+  };
+}
+
+async function checkLeanCandidate(
+  project: LeanProjectInfo,
+  code: string,
+  imports: string[],
+  timeoutMs: number,
+  toolchain: string | null | undefined,
+  declarationName: string | null | undefined,
+): Promise<Record<string, unknown>> {
+  const candidate = code.trim();
+  if (!candidate) {
+    return { success: false, error: "Candidate code is empty." };
+  }
+  if (candidate.length > MAX_CANDIDATE_CHARS) {
+    return {
+      success: false,
+      error: `Candidate is too large (${candidate.length} characters; limit ${MAX_CANDIDATE_CHARS}).`,
+    };
+  }
+  if (CANDIDATE_EXECUTION_PATTERN.test(candidate)) {
+    return {
+      success: false,
+      error:
+        "Candidate contains an execution directive (#eval, run_cmd, #exec, IO.Process, or System.Command). The checker accepts declaration-only proof code.",
+    };
+  }
+
+  const cleanDeclaration = declarationName?.trim() ?? "";
+  if (cleanDeclaration && !/^[A-Za-z0-9_.']+$/.test(cleanDeclaration)) {
+    return {
+      success: false,
+      error:
+        "declarationName must be a Lean identifier, for example SteinGate.foo.",
+    };
+  }
+
+  const cleanImports = imports
+    .map((entry) => entry.trim().replace(/^import\s+/, ""))
+    .filter((entry) => /^[A-Za-z0-9_.'-]+$/.test(entry));
+  const hasImports = /^\s*import\s+/m.test(candidate);
+  const header =
+    cleanImports.length > 0 && !hasImports
+      ? `${cleanImports.map((entry) => `import ${entry}`).join("\n")}\n\n`
+      : "";
+  const axiomCheck = cleanDeclaration
+    ? `\n\n#print axioms ${cleanDeclaration}\n`
+    : "";
+  const source = `${header}${candidate}${axiomCheck}`;
+
+  const selected = await lakeCommandForToolchain(project, toolchain);
+  if (selected.error) {
+    return { success: false, error: selected.error };
+  }
+
+  const directory = await mkdtemp(join(tmpdir(), "arcana-lean-check-"));
+  const filePath = join(directory, "Candidate.lean");
+  await writeFile(filePath, source, "utf-8");
+
+  try {
+    const result = await runCommand(
+      selected.command,
+      ["env", "lean", filePath],
+      {
+        cwd: project.path,
+        timeoutMs: Math.min(
+          MAX_CANDIDATE_TIMEOUT_MS,
+          Math.max(10_000, timeoutMs),
+        ),
+        maxOutputChars: 600_000,
+        env: selected.toolchain
+          ? {
+              ...process.env,
+              PATH: `${dirname(selected.toolchain.lakePath)}:${process.env.PATH ?? ""}`,
+            }
+          : process.env,
+      },
+    );
+
+    const output = [result.stdout, result.stderr]
+      .filter((part) => part.trim())
+      .join("\n")
+      .trim();
+    const lines = output ? output.split("\n") : [];
+    const errors = lines.filter((line) => /\berror:/.test(line)).slice(0, 40);
+    const warnings = lines
+      .filter((line) => /\bwarning:/.test(line))
+      .slice(0, 40);
+    const codeHasSorry = /\b(?:sorry|admit)\b/.test(candidate);
+    const hasDeclaration =
+      /^\s*(?:theorem|lemma|example|def|instance|abbrev|structure|class|inductive|opaque|axiom)\b/m.test(
+        candidate,
+      );
+    const sorries = lines
+      .filter((line) =>
+        /(?:declaration uses 'sorry'|uses "sorry"|\bsorry\b|\badmit\b)/i.test(
+          line,
+        ),
+      )
+      .slice(0, 20);
+    const elaborated =
+      !result.timedOut && !result.error && result.exitCode === 0;
+    const hasSorryAx = /sorryAx/.test(output);
+    const axioms = lines
+      .filter((line) =>
+        /(?:depends on axioms|does not depend on any axioms)/.test(line),
+      )
+      .slice(0, 5);
+    const proved =
+      elaborated &&
+      hasDeclaration &&
+      !codeHasSorry &&
+      sorries.length === 0 &&
+      !hasSorryAx;
+
+    return {
+      success: true,
+      projectName: project.name,
+      projectPath: project.path,
+      toolchainId: selected.toolchain?.id ?? "default",
+      declarationName: cleanDeclaration || null,
+      exitCode: result.exitCode,
+      timedOut: result.timedOut,
+      durationMs: result.durationMs,
+      elaborated,
+      proved,
+      hasDeclaration,
+      hasSorry: codeHasSorry || sorries.length > 0,
+      hasSorryAx,
+      axioms,
+      errors,
+      warnings,
+      sorries,
+      stdout: result.stdout,
+      stderr: result.stderr,
+      command: `${result.command} ${result.args.join(" ")}`.trim(),
+      note: proved
+        ? "Candidate elaborated and is sorry-free."
+        : elaborated
+          ? hasSorryAx
+            ? "Candidate elaborated, but #print axioms reports sorryAx. It is not a proof."
+            : hasDeclaration
+              ? "Candidate elaborates but still contains sorry/admit."
+              : "Candidate elaborates, but it contains no theorem, lemma, example, def, or instance to count as a proof. Use #check for queries and a declaration for proof evidence."
+          : "Candidate did not elaborate. Read the errors before revising.",
+    };
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
+
 export function registerLeanRoutes(app: Hono) {
   app.use("/lean/*", guard);
 
@@ -586,6 +969,97 @@ export function registerLeanRoutes(app: Hono) {
       content,
       size: info.size,
     });
+  });
+
+  app.get("/lean/mathlib/search", async (c) => {
+    const project = await resolveProject(c.req.query("path"));
+    if (!project) return projectError(c);
+
+    const requestedMode = (c.req.query("mode") ?? "identifier").trim();
+    if (!["identifier", "keyword", "file"].includes(requestedMode)) {
+      return c.json(
+        {
+          success: false,
+          error: "mode must be identifier, keyword, or file.",
+        },
+        400,
+      );
+    }
+
+    const query = (c.req.query("query") ?? "").trim();
+    if (!query) {
+      return c.json({ success: false, error: "query is required." }, 400);
+    }
+    if (query.length > MAX_MATHLIB_QUERY_CHARS) {
+      return c.json(
+        {
+          success: false,
+          error: `query is too long (limit ${MAX_MATHLIB_QUERY_CHARS} characters).`,
+        },
+        400,
+      );
+    }
+
+    const parsedLimit = Number.parseInt(c.req.query("limit") ?? "40", 10);
+    const limit = Math.min(
+      MAX_MATHLIB_RESULTS,
+      Math.max(1, Number.isFinite(parsedLimit) ? parsedLimit : 40),
+    );
+    const result = await searchMathlib(
+      project,
+      requestedMode as MathlibSearchMode,
+      query,
+      limit,
+    );
+    return c.json(result, result.success ? 200 : 400);
+  });
+
+  app.post("/lean/check", async (c) => {
+    const body = (await c.req.json().catch(() => ({}))) as {
+      path?: string;
+      code?: string;
+      imports?: string[];
+      timeoutMs?: number;
+      toolchain?: string;
+      declarationName?: string;
+    };
+    const project = await resolveProject(body.path);
+    if (!project) return projectError(c);
+
+    if (!body.code?.trim()) {
+      return c.json({ success: false, error: "code is required." }, 400);
+    }
+    if (!Array.isArray(body.imports ?? [])) {
+      return c.json(
+        { success: false, error: "imports must be an array." },
+        400,
+      );
+    }
+    if (activeCandidateChecks >= MAX_ACTIVE_CANDIDATE_CHECKS) {
+      return c.json(
+        {
+          success: false,
+          error:
+            "Two Lean candidate checks are already running. Retry shortly.",
+        },
+        409,
+      );
+    }
+
+    activeCandidateChecks++;
+    try {
+      const result = await checkLeanCandidate(
+        project,
+        body.code,
+        body.imports ?? [],
+        body.timeoutMs ?? 180_000,
+        body.toolchain,
+        body.declarationName,
+      );
+      return c.json(result, result.success ? 200 : 400);
+    } finally {
+      activeCandidateChecks--;
+    }
   });
 
   app.post("/lean/build", async (c) => {

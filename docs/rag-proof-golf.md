@@ -126,3 +126,10 @@ LaTeX diagnostics, Lean build messages, Python tracebacks, and R errors should
 carry their own language tag. Only render diagnostics compatible with the active
 file, and only invoke that language's validator. The patcher is shared; the
 validators are not.
+
+## Related workflow
+
+For full Lean proof construction and mathlib search, see
+[mathematical-prover.md](./mathematical-prover.md). The `/prove` skill uses the
+same retrieval and approval-patch surfaces, adds isolated candidate elaboration,
+and preserves the theorem statement while changing only the proof body.

@@ -28,16 +28,16 @@ const CODE_EXECUTION_GUIDE = `Python, R, and subagents are available for computa
 
 const PROOF_GOLF_GUIDE = `RAG and proof golf:
 - When the user asks to golf, shorten, minimize, simplify, or tighten a proof, use retrieve_context first. Retrieve the exact theorem/lemma, its statement, imports, and nearby declarations or proof text. Use read_project_file or inspect_lean_sources to verify the exact source before editing.
-- Preserve theorem statements, names, assumptions, and imports unless the user explicitly asks to change them. Golf the proof body, not the specification. For Lean, do not claim success without a Lake build. For LaTeX proofs, recompile before claiming success.
+- Preserve theorem statements, names, assumptions, and imports unless the user explicitly asks to change them. Golf the proof body, not the specification. For Lean, do not claim success without check_lean_candidate returning proved=true or a Lake build. For LaTeX proofs, recompile before claiming success.
 - Return changes through propose_patch, not direct writes. Explain your work in chat as you go: what you retrieved, what you are changing, why it should be shorter or clearer, and how it will be validated. Do not expose hidden chain-of-thought; provide a concise work log.
-- The patch opens a side-by-side preview with Keep and Undo. After Keep, run the matching validator: Lean build for Lean, LaTeX compile for TeX, Python/R runtime for Python/R. Python scripts may compute or validate a patch, but source application still goes through propose_patch for approval.`;
+- The patch opens a side-by-side preview with Keep and Undo. After Keep, run the matching validator: Lean build for Lean, LaTeX compile for TeX, Python/R runtime for Python/R. Python scripts may compute or validate a patch, but source application still goes through propose_patch for approval. For a full proof search, use the /prove or /mathematical-prover skill.`;
 
 function activeModeGuide(kind: FileKind, path: string): string {
   switch (kind) {
     case "latex":
       return `Active mode: LaTeX (${path}). Treat this as LaTeX source. Compile-log diagnostics, LaTeX errors, and source fixes belong to LaTeX. Do not run Lean tools or treat Python/R code as LaTeX. If a figure needs computation, use run_python or run_r only for the computation and insert editable TikZ back into a .tex file when asked.`;
     case "lean":
-      return `Active mode: Lean 4 (${path}). Treat this as a Lean 4 source file, not LaTeX. Use inspect_lean_sources and build_lean_project for evidence. Never claim a proof is complete or kernel-checked without build output. Do not run LaTeX compilation, compile-log repair, or LaTeX formatting tools on this file. Do not use run_python or run_r unless the user explicitly asks for a separate computational task.`;
+      return `Active mode: Lean 4 (${path}). Treat this as a Lean 4 source file, not LaTeX. Use inspect_lean_sources, search_mathlib, check_lean_candidate, and build_lean_project for evidence. Never claim a proof is complete or kernel-checked without check_lean_candidate returning proved=true or build output. Do not run LaTeX compilation, compile-log repair, or LaTeX formatting tools on this file. Do not use run_python or run_r unless the user explicitly asks for a separate computational task.`;
     case "python":
       return `Active mode: Python (${path}). Treat this as Python source. Use run_python for execution and testing; do not interpret it as LaTeX and do not invoke the LaTeX compiler or LaTeX repair rules. If Python is used to generate TikZ, return an editable TikZ artifact and insert it only into a LaTeX file when asked.`;
     case "r":
