@@ -1,8 +1,7 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { DEFAULT_GROQ_MODEL_ID, isGroqModelId } from "@/lib/chat-models";
+import { resolveChatModel } from "@/lib/ai/llm-providers";
 import { isLatexPatchableFile } from "@/lib/file-kind";
 
 export const runtime = "nodejs";
@@ -60,21 +59,6 @@ const patchSchema = z.object({
 
 type InputFile = z.infer<typeof fileSchema>;
 type InputDiagnostic = z.infer<typeof diagnosticSchema>;
-
-const groqApiKey = process.env.GROQ_API_KEY?.trim();
-const useGroq = Boolean(groqApiKey);
-const provider = createOpenAI({
-  apiKey: useGroq ? groqApiKey : process.env.OPENAI_API_KEY || "local",
-  baseURL: useGroq
-    ? process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1"
-    : process.env.OPENAI_BASE_URL || undefined,
-});
-const configuredModel = process.env.GROQ_MODEL?.trim();
-const defaultModel = useGroq
-  ? isGroqModelId(configuredModel)
-    ? configuredModel
-    : DEFAULT_GROQ_MODEL_ID
-  : process.env.OPENAI_MODEL || "gpt-4o";
 
 function resolveFile(
   diagnostic: InputDiagnostic,
@@ -243,16 +227,6 @@ function validatePatches(
 }
 
 export async function POST(request: Request) {
-  if (!useGroq && !process.env.OPENAI_API_KEY && !process.env.OPENAI_BASE_URL) {
-    return NextResponse.json(
-      {
-        error:
-          "No AI model is configured. Set GROQ_API_KEY in apps/web/.env.local.",
-      },
-      { status: 503 },
-    );
-  }
-
   let parsed: z.infer<typeof requestSchema>;
   try {
     parsed = requestSchema.parse(await request.json());
@@ -263,9 +237,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const requestedModel = parsed.model;
-  const model =
-    useGroq && isGroqModelId(requestedModel) ? requestedModel : defaultModel;
+  const resolvedModel = await resolveChatModel(parsed.model);
+  if (!resolvedModel) {
+    return NextResponse.json(
+      {
+        error:
+          "No AI model is configured. Add an LLM provider in the developer panel or set GROQ_API_KEY / OPENAI_API_KEY in apps/web/.env.local.",
+      },
+      { status: 503 },
+    );
+  }
+
+  const model = resolvedModel.modelId;
   const files = parsed.files.map((file) => ({
     ...file,
     content: file.content.slice(0, MAX_FILE_CHARS),
@@ -288,7 +271,7 @@ export async function POST(request: Request) {
 
   try {
     const result = await generateObject({
-      model: provider.chat(model),
+      model: resolvedModel.model,
       schema: patchSchema,
       temperature: 0,
       maxOutputTokens: 3000,

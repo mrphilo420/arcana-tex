@@ -1,12 +1,13 @@
 "use client";
 
 import { BotIcon } from "lucide-react";
-import { GROQ_CHAT_MODELS, getGroqModel } from "@/lib/chat-models";
 import { useChatModelStore } from "@/stores/chat-model-store";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -14,15 +15,33 @@ import { cn } from "@/lib/utils";
 
 export function ModelPicker({ className }: { className?: string }) {
   const selectedModelId = useChatModelStore((s) => s.selectedModelId);
+  const options = useChatModelStore((s) => s.options);
   const setSelectedModelId = useChatModelStore((s) => s.setSelectedModelId);
-  const selectedModel = getGroqModel(selectedModelId);
+  const selectedModel = options.find(
+    (option) => option.value === selectedModelId,
+  );
+
+  const groups = new Map<
+    string,
+    { providerLabel: string; models: typeof options }
+  >();
+  for (const option of options) {
+    const group = groups.get(option.providerId);
+    if (group) {
+      group.models.push(option);
+    } else {
+      groups.set(option.providerId, {
+        providerLabel: option.providerLabel,
+        models: [option],
+      });
+    }
+  }
 
   return (
     <Select
-      value={selectedModelId}
-      onValueChange={(value) =>
-        setSelectedModelId(value as (typeof GROQ_CHAT_MODELS)[number]["id"])
-      }
+      value={selectedModelId || undefined}
+      onValueChange={setSelectedModelId}
+      disabled={options.length === 0}
     >
       <SelectTrigger
         className={cn(
@@ -30,17 +49,28 @@ export function ModelPicker({ className }: { className?: string }) {
           className,
         )}
         aria-label="AI model"
-        title={selectedModel.description}
+        title={selectedModel?.description ?? "No model configured"}
       >
         <BotIcon className="size-3.5 shrink-0 text-primary" />
-        <SelectValue />
+        <SelectValue placeholder="No model configured" />
       </SelectTrigger>
       <SelectContent>
-        {GROQ_CHAT_MODELS.map((model) => (
-          <SelectItem key={model.id} value={model.id}>
-            {model.label}
+        {options.length === 0 ? (
+          <SelectItem value="__none" disabled>
+            No models configured
           </SelectItem>
-        ))}
+        ) : (
+          [...groups.entries()].map(([providerId, group]) => (
+            <SelectGroup key={providerId}>
+              <SelectLabel>{group.providerLabel}</SelectLabel>
+              {group.models.map((model) => (
+                <SelectItem key={model.value} value={model.value}>
+                  {model.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          ))
+        )}
       </SelectContent>
     </Select>
   );

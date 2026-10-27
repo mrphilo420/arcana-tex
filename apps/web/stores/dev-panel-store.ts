@@ -8,7 +8,12 @@ import {
   type DevFeatureFlags,
 } from "@/lib/dev-panel";
 
-export type DevPanelTab = "features" | "workspace" | "bridge" | "data";
+export type DevPanelTab =
+  | "features"
+  | "models"
+  | "workspace"
+  | "bridge"
+  | "data";
 
 interface DevPanelState {
   isOpen: boolean;

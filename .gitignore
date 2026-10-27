@@ -42,4 +42,5 @@ yarn-error.log*
 
 # Local developer control panel state
 apps/web/.dev-panel.local.json
+apps/web/.llm-providers.local.json
 .dev-panel/

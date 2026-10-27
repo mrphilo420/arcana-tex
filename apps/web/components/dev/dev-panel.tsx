@@ -32,7 +32,6 @@ import {
   type DevFeatureFlags,
   normalizeDevFeatureFlags,
 } from "@/lib/dev-panel";
-import { GROQ_CHAT_MODELS, getGroqModel } from "@/lib/chat-models";
 import { TERMINAL_THEMES } from "@/lib/editor-theme";
 import { FONT_PAIRINGS } from "@/lib/font-pairings";
 import { MONO_FONTS } from "@/lib/mono-fonts";
@@ -58,9 +57,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { LlmProvidersPanel } from "./llm-providers-panel";
 
 const TABS: { id: DevPanelTab; label: string; icon: typeof WrenchIcon }[] = [
   { id: "features", label: "Features", icon: FlaskConicalIcon },
+  { id: "models", label: "Models", icon: BotIcon },
   { id: "workspace", label: "Workspace", icon: Settings2Icon },
   { id: "bridge", label: "Bridge", icon: ServerIcon },
   { id: "data", label: "Local data", icon: HardDriveIcon },
@@ -135,7 +136,10 @@ export function DevPanel() {
   const setTextScaleId = useEditorPreferencesStore((s) => s.setTextScaleId);
   const selectedModelId = useChatModelStore((s) => s.selectedModelId);
   const setSelectedModelId = useChatModelStore((s) => s.setSelectedModelId);
-  const selectedModel = getGroqModel(selectedModelId);
+  const modelOptions = useChatModelStore((s) => s.options);
+  const selectedModel = modelOptions.find(
+    (option) => option.value === selectedModelId,
+  );
 
   const projectId = useDocumentStore((s) => s.projectId);
   const projectName = useDocumentStore((s) => s.projectName);
@@ -598,57 +602,50 @@ export function DevPanel() {
                       AI model
                     </div>
                     <p className="mt-0.5 text-[0.75rem] text-muted-foreground">
-                      Only the active Groq model is called. Pick a smaller model
-                      to conserve compute.
+                      The selected provider model is used for chat, fixes, and
+                      subagents. Add or import providers in the Models tab.
                     </p>
                   </div>
                   <Select
-                    value={selectedModelId}
-                    onValueChange={(value) =>
-                      setSelectedModelId(
-                        value as (typeof GROQ_CHAT_MODELS)[number]["id"],
-                      )
-                    }
+                    value={selectedModelId || undefined}
+                    onValueChange={setSelectedModelId}
+                    disabled={modelOptions.length === 0}
                   >
                     <SelectTrigger
                       className="h-7 w-[190px] text-[0.75rem]"
                       aria-label="AI model"
                     >
-                      <SelectValue />
+                      <SelectValue placeholder="No model configured" />
                     </SelectTrigger>
                     <SelectContent>
-                      {GROQ_CHAT_MODELS.map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          {model.label}
+                      {modelOptions.length === 0 ? (
+                        <SelectItem value="__none" disabled>
+                          No models configured
                         </SelectItem>
-                      ))}
+                      ) : (
+                        modelOptions.map((model) => (
+                          <SelectItem key={model.value} value={model.value}>
+                            {model.providerLabel} · {model.label}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="mt-2 grid grid-cols-3 gap-1.5">
-                  {GROQ_CHAT_MODELS.map((model) => (
-                    <button
-                      key={model.id}
-                      type="button"
-                      onClick={() => setSelectedModelId(model.id)}
-                      className={cn(
-                        "rounded border px-2 py-1.5 text-left transition-colors",
-                        model.id === selectedModelId
-                          ? "border-primary/30 bg-primary/5"
-                          : "border-hairline hover:bg-accent",
-                      )}
-                    >
-                      <div className="font-medium text-[0.75rem]">
-                        {model.label}
-                      </div>
-                      <div className="mt-0.5 text-[0.75rem] text-muted-foreground">
-                        {model.compute} · {model.contextWindow} ctx
-                      </div>
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-2 rounded border border-hairline/70 bg-background/40 px-2 py-1.5 text-[0.75rem] text-muted-foreground">
-                  {selectedModel.description}
+                <div className="mt-2 flex items-center justify-between gap-2 rounded border border-hairline/70 bg-background/40 px-2 py-1.5 text-[0.75rem] text-muted-foreground">
+                  <span className="min-w-0 truncate">
+                    {selectedModel?.description ??
+                      "Add a provider to choose a model."}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 shrink-0 text-[0.7rem]"
+                    onClick={() => setActiveTab("models")}
+                  >
+                    Manage providers
+                  </Button>
                 </div>
               </div>
 
@@ -662,6 +659,8 @@ export function DevPanel() {
               </div>
             </div>
           )}
+
+          {activeTab === "models" && <LlmProvidersPanel />}
 
           {activeTab === "workspace" && (
             <div className="space-y-4">

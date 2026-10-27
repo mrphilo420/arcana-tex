@@ -1,4 +1,3 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import { frontendTools } from "@assistant-ui/react-ai-sdk";
 import {
   streamText,
@@ -18,27 +17,10 @@ import {
   MATHEMATICAL_PROVER_SKILL,
 } from "@/lib/chat-skills/mathematical-prover";
 import { createServerTools } from "@/lib/ai/server-tools";
-import { DEFAULT_GROQ_MODEL_ID, isGroqModelId } from "@/lib/chat-models";
+import { resolveChatModel } from "@/lib/ai/llm-providers";
 import { chatRatelimit, getIP } from "@/lib/ratelimit";
 
 export const maxDuration = 300;
-
-const groqApiKey = process.env.GROQ_API_KEY?.trim();
-const useGroq = Boolean(groqApiKey);
-
-const modelProvider = createOpenAI({
-  apiKey: useGroq ? groqApiKey : process.env.OPENAI_API_KEY || "local",
-  baseURL: useGroq
-    ? process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1"
-    : process.env.OPENAI_BASE_URL || undefined,
-});
-
-const configuredEnvModel = process.env.GROQ_MODEL?.trim();
-const chatModel = useGroq
-  ? isGroqModelId(configuredEnvModel)
-    ? configuredEnvModel
-    : DEFAULT_GROQ_MODEL_ID
-  : process.env.OPENAI_MODEL || "gpt-4o";
 
 const SYSTEM_PROMPT = `You are a helpful research-writing and formalization assistant working in arcanaTeX, a local-first LaTeX and Lean 4 workspace.
 
@@ -218,16 +200,6 @@ function readOnlyTools(tools: unknown): unknown {
 }
 
 export async function POST(req: Request) {
-  if (!useGroq && !process.env.OPENAI_API_KEY && !process.env.OPENAI_BASE_URL) {
-    return NextResponse.json(
-      {
-        error:
-          "No chat model is configured. Set GROQ_API_KEY (or OPENAI_API_KEY / OPENAI_BASE_URL) in apps/web/.env.local, then restart the dev server.",
-      },
-      { status: 500 },
-    );
-  }
-
   if (chatRatelimit) {
     const ip = getIP(req);
     const { success, limit, remaining, reset } = await chatRatelimit.limit(ip);
@@ -254,9 +226,16 @@ export async function POST(req: Request) {
       ? truncateText(payload.system, MAX_SYSTEM_CHARS)
       : undefined;
   const tools = payload.tools;
-  const requestedModel = payload.model;
-  const selectedModel =
-    useGroq && isGroqModelId(requestedModel) ? requestedModel : chatModel;
+  const resolvedModel = await resolveChatModel(payload.model);
+  if (!resolvedModel) {
+    return NextResponse.json(
+      {
+        error:
+          "No chat model is configured. Add an LLM provider in the developer panel (Models tab), or set GROQ_API_KEY / OPENAI_API_KEY / OPENAI_BASE_URL in apps/web/.env.local.",
+      },
+      { status: 500 },
+    );
+  }
   const latestText = latestUserText(messages);
   const review = getPaperReviewInvocation(latestText);
   const prover = review ? null : getMathematicalProverInvocation(latestText);
@@ -295,7 +274,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const selectedModelInstance = modelProvider.chat(selectedModel);
+  const selectedModelInstance = resolvedModel.model;
   const serverTools = createServerTools(selectedModelInstance);
   const clientTools = activeTools
     ? (frontendTools(activeTools) as unknown as ToolSet)
@@ -318,10 +297,10 @@ export async function POST(req: Request) {
           ? (error as { statusCode?: number }).statusCode
           : undefined;
       if (statusCode === 413) {
-        return "Groq rejected this request as too large for the current token limit. The editor context was compacted automatically; try sending the message again or choose the Fast model.";
+        return "The model provider rejected this request as too large for the current token limit. The editor context was compacted automatically; try sending the message again or choose a model with a larger context window.";
       }
       console.error("Chat stream error", error);
-      return "Chat failed while contacting the model. Check the server logs and your Groq configuration.";
+      return "Chat failed while contacting the model. Check the server logs and the selected provider configuration.";
     },
   });
 }
