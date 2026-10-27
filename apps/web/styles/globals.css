@@ -253,6 +253,16 @@ html[data-workspace="true"] body {
 
 /* Product chrome ------------------------------------------------------- */
 
+.cm-diagnostic-error {
+  background-color: rgba(198, 69, 69, 0.12);
+  box-shadow: inset 2px 0 0 #c64545;
+}
+
+.cm-diagnostic-warning {
+  background-color: rgba(185, 130, 47, 0.12);
+  box-shadow: inset 2px 0 0 #b9822f;
+}
+
 .surface-dark {
   background: var(--surface-dark);
   color: var(--on-dark);

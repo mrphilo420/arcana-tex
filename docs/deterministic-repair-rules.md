@@ -365,7 +365,15 @@ whole suite, then `pnpm lint` and `pnpm --filter @open-prism/web build`.
 6. Add the idempotence and conflict tests.
 7. Only then consider R7 or any new rule.
 
-## 10. Open questions
+## 10. AI repairs are outside this contract
+
+AI fixes are an opt-in fallback for errors that remain after the deterministic
+rules. They use the selected Groq model and are validated as line-based
+patches before application. They do not inherit determinism from this
+document. If the last compile produced a PDF, the UI pauses automatic source
+changes and highlights the affected lines instead.
+
+## 11. Open questions
 
 - Should a missing `\input` be review-only permanently, or become R7 after
   fixtures prove that commenting it is acceptable?

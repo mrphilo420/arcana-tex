@@ -20,13 +20,21 @@ import {
   PlusIcon,
   RotateCcwIcon,
   ScrollTextIcon,
+  SparklesIcon,
   Trash2Icon,
   UsersIcon,
   WrenchIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ProjectComment, ProjectVersion } from "@/lib/storage/schema";
+import type { CompileDiagnostic } from "@/lib/compile-diagnostics";
 import { diagnosticNature } from "@/lib/compile-diagnostics";
+import {
+  applyAiFixPatches,
+  requestAiFixes,
+  type AiFixDiagnosticInput,
+} from "@/lib/ai-fixes";
+import type { ProjectFile } from "@/lib/project-files";
 import {
   describeAutoFix,
   previewAutoFix,
@@ -41,6 +49,7 @@ import {
   restoreProjectVersion,
 } from "@/lib/projects/repository";
 import { getSyncUserName, loadProjectSyncSettings } from "@/lib/sync/settings";
+import { useChatModelStore } from "@/stores/chat-model-store";
 import { useDocumentStore, type InspectorTab } from "@/stores/document-store";
 import { useSyncStore } from "@/stores/sync-store";
 import { Button } from "@/components/ui/button";
@@ -148,6 +157,8 @@ export function ProjectInspector() {
   const compileLogs = useDocumentStore((s) => s.compileLogs);
   const compileDiagnostics = useDocumentStore((s) => s.compileDiagnostics);
   const lastCompileLog = useDocumentStore((s) => s.lastCompileLog);
+  const pdfData = useDocumentStore((s) => s.pdfData);
+  const compileError = useDocumentStore((s) => s.compileError);
   const clearCompileLogs = useDocumentStore((s) => s.clearCompileLogs);
   const setActiveFile = useDocumentStore((s) => s.setActiveFile);
   const requestJumpToPosition = useDocumentStore(
@@ -172,6 +183,8 @@ export function ProjectInspector() {
   const [savingVersion, setSavingVersion] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [fixingId, setFixingId] = useState<string | "all" | null>(null);
+  const [aiFixingId, setAiFixingId] = useState<string | "all" | null>(null);
+  const selectedModelId = useChatModelStore((s) => s.selectedModelId);
   const [expandedDiagnostics, setExpandedDiagnostics] = useState<Set<string>>(
     new Set(),
   );
@@ -218,9 +231,9 @@ export function ProjectInspector() {
   const warningCount = compileDiagnostics.filter(
     (diagnostic) => diagnostic.severity === "warning",
   ).length;
-  const autoFixableCount = compileDiagnostics.filter(
-    (diagnostic) => describeAutoFix(diagnostic) !== null,
-  ).length;
+  const fixBusy = fixingId !== null || aiFixingId !== null;
+  const compiledWithErrors =
+    Boolean(pdfData) && !compileError && errorCount > 0;
   const selectedDiagnostic =
     compileDiagnostics.find(
       (diagnostic) => diagnostic.id === selectedDiagnosticId,
@@ -248,6 +261,259 @@ export function ProjectInspector() {
       setSelectedDiagnosticId(null);
     }
   }, [compileDiagnostics, selectedDiagnosticId]);
+
+  const toAiDiagnostic = (
+    diagnostic: CompileDiagnostic,
+  ): AiFixDiagnosticInput => ({
+    id: diagnostic.id,
+    kind: diagnostic.kind,
+    message: diagnostic.message,
+    details: diagnostic.details,
+    filePath: diagnostic.filePath ?? null,
+    fileId: diagnostic.fileId ?? null,
+    line: diagnostic.line ?? null,
+    lineText: diagnostic.lineText ?? null,
+    raw: diagnostic.raw,
+    data: diagnostic.data as Record<string, unknown>,
+  });
+
+  const withFileUpdates = (
+    source: ProjectFile[],
+    updates: { id: string; content: string }[],
+  ): ProjectFile[] => {
+    const updateMap = new Map(updates.map((update) => [update.id, update]));
+    return source.map((file) => {
+      const update = updateMap.get(file.id);
+      return update ? { ...file, content: update.content } : file;
+    });
+  };
+
+  const commitFixPlan = async ({
+    baseFiles,
+    finalFiles,
+    label,
+    messages,
+    warning,
+  }: {
+    baseFiles: ProjectFile[];
+    finalFiles: ProjectFile[];
+    label: string;
+    messages: string[];
+    warning?: string;
+  }): Promise<boolean> => {
+    if (!projectId) return false;
+
+    const changed = finalFiles.filter((file) => {
+      const before = baseFiles.find((candidate) => candidate.id === file.id);
+      return before && file.content !== before.content;
+    });
+
+    if (changed.length === 0) return false;
+
+    try {
+      const version = await createProjectVersion({
+        projectId,
+        label,
+        name: projectName,
+        projectCreatedAt: createdAt ?? Date.now(),
+        files: baseFiles,
+        activeFileId: useDocumentStore.getState().activeFileId,
+        mainFileId,
+        compiler,
+        comments,
+      });
+
+      setVersions((current) => [version, ...current].slice(0, 30));
+
+      const store = useDocumentStore.getState();
+      for (const file of changed) {
+        store.updateFileContent(file.id, file.content ?? "");
+      }
+      store.requestCompile();
+
+      toast.success(
+        `Applied ${messages.length} fix${messages.length === 1 ? "" : "es"}`,
+        {
+          description: messages.slice(0, 4).join(" · "),
+        },
+      );
+      if (warning) {
+        toast.warning("Some fixes need attention", { description: warning });
+      }
+      return true;
+    } catch (error) {
+      console.error("Failed to apply fix plan", error);
+      toast.error("Could not apply the fixes");
+      return false;
+    }
+  };
+
+  const handleAiFix = async (diagnosticId?: string) => {
+    if (!projectId || fixBusy) return;
+    if (compiledWithErrors) {
+      toast.info("PDF compiled; source left unchanged", {
+        description:
+          "Affected lines are highlighted in the editor. Fixes are review-only while the PDF builds.",
+      });
+      return;
+    }
+
+    const targets = compileDiagnostics.filter(
+      (diagnostic) =>
+        diagnostic.severity === "error" &&
+        (!diagnosticId || diagnostic.id === diagnosticId),
+    );
+    if (targets.length === 0) return;
+
+    setAiFixingId(diagnosticId ?? "all");
+    try {
+      const response = await requestAiFixes({
+        model: selectedModelId,
+        mode: diagnosticId ? "single" : "all",
+        mainFileId,
+        files: files
+          .filter((file) => file.type === "tex")
+          .map((file) => ({
+            id: file.id,
+            path: file.path,
+            content: file.content ?? "",
+          })),
+        diagnostics: targets.slice(0, 12).map(toAiDiagnostic),
+      });
+
+      if (response.patches.length === 0) {
+        toast.info("AI did not propose a safe fix", {
+          description:
+            response.rejected[0]?.reason ??
+            response.notes ??
+            "Try a different model or fix the highlighted line manually.",
+        });
+        return;
+      }
+
+      const applied = applyAiFixPatches(files, response.patches);
+      if (applied.applied.length === 0) {
+        toast.info("AI patches did not pass validation", {
+          description: applied.skipped[0]?.reason,
+        });
+        return;
+      }
+
+      await commitFixPlan({
+        baseFiles: files,
+        finalFiles: applied.files,
+        label: diagnosticId ? "Before AI fix" : "Before AI fix all",
+        messages: applied.applied.map((patch) => `AI: ${patch.explanation}`),
+        warning: response.rejected.length
+          ? `${response.rejected.length} patch${response.rejected.length === 1 ? "" : "es"} rejected: ${response.rejected[0]?.reason}`
+          : undefined,
+      });
+    } catch (error) {
+      console.error("AI fix failed", error);
+      toast.error("AI fix failed", {
+        description:
+          error instanceof Error
+            ? error.message.slice(0, 240)
+            : "Check the model configuration and try again.",
+      });
+    } finally {
+      setAiFixingId(null);
+    }
+  };
+
+  const handleFixAll = async () => {
+    if (!projectId || fixBusy) return;
+    if (compiledWithErrors) {
+      toast.info("PDF compiled; source left unchanged", {
+        description:
+          "The affected lines are highlighted. Fixes are review-only while the PDF builds.",
+      });
+      return;
+    }
+
+    setFixingId("all");
+    try {
+      const deterministic = runAutoFixes({
+        files,
+        mainFileId,
+        diagnostics: compileDiagnostics,
+      });
+      let finalFiles = withFileUpdates(files, deterministic.updates);
+      const unresolved = compileDiagnostics.filter(
+        (diagnostic) =>
+          diagnostic.severity === "error" &&
+          deterministic.skipped.some(
+            (item) => item.diagnosticId === diagnostic.id,
+          ),
+      );
+
+      let aiApplied = 0;
+      let aiWarning: string | undefined;
+      let aiError: string | undefined;
+
+      if (unresolved.length > 0) {
+        try {
+          const response = await requestAiFixes({
+            model: selectedModelId,
+            mode: "all",
+            mainFileId,
+            files: finalFiles
+              .filter((file) => file.type === "tex")
+              .map((file) => ({
+                id: file.id,
+                path: file.path,
+                content: file.content ?? "",
+              })),
+            diagnostics: unresolved.slice(0, 12).map(toAiDiagnostic),
+          });
+
+          if (response.patches.length > 0) {
+            const applied = applyAiFixPatches(finalFiles, response.patches);
+            finalFiles = applied.files;
+            aiApplied = applied.applied.length;
+          }
+          if (response.rejected.length > 0) {
+            aiWarning = `${response.rejected.length} AI patch${response.rejected.length === 1 ? "" : "es"} rejected: ${response.rejected[0]?.reason}`;
+          }
+        } catch (error) {
+          aiError =
+            error instanceof Error
+              ? error.message.slice(0, 200)
+              : "AI repair failed";
+        }
+      }
+
+      const messages = [
+        ...deterministic.applied,
+        ...(aiApplied > 0
+          ? [
+              `AI applied ${aiApplied} source patch${aiApplied === 1 ? "" : "es"}`,
+            ]
+          : []),
+      ];
+
+      if (messages.length === 0) {
+        toast.info("No safe fix was found", {
+          description:
+            aiError ??
+            "The remaining errors need a manual repair; the affected lines are highlighted.",
+        });
+        return;
+      }
+
+      await commitFixPlan({
+        baseFiles: files,
+        finalFiles,
+        label: "Before fix all",
+        messages,
+        warning: aiError
+          ? `Deterministic fixes applied; AI repair failed: ${aiError}`
+          : aiWarning,
+      });
+    } finally {
+      setFixingId(null);
+    }
+  };
 
   const loadVersions = useCallback(async () => {
     if (!projectId) return;
@@ -408,7 +674,14 @@ export function ProjectInspector() {
   };
 
   const handleAutoFix = async (diagnosticId?: string) => {
-    if (!projectId || fixingId) return;
+    if (!projectId || fixBusy) return;
+    if (compiledWithErrors) {
+      toast.info("PDF compiled; source left unchanged", {
+        description:
+          "Affected lines are highlighted in the editor. Fixes are review-only while the PDF builds.",
+      });
+      return;
+    }
 
     const result = runAutoFixes({
       files,
@@ -906,9 +1179,10 @@ export function ProjectInspector() {
                   </div>
                   <p className="mt-1 text-[0.75rem] text-muted-foreground leading-relaxed">
                     Detected from the latest compile. Click an issue to jump to
-                    its line and inspect the suggested fix. Auto-fix runs local
-                    deterministic repair rules; a version snapshot is saved
-                    first.
+                    its line and inspect the suggested fix. Fix all runs local
+                    deterministic rules, then AI for remaining errors; a version
+                    snapshot is saved first. If the PDF builds, source changes
+                    are paused.
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-0.5">
@@ -937,20 +1211,45 @@ export function ProjectInspector() {
                 </div>
               </div>
 
-              {autoFixableCount > 0 && (
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={() => void handleAutoFix()}
-                  disabled={fixingId !== null}
-                >
-                  {fixingId === "all" ? (
-                    <Loader2Icon className="size-3.5 animate-spin" />
-                  ) : (
-                    <WrenchIcon className="size-3.5" />
-                  )}
-                  Auto-fix all ({autoFixableCount})
-                </Button>
+              {compiledWithErrors && (
+                <div className="rounded-lg border border-[#b9822f]/25 bg-[#b9822f]/5 p-3 text-[#8a6421] text-[0.75rem] leading-relaxed">
+                  <div className="font-medium">PDF builds with errors</div>
+                  <p className="mt-1">
+                    The source is left unchanged. The affected lines are
+                    highlighted in the editor; fix them manually, or use a
+                    single issue action when you intend to change the source.
+                  </p>
+                </div>
+              )}
+
+              {errorCount > 0 && (
+                <div className="space-y-1">
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    onClick={() => void handleFixAll()}
+                    disabled={fixBusy || compiledWithErrors}
+                    title={
+                      compiledWithErrors
+                        ? "PDF builds; automatic fixes are paused while errors remain."
+                        : "Run deterministic fixes, then ask AI about remaining errors."
+                    }
+                  >
+                    {fixingId === "all" || aiFixingId === "all" ? (
+                      <Loader2Icon className="size-3.5 animate-spin" />
+                    ) : (
+                      <SparklesIcon className="size-3.5" />
+                    )}
+                    {compiledWithErrors
+                      ? "Fix all paused"
+                      : `Fix all (${errorCount})`}
+                  </Button>
+                  <p className="text-[0.6875rem] text-muted-foreground leading-relaxed">
+                    {compiledWithErrors
+                      ? "Highlighted errors are review-only while the PDF builds."
+                      : "Runs deterministic rules first, then AI for remaining errors. Saves a version first."}
+                  </p>
+                </div>
               )}
 
               {compileDiagnostics.length === 0 ? (
@@ -1047,28 +1346,62 @@ export function ProjectInspector() {
                             )}
                           </div>
 
-                          {fix ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 shrink-0 gap-1 px-2 text-[0.75rem]"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                void handleAutoFix(diagnostic.id);
-                              }}
-                              disabled={fixingId !== null}
-                              title={fix}
-                            >
-                              {isFixing ? (
-                                <Loader2Icon className="size-3 animate-spin" />
+                          {isError ? (
+                            <div className="flex shrink-0 items-center gap-1">
+                              {fix ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 gap-1 px-2 text-[0.75rem]"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    void handleAutoFix(diagnostic.id);
+                                  }}
+                                  disabled={fixBusy || compiledWithErrors}
+                                  title={
+                                    compiledWithErrors
+                                      ? "PDF builds; automatic fixes are paused."
+                                      : fix
+                                  }
+                                >
+                                  {isFixing ? (
+                                    <Loader2Icon className="size-3 animate-spin" />
+                                  ) : (
+                                    <WrenchIcon className="size-3" />
+                                  )}
+                                  Auto-fix
+                                </Button>
                               ) : (
-                                <WrenchIcon className="size-3" />
+                                <span className="rounded-full border border-hairline px-1.5 py-0.5 text-[0.75rem] text-muted-foreground uppercase tracking-[0.12em]">
+                                  Manual
+                                </span>
                               )}
-                              Auto-fix
-                            </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 gap-1 px-2 text-[0.75rem]"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void handleAiFix(diagnostic.id);
+                                }}
+                                disabled={fixBusy || compiledWithErrors}
+                                title={
+                                  compiledWithErrors
+                                    ? "PDF builds; AI fixes are paused."
+                                    : "Ask the selected AI model to propose a repair"
+                                }
+                              >
+                                {aiFixingId === diagnostic.id ? (
+                                  <Loader2Icon className="size-3 animate-spin" />
+                                ) : (
+                                  <SparklesIcon className="size-3" />
+                                )}
+                                AI
+                              </Button>
+                            </div>
                           ) : (
                             <span className="shrink-0 rounded-full border border-hairline px-1.5 py-0.5 text-[0.75rem] text-muted-foreground uppercase tracking-[0.12em]">
-                              {isError ? "Manual" : "Review"}
+                              Review
                             </span>
                           )}
                         </div>
@@ -1120,10 +1453,31 @@ export function ProjectInspector() {
                             </div>
 
                             {selectedFix.updates.length === 0 ? (
-                              <p className="mt-2 text-[0.875rem] text-muted-foreground leading-relaxed">
-                                No deterministic repair rule matches this issue.
-                                Edit the highlighted line in the editor.
-                              </p>
+                              <div className="mt-2 space-y-2">
+                                <p className="text-[0.875rem] text-muted-foreground leading-relaxed">
+                                  No deterministic repair rule matches this
+                                  issue. The affected line is highlighted in the
+                                  editor.
+                                </p>
+                                {isError && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 gap-1 px-2 text-[0.75rem]"
+                                    onClick={() =>
+                                      void handleAiFix(diagnostic.id)
+                                    }
+                                    disabled={fixBusy || compiledWithErrors}
+                                  >
+                                    {aiFixingId === diagnostic.id ? (
+                                      <Loader2Icon className="size-3 animate-spin" />
+                                    ) : (
+                                      <SparklesIcon className="size-3" />
+                                    )}
+                                    Ask AI to fix
+                                  </Button>
+                                )}
+                              </div>
                             ) : (
                               <div className="mt-2 space-y-2">
                                 {selectedFix.updates.map((update) => (
@@ -1161,7 +1515,8 @@ export function ProjectInspector() {
                                   void handleAutoFix(diagnostic.id)
                                 }
                                 disabled={
-                                  fixingId !== null ||
+                                  fixBusy ||
+                                  compiledWithErrors ||
                                   selectedFix.updates.length === 0
                                 }
                               >

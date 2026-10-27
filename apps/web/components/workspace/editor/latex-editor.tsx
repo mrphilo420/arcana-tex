@@ -35,6 +35,10 @@ import { useDocumentStore } from "@/stores/document-store";
 import { useDevFeatureFlag } from "@/stores/dev-panel-store";
 import { useEditorPreferencesStore } from "@/stores/editor-preferences-store";
 import { compileProject } from "@/lib/compile-project";
+import {
+  diagnosticHighlightExtension,
+  setEditorDiagnostics,
+} from "@/lib/editor-diagnostics";
 import { buildEditorTheme, getTerminalTheme } from "@/lib/editor-theme";
 import { EditorToolbar } from "./editor-toolbar";
 import { type LatexInsertion, TikzLatexRibbon } from "../tikz-latex-ribbon";
@@ -174,6 +178,7 @@ export function LatexEditor() {
   const setContent = useDocumentStore((s) => s.setContent);
   const setCursorPosition = useDocumentStore((s) => s.setCursorPosition);
   const setSelectionRange = useDocumentStore((s) => s.setSelectionRange);
+  const compileDiagnostics = useDocumentStore((s) => s.compileDiagnostics);
   const jumpToPosition = useDocumentStore((s) => s.jumpToPosition);
   const clearJumpRequest = useDocumentStore((s) => s.clearJumpRequest);
   const isLatexKeyboardOpen = useDocumentStore((s) => s.isLatexKeyboardOpen);
@@ -197,6 +202,44 @@ export function LatexEditor() {
   const isMarkdown =
     activeFile?.type === "tex" && /\.(?:md|markdown)$/i.test(activeFile.path);
   const activeFileContent = activeFile?.content;
+  const activeFileMarks = useMemo(() => {
+    if (!activeFile) return [];
+    const path = activeFile.path.replace(/\\/g, "/");
+    const basename = path.split("/").pop();
+    const relevant = compileDiagnostics.filter((diagnostic) => {
+      if (diagnostic.fileId) return diagnostic.fileId === activeFile.id;
+      if (!diagnostic.filePath) return true;
+      const diagnosticPath = diagnostic.filePath.replace(/\\/g, "/");
+      return (
+        diagnosticPath === path ||
+        (!diagnosticPath.includes("/") && diagnosticPath === basename)
+      );
+    });
+    const marks: { line: number; severity: "error" | "warning" }[] = [];
+    const lines = (activeFile.content ?? "").split("\n");
+
+    for (const diagnostic of relevant) {
+      if (typeof diagnostic.line === "number" && diagnostic.line > 0) {
+        marks.push({
+          line: diagnostic.line,
+          severity: diagnostic.severity,
+        });
+      }
+
+      // An environment mismatch is reported at the closing token, but the
+      // opening block is part of the repair, so highlight it too when present.
+      if (diagnostic.kind === "environment-mismatch" && diagnostic.data.begin) {
+        const marker = `\\begin{${diagnostic.data.begin}}`;
+        lines.forEach((lineText, index) => {
+          if (lineText.includes(marker)) {
+            marks.push({ line: index + 1, severity: diagnostic.severity });
+          }
+        });
+      }
+    }
+
+    return marks;
+  }, [activeFile, compileDiagnostics]);
 
   const [imageScale, setImageScale] = useState(0.5);
   const [currentLine, setCurrentLine] = useState(1);
@@ -476,6 +519,7 @@ export function LatexEditor() {
         isLean ? leanLanguage : isMarkdown ? markdown() : latex(),
         terminalTheme.theme,
         syntaxHighlighting(terminalTheme.highlight),
+        diagnosticHighlightExtension,
         search(),
         highlightSelectionMatches(),
         updateListener,
@@ -527,6 +571,14 @@ export function LatexEditor() {
     setCursorPosition,
     setSelectionRange,
   ]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: setEditorDiagnostics.of(activeFileMarks),
+    });
+  }, [activeFileMarks, activeFileId]);
 
   useEffect(() => {
     const view = viewRef.current;

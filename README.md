@@ -86,10 +86,12 @@ you configure.
 - **Real-time diagnostics** - The TeX log is parsed into structured errors and
   warnings with severity, nature, file/line, and a source excerpt. Click an
   issue to jump to it.
-- **Deterministic auto-fix** - Local repair rules cover missing figures and
+- **Deterministic + AI repair** - Local repair rules cover missing figures and
   packages, undefined theorem environments, unbalanced environments,
-  package-provided commands, and duplicate definitions. Every fix shows a diff
-  and saves a version snapshot before applying.
+  package-provided commands, and duplicate definitions. **Fix all** runs those
+  rules first, then asks the selected AI model about remaining errors. Every
+  applied repair saves a version snapshot; when a PDF already builds despite
+  errors, automatic source changes pause and the affected lines are highlighted.
 - **Beamer companion + wizard** - Appears only when a Beamer document is
   detected. Includes a slide navigator, frame snippets, theme and aspect-ratio
   controls, overlays, notes, handout mode, and a three-step deck wizard.
@@ -292,9 +294,14 @@ diagnostics.
 - Click an issue to jump the editor to that line. The inspector is non-modal,
   so the code and the suggested fix remain visible together.
 - The **Suggested fix** panel shows the exact line changes before applying.
-  **Auto-fix all** runs the same deterministic rules across the issue list.
-- A version snapshot is saved before any auto-fix, so the change can be
-  restored from **Versions**.
+  Each error can be repaired with the deterministic rule or the selected AI
+  model.
+- **Fix all** applies the deterministic rules first, then uses AI for the
+  remaining errors. A version snapshot is saved before any source change, so
+  the result can be restored from **Versions**.
+- If a PDF is produced despite compile errors, automatic source changes are
+  paused. The affected lines are highlighted in the editor and the log actions
+  remain review-only so a working PDF is not overwritten.
 - The repair rules cover missing graphics (comment the command), missing
   theorem-like environments (add `\newtheorem`), missing package-provided
   environments/commands (add the package), unbalanced environments (comment
