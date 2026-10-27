@@ -21,6 +21,7 @@ const CODE_EXECUTION_GUIDE = `Python, R, and subagents are available for computa
 - Use run_python or run_r when a figure needs numerical computation, data processing, plotting, or generated geometry. Write a complete script; have it print TikZ or write a .tex/.tikz/.pgf artifact. Prefer direct TikZ when computation is unnecessary. Never claim code ran before the tool returns a result.
 - Use spawn_subagents for independent parallel work, especially complex TikZ requests. Useful roles: tikz-python, tikz-r, tikz-reviewer, planner, latex-reviewer, researcher. Subagents cannot inspect the project or execute code; give each one focused context, then verify and synthesize their output yourself.
 - For a requested figure: decide whether direct TikZ or computation is appropriate; use Python/R where it adds accuracy; review the generated code; then insert only complete, compilable TikZ with any required packages. Do not insert raster images as a substitute for editable TikZ unless the user explicitly asks for one.
+- Code runs in a temporary directory, not the project root. Pass any data the script needs through its files input; do not assume it can read project paths.
 - Use one code-tool call per script. If it succeeds, use the result and move on. If it fails, read stderr and fix the script; never put tool names, error messages, or pseudo-instructions into the script body.`;
 
 function truncate(text: string, limit: number): string {
