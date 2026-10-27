@@ -45,6 +45,36 @@ describe("LLM_PROVIDER_PRESETS", () => {
     const ids = LLM_PROVIDER_PRESETS.map((preset) => preset.providerId);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  it("includes OpenCode Zen/Go, Anthropic, and Nous/Hermes presets", () => {
+    const byId = new Map(
+      LLM_PROVIDER_PRESETS.map((preset) => [preset.providerId, preset]),
+    );
+    expect(byId.get("opencode")).toMatchObject({
+      baseUrl: "https://opencode.ai/inference/openai/v1",
+      api: "openai-chat",
+    });
+    expect(byId.get("opencode-responses")).toMatchObject({
+      baseUrl: "https://opencode.ai/inference/openai/v1",
+      api: "openai-responses",
+    });
+    expect(byId.get("anthropic")).toMatchObject({
+      baseUrl: "https://api.anthropic.com/v1",
+      api: "anthropic",
+    });
+    expect(byId.get("nous")).toMatchObject({
+      baseUrl: "https://inference-api.nousresearch.com/v1",
+      api: "openai-chat",
+    });
+  });
+
+  it("uses a supported API type for every preset", () => {
+    for (const preset of LLM_PROVIDER_PRESETS) {
+      expect(["openai-chat", "openai-responses", "anthropic"]).toContain(
+        preset.api,
+      );
+    }
+  });
 });
 
 describe("groqModelSelections", () => {

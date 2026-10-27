@@ -31,6 +31,7 @@ export async function POST(request: Request) {
       label: typeof provider.label === "string" ? provider.label : undefined,
       baseUrl:
         typeof provider.baseUrl === "string" ? provider.baseUrl : undefined,
+      api: typeof provider.api === "string" ? provider.api : undefined,
       apiKey:
         typeof body.apiKey === "string"
           ? body.apiKey

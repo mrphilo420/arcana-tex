@@ -1,3 +1,4 @@
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
 import { chmod, readFile, writeFile } from "node:fs/promises";
@@ -9,6 +10,7 @@ import {
   modelValue,
   parseModelValue,
   type ChatModelSelection,
+  type LlmProviderApi,
 } from "@/lib/chat-models";
 
 const CONFIG_PATH = join(process.cwd(), ".llm-providers.local.json");
@@ -25,6 +27,7 @@ export interface StoredLlmProvider {
   id: string;
   label: string;
   baseUrl: string;
+  api: LlmProviderApi;
   apiKey: string;
   headers: Record<string, string>;
   models: string[];
@@ -37,6 +40,7 @@ export interface PublicLlmProvider {
   id: string;
   label: string;
   baseUrl: string;
+  api: LlmProviderApi;
   models: string[];
   defaultModel: string;
   hasApiKey: boolean;
@@ -51,6 +55,7 @@ export interface ResolvedChatModel {
   providerId: string;
   providerLabel: string;
   modelId: string;
+  api: LlmProviderApi;
   model: LanguageModel;
   baseUrl: string;
 }
@@ -85,6 +90,17 @@ function normalizeHeaders(value: unknown): Record<string, string> {
       )
       .slice(0, MAX_HEADERS),
   );
+}
+
+function normalizeProviderApi(
+  value: unknown,
+  fallback: LlmProviderApi = "openai-chat",
+): LlmProviderApi {
+  return value === "openai-chat" ||
+    value === "openai-responses" ||
+    value === "anthropic"
+    ? value
+    : fallback;
 }
 
 function slugify(value: string, fallback: string): string {
@@ -138,6 +154,7 @@ export async function readLlmProviders(): Promise<StoredLlmProvider[]> {
         const models = normalizeModels(provider.models);
         return {
           ...provider,
+          api: normalizeProviderApi(provider.api),
           apiKey:
             typeof provider.apiKey === "string"
               ? provider.apiKey.slice(0, MAX_API_KEY_CHARS)
@@ -173,6 +190,7 @@ export async function publicLlmProviders(): Promise<PublicLlmProvider[]> {
     id: provider.id,
     label: provider.label,
     baseUrl: provider.baseUrl,
+    api: provider.api,
     models: provider.models,
     defaultModel: provider.defaultModel,
     hasApiKey: Boolean(provider.apiKey),
@@ -187,6 +205,7 @@ export interface ProviderInput {
   id?: string;
   label?: string;
   baseUrl?: string;
+  api?: string;
   apiKey?: string;
   headers?: unknown;
   models?: unknown;
@@ -229,6 +248,7 @@ export async function upsertLlmProvider(
 
   const existingIndex = providers.findIndex((provider) => provider.id === id);
   const existing = existingIndex >= 0 ? providers[existingIndex] : null;
+  const api = normalizeProviderApi(input.api, existing?.api ?? "openai-chat");
   const apiKey =
     typeof input.apiKey === "string" && input.apiKey.trim()
       ? input.apiKey.trim().slice(0, MAX_API_KEY_CHARS)
@@ -249,6 +269,7 @@ export async function upsertLlmProvider(
     id,
     label,
     baseUrl,
+    api,
     apiKey,
     headers,
     models,
@@ -271,6 +292,7 @@ export async function upsertLlmProvider(
       id: provider.id,
       label: provider.label,
       baseUrl: provider.baseUrl,
+      api: provider.api,
       models: provider.models,
       defaultModel: provider.defaultModel,
       hasApiKey: Boolean(provider.apiKey),
@@ -296,6 +318,7 @@ export async function deleteLlmProvider(
 export async function discoverLlmModels(input: {
   providerId?: string;
   baseUrl?: string;
+  api?: string;
   apiKey?: string;
   headers?: unknown;
 }): Promise<
@@ -319,6 +342,7 @@ export async function discoverLlmModels(input: {
     };
   }
 
+  const api = normalizeProviderApi(input.api, stored?.api ?? "openai-chat");
   const apiKey =
     typeof input.apiKey === "string" && input.apiKey.trim()
       ? input.apiKey.trim().slice(0, MAX_API_KEY_CHARS)
@@ -329,7 +353,12 @@ export async function discoverLlmModels(input: {
       ? (stored?.headers ?? {})
       : normalizeHeaders(input.headers)),
   };
-  if (apiKey) headers.authorization = `Bearer ${apiKey}`;
+  if (api === "anthropic") {
+    if (apiKey) headers["x-api-key"] = apiKey;
+    headers["anthropic-version"] = headers["anthropic-version"] ?? "2023-06-01";
+  } else if (apiKey) {
+    headers.authorization = `Bearer ${apiKey}`;
+  }
 
   let response: Response;
   try {
@@ -378,9 +407,18 @@ export async function discoverLlmModels(input: {
     .map((item) => {
       if (typeof item === "string") return { id: item, label: item };
       if (item && typeof item === "object") {
-        const record = item as { id?: unknown; name?: unknown };
+        const record = item as {
+          id?: unknown;
+          name?: unknown;
+          display_name?: unknown;
+        };
         const id = typeof record.id === "string" ? record.id : "";
-        const label = typeof record.name === "string" ? record.name : id;
+        const label =
+          typeof record.display_name === "string"
+            ? record.display_name
+            : typeof record.name === "string"
+              ? record.name
+              : id;
         return id ? { id, label } : null;
       }
       return null;
@@ -402,12 +440,22 @@ function createProviderModel(
   provider: StoredLlmProvider,
   modelId: string,
 ): LanguageModel {
+  if (provider.api === "anthropic") {
+    return createAnthropic({
+      apiKey: provider.apiKey || "local",
+      baseURL: provider.baseUrl,
+      headers: provider.headers,
+    }).messages(modelId);
+  }
+
   const client = createOpenAI({
     apiKey: provider.apiKey || "local",
     baseURL: provider.baseUrl,
     headers: provider.headers,
   });
-  return client.chat(modelId);
+  return provider.api === "openai-responses"
+    ? client.responses(modelId)
+    : client.chat(modelId);
 }
 
 function envGroqModel(requested: unknown): ResolvedChatModel | null {
@@ -425,6 +473,7 @@ function envGroqModel(requested: unknown): ResolvedChatModel | null {
     providerId: "groq",
     providerLabel: "Groq",
     modelId,
+    api: "openai-chat",
     baseUrl: process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1",
     model: createOpenAI({
       apiKey,
@@ -445,6 +494,7 @@ function envOpenAiModel(requested: unknown): ResolvedChatModel | null {
     providerId: "openai",
     providerLabel: "OpenAI",
     modelId,
+    api: "openai-chat",
     baseUrl: baseUrl || "https://api.openai.com/v1",
     model: createOpenAI({
       apiKey: apiKey || "local",
@@ -467,6 +517,7 @@ function resolveConfiguredModel(
           providerId: provider.id,
           providerLabel: provider.label,
           modelId: parsed.modelId,
+          api: provider.api,
           baseUrl: provider.baseUrl,
           model: createProviderModel(provider, parsed.modelId),
         };
@@ -481,6 +532,7 @@ function resolveConfiguredModel(
           providerId: provider.id,
           providerLabel: provider.label,
           modelId: requested.trim(),
+          api: provider.api,
           baseUrl: provider.baseUrl,
           model: createProviderModel(provider, requested.trim()),
         };
@@ -499,6 +551,7 @@ function resolveConfiguredModel(
     providerId: fallback.id,
     providerLabel: fallback.label,
     modelId,
+    api: fallback.api,
     baseUrl: fallback.baseUrl,
     model: createProviderModel(fallback, modelId),
   };

@@ -14,9 +14,17 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   LLM_PROVIDER_PRESETS,
+  type LlmProviderApi,
   type LlmProviderPreset,
 } from "@/lib/chat-models";
 import { cn } from "@/lib/utils";
@@ -26,6 +34,7 @@ interface PublicProvider {
   id: string;
   label: string;
   baseUrl: string;
+  api: LlmProviderApi;
   models: string[];
   defaultModel: string;
   hasApiKey: boolean;
@@ -37,6 +46,7 @@ interface ProviderForm {
   id: string | null;
   label: string;
   baseUrl: string;
+  api: LlmProviderApi;
   apiKey: string;
   headers: string;
   models: string;
@@ -47,10 +57,17 @@ const EMPTY_FORM: ProviderForm = {
   id: null,
   label: "",
   baseUrl: "",
+  api: "openai-chat",
   apiKey: "",
   headers: "",
   models: "",
   defaultModel: "",
+};
+
+const API_LABELS: Record<LlmProviderApi, string> = {
+  "openai-chat": "OpenAI chat",
+  "openai-responses": "OpenAI responses",
+  anthropic: "Anthropic messages",
 };
 
 function formFromPreset(preset: LlmProviderPreset): ProviderForm {
@@ -58,6 +75,7 @@ function formFromPreset(preset: LlmProviderPreset): ProviderForm {
     id: preset.providerId,
     label: preset.label,
     baseUrl: preset.baseUrl,
+    api: preset.api,
     apiKey: "",
     headers: "",
     models: preset.models.map((model) => model.id).join("\n"),
@@ -70,6 +88,7 @@ function formFromProvider(provider: PublicProvider): ProviderForm {
     id: provider.id,
     label: provider.label,
     baseUrl: provider.baseUrl,
+    api: provider.api,
     apiKey: "",
     headers: "",
     models: provider.models.join("\n"),
@@ -166,6 +185,7 @@ export function LlmProvidersPanel() {
             id: form.id ?? undefined,
             label: form.label.trim(),
             baseUrl: form.baseUrl.trim(),
+            api: form.api,
             headers,
             models,
             defaultModel: form.defaultModel.trim() || models[0],
@@ -244,6 +264,7 @@ export function LlmProvidersPanel() {
         body: JSON.stringify({
           providerId: form.id ?? undefined,
           baseUrl: form.baseUrl.trim(),
+          api: form.api,
           apiKey: form.apiKey.trim() || undefined,
           headers,
         }),
@@ -336,6 +357,9 @@ export function LlmProvidersPanel() {
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1.5 text-[0.7rem] text-muted-foreground">
                     <span className="rounded bg-muted px-1.5 py-0.5">
+                      {API_LABELS[provider.api] ?? provider.api}
+                    </span>
+                    <span className="rounded bg-muted px-1.5 py-0.5">
                       {provider.models.length} model
                       {provider.models.length === 1 ? "" : "s"}
                     </span>
@@ -413,6 +437,33 @@ export function LlmProvidersPanel() {
             />
           </div>
           <div className="space-y-1 sm:col-span-2">
+            <Label htmlFor="llm-provider-api" className="text-[0.75rem]">
+              API type
+            </Label>
+            <Select
+              value={form.api}
+              onValueChange={(value) =>
+                update({ api: value as LlmProviderApi })
+              }
+            >
+              <SelectTrigger
+                id="llm-provider-api"
+                className="h-8 w-full text-[0.8rem]"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="openai-chat">
+                  OpenAI chat completions
+                </SelectItem>
+                <SelectItem value="openai-responses">
+                  OpenAI responses
+                </SelectItem>
+                <SelectItem value="anthropic">Anthropic messages</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1 sm:col-span-2">
             <Label htmlFor="llm-provider-key" className="text-[0.75rem]">
               API key{" "}
               {form.id && (
@@ -470,7 +521,9 @@ export function LlmProvidersPanel() {
         </div>
         <p className="mt-2 text-[0.7rem] text-muted-foreground">
           Leave headers blank to keep the stored headers; enter {"{}"} to clear
-          them. Discovery calls GET /models with the same base URL and key.
+          them. Discovery calls GET /models with the same base URL and key. It
+          uses Bearer auth for OpenAI-compatible endpoints and x-api-key plus
+          anthropic-version for Anthropic.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <Button

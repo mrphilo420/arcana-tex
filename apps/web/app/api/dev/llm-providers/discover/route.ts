@@ -13,12 +13,14 @@ export async function POST(request: Request) {
     const body = (await request.json()) as {
       providerId?: string;
       baseUrl?: string;
+      api?: string;
       apiKey?: string;
       headers?: unknown;
     };
     const result = await discoverLlmModels({
       providerId: body.providerId,
       baseUrl: body.baseUrl,
+      api: body.api,
       apiKey: body.apiKey,
       headers: body.headers,
     });

@@ -68,10 +68,13 @@ export interface ChatModelSelection extends ChatModelOption {
   providerLabel: string;
 }
 
+export type LlmProviderApi = "openai-chat" | "openai-responses" | "anthropic";
+
 export interface LlmProviderPreset {
   providerId: string;
   label: string;
   baseUrl: string;
+  api: LlmProviderApi;
   description: string;
   models: Array<{ id: string; label: string }>;
 }
@@ -81,20 +84,83 @@ export const LLM_PROVIDER_PRESETS: LlmProviderPreset[] = [
     providerId: "meta",
     label: "Meta AI",
     baseUrl: "https://api.meta.ai/v1",
+    api: "openai-chat",
     description: "Meta AI Muse Spark through its OpenAI-compatible endpoint.",
     models: [{ id: "muse-spark-1.1", label: "Muse Spark 1.1" }],
+  },
+  {
+    providerId: "opencode",
+    label: "OpenCode Zen / Go",
+    baseUrl: "https://opencode.ai/inference/openai/v1",
+    api: "openai-chat",
+    description:
+      "OpenCode Zen and Go chat-completion models, including DeepSeek, Qwen, GLM, Kimi, and MiniMax.",
+    models: [
+      { id: "deepseek-v4.1-flash", label: "DeepSeek V4.1 Flash" },
+      { id: "qwen3.8-max", label: "Qwen3.8 Max" },
+      { id: "glm-5.3", label: "GLM 5.3" },
+      { id: "kimi-k2.6", label: "Kimi K2.6" },
+      { id: "minimax-m3", label: "MiniMax M3" },
+    ],
+  },
+  {
+    providerId: "opencode-responses",
+    label: "OpenCode Responses",
+    baseUrl: "https://opencode.ai/inference/openai/v1",
+    api: "openai-responses",
+    description:
+      "OpenCode Zen models that use the OpenAI Responses API, such as GPT, Grok, and Muse Spark.",
+    models: [
+      { id: "gpt-6.1-sol", label: "GPT 6.1 Sol" },
+      { id: "muse-spark-1.2", label: "Muse Spark 1.2" },
+      { id: "grok-4.7", label: "Grok 4.7" },
+      { id: "gpt-5.6-luna", label: "GPT 5.6 Luna" },
+    ],
+  },
+  {
+    providerId: "anthropic",
+    label: "Anthropic",
+    baseUrl: "https://api.anthropic.com/v1",
+    api: "anthropic",
+    description: "Anthropic Claude through the native Messages API.",
+    models: [
+      { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
+      { id: "claude-opus-4-6", label: "Claude Opus 4.6" },
+      { id: "claude-haiku-4-5", label: "Claude Haiku 4.5" },
+    ],
+  },
+  {
+    providerId: "nous",
+    label: "Nous Portal / Hermes",
+    baseUrl: "https://inference-api.nousresearch.com/v1",
+    api: "openai-chat",
+    description:
+      "Nous Portal and Hermes models, including Claude, GPT, DeepSeek, and Hermes 4.",
+    models: [
+      { id: "anthropic/claude-sonnet-4.6", label: "Claude Sonnet 4.6" },
+      { id: "openai/gpt-5.5-pro", label: "GPT-5.5 Pro" },
+      { id: "deepseek/deepseek-v4-pro", label: "DeepSeek V4 Pro" },
+      { id: "nousresearch/hermes-4-70b", label: "Hermes 4 70B" },
+      { id: "nousresearch/hermes-4-405b", label: "Hermes 4 405B" },
+    ],
   },
   {
     providerId: "openai",
     label: "OpenAI",
     baseUrl: "https://api.openai.com/v1",
+    api: "openai-chat",
     description: "OpenAI GPT models.",
-    models: [{ id: "gpt-4o", label: "GPT-4o" }],
+    models: [
+      { id: "gpt-4o", label: "GPT-4o" },
+      { id: "gpt-5.2", label: "GPT-5.2" },
+      { id: "gpt-5.6-sol", label: "GPT-5.6 Sol" },
+    ],
   },
   {
     providerId: "groq",
     label: "Groq",
     baseUrl: "https://api.groq.com/openai/v1",
+    api: "openai-chat",
     description: "Groq-hosted open models.",
     models: GROQ_CHAT_MODELS.map((model) => ({
       id: model.id,
@@ -105,13 +171,48 @@ export const LLM_PROVIDER_PRESETS: LlmProviderPreset[] = [
     providerId: "openrouter",
     label: "OpenRouter",
     baseUrl: "https://openrouter.ai/api/v1",
+    api: "openai-chat",
     description: "OpenRouter's multi-provider gateway.",
     models: [],
+  },
+  {
+    providerId: "google",
+    label: "Google Gemini",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+    api: "openai-chat",
+    description: "Gemini through Google's OpenAI-compatible endpoint.",
+    models: [
+      { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
+      { id: "gemini-3.1-pro", label: "Gemini 3.1 Pro" },
+    ],
+  },
+  {
+    providerId: "deepseek",
+    label: "DeepSeek",
+    baseUrl: "https://api.deepseek.com/v1",
+    api: "openai-chat",
+    description: "DeepSeek's OpenAI-compatible API.",
+    models: [
+      { id: "deepseek-chat", label: "DeepSeek Chat" },
+      { id: "deepseek-reasoner", label: "DeepSeek Reasoner" },
+    ],
+  },
+  {
+    providerId: "xai",
+    label: "xAI",
+    baseUrl: "https://api.x.ai/v1",
+    api: "openai-chat",
+    description: "xAI Grok models.",
+    models: [
+      { id: "grok-4.5", label: "Grok 4.5" },
+      { id: "grok-4.6", label: "Grok 4.6" },
+    ],
   },
   {
     providerId: "ollama",
     label: "Ollama",
     baseUrl: "http://localhost:11434/v1",
+    api: "openai-chat",
     description: "A local Ollama server; no API key is required.",
     models: [],
   },
