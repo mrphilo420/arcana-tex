@@ -63,6 +63,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ProjectCard } from "@/components/home/project-card";
+import { HomeHero } from "@/components/home/home-hero";
 import {
   createBeamerProject,
   createDefaultProject,
@@ -628,6 +629,9 @@ export function HomePage() {
         ? "Every project stored in this browser"
         : "Your local manuscripts and folders";
 
+  const showHero =
+    !isLoading && !query.trim() && (view === "yours" || view === "all");
+
   const renderProjectMenu = (project: ProjectMeta) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -853,6 +857,19 @@ export function HomePage() {
     !activeFolderId && view !== "shared" && !query.trim() && folders.length > 0;
 
   const renderEmpty = () => {
+    if (showHero && !query.trim() && visibleProjects.length === 0) {
+      return (
+        <div className="flex min-h-[150px] flex-col items-center justify-center rounded-xl border border-hairline bg-card/25 px-6 py-8 text-center">
+          <p className="font-serif text-xl tracking-[-0.02em]">
+            No projects yet
+          </p>
+          <p className="mt-1 max-w-sm text-[0.8rem] text-muted-foreground">
+            Create one above, or drag a folder anywhere on this page.
+          </p>
+        </div>
+      );
+    }
+
     if (projects.length === 0) {
       return (
         <div className="flex min-h-[420px] flex-col items-center justify-center rounded-xl border border-hairline bg-card/30 px-6 py-14 text-center">
@@ -1435,6 +1452,16 @@ export function HomePage() {
               <FolderUpIcon className="size-3.5" />
             </Button>
           </div>
+
+          {showHero && (
+            <HomeHero
+              projectCount={projects.length}
+              folderCount={folders.length}
+              sharedCount={sharedCount}
+              onNewProject={() => void handleNewProject()}
+              onImport={() => folderInputRef.current?.click()}
+            />
+          )}
 
           {isLoading ? (
             <div className="overflow-hidden rounded-xl border border-hairline bg-card/20">
