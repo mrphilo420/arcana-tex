@@ -11,8 +11,10 @@ import {
   FolderGit2Icon,
   InfoIcon,
   ListTreeIcon,
+  Loader2Icon,
   PanelLeftIcon,
   PanelRightIcon,
+  RotateCcwIcon,
   TerminalIcon,
   XIcon,
 } from "lucide-react";
@@ -23,6 +25,7 @@ import {
   LEAN_TOOLCHAIN_LABEL_STORAGE_KEY,
   summarizeLeanFile,
 } from "@/lib/lean";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useDocumentStore } from "@/stores/document-store";
 
@@ -65,12 +68,17 @@ export function LeanInfoview() {
   const [tab, setTab] = useState<InfoviewTab>("goals");
   const [projectPath, setProjectPath] = useState("");
   const [toolchainLabel, setToolchainLabel] = useState("");
+  const [isRestarting, setIsRestarting] = useState(false);
+  const [lastRestarted, setLastRestarted] = useState<Date | null>(null);
+  const [restartCount, setRestartCount] = useState(0);
+  const [analysisVersion, setAnalysisVersion] = useState(0);
 
   const activeFile = files.find((file) => file.id === activeFileId);
   const content = activeFile?.content ?? "";
   const summary = useMemo(
     () => (activeFile ? summarizeLeanFile(activeFile) : null),
-    [activeFile],
+    // analysisVersion intentionally re-runs source analysis on Restart File.
+    [activeFile, analysisVersion],
   );
 
   useEffect(() => {
@@ -134,6 +142,41 @@ export function LeanInfoview() {
 
   const jumpToLine = (line: number) => {
     requestJumpToPosition(lineStart(content, line));
+  };
+
+  const restartFile = async () => {
+    if (isRestarting) return;
+    setIsRestarting(true);
+    setTab("goals");
+    setAnalysisVersion((version) => version + 1);
+
+    const connectedProject = window.localStorage.getItem(
+      LEAN_PROJECT_STORAGE_KEY,
+    );
+    if (connectedProject) {
+      try {
+        const response = await fetch(
+          `/api/lean/status?path=${encodeURIComponent(connectedProject)}`,
+          { cache: "no-store" },
+        );
+        if (response.ok) {
+          const status = (await response.json()) as {
+            projectPath?: string;
+          };
+          if (status.projectPath) setProjectPath(status.projectPath);
+        }
+      } catch {
+        // Local source analysis still works without the bridge.
+      }
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 420));
+    setLastRestarted(new Date());
+    setRestartCount((count) => count + 1);
+    setIsRestarting(false);
+    toast.success("Lean Infoview restarted", {
+      description: `Reloaded analysis for ${activeFile.path}.`,
+    });
   };
 
   const dock = leanInfoviewDock === "left" ? "right" : "left";
@@ -429,13 +472,40 @@ export function LeanInfoview() {
         )}
       </div>
 
-      <div className="flex shrink-0 items-center justify-between border-hairline border-t px-3 py-1.5 text-[8px] text-muted-foreground">
-        <span className="truncate">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-hairline border-t bg-background/35 px-3 py-1.5 text-[8px] text-muted-foreground">
+        <span className="min-w-0 truncate">
           {summary.sorryLines.length + summary.admitLines.length === 0
-            ? "No incomplete proof markers"
+            ? "Analysis ready"
             : `${summary.sorryLines.length + summary.admitLines.length} incomplete`}
+          <span className="mx-1 text-muted-foreground/50">·</span>
+          {summary.lineCount} lines
+          {lastRestarted && (
+            <>
+              <span className="mx-1 text-muted-foreground/50">·</span>
+              restarted{" "}
+              {lastRestarted.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+              {restartCount > 1 ? ` ×${restartCount}` : ""}
+            </>
+          )}
         </span>
-        <span className="font-mono">{summary.lineCount} lines</span>
+        <button
+          type="button"
+          onClick={() => void restartFile()}
+          disabled={isRestarting}
+          title="Re-analyze this file and reset the Infoview"
+          className="flex h-6 shrink-0 items-center gap-1 rounded-md border border-hairline bg-card/70 px-2 text-[9px] text-foreground transition-colors hover:border-primary/35 hover:bg-background disabled:opacity-60"
+          aria-label="Restart File"
+        >
+          {isRestarting ? (
+            <Loader2Icon className="size-3 animate-spin" />
+          ) : (
+            <RotateCcwIcon className="size-3" />
+          )}
+          {isRestarting ? "Restarting..." : "Restart File"}
+        </button>
       </div>
     </aside>
   );

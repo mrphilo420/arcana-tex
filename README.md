@@ -119,7 +119,8 @@ you configure.
   the editor toolbar and the developer panel, and persists across sessions.
 - **Lean Infoview** - Opens automatically for `.lean` files with proof health,
   declarations, imports, local messages, and project details. Hide it or dock it
-  left/right, then reopen it from the top bar.
+  left/right, then reopen it from the top bar. **Restart File** re-runs local
+  source analysis and refreshes project metadata without changing the file.
 - **Markdown chat rendering** - Chat renders GFM, math, tables, and fenced code
   blocks; review reports remain readable in the assistant and can be copied
   into a Markdown note.
