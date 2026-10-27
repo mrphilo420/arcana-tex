@@ -1,4 +1,8 @@
-import { isLatexPatchableFile } from "@/lib/file-kind";
+import {
+  fileKindForName,
+  isLatexPatchableFile,
+  type FileKind,
+} from "@/lib/file-kind";
 import type { ProjectFile } from "@/lib/project-files";
 
 export type DiagnosticSeverity = "error" | "warning";
@@ -22,6 +26,8 @@ export type DiagnosticKind =
 
 export interface CompileDiagnostic {
   id: string;
+  /** Source language that produced this diagnostic. */
+  language?: FileKind;
   severity: DiagnosticSeverity;
   kind: DiagnosticKind;
   title: string;
@@ -40,6 +46,17 @@ export interface CompileDiagnostic {
     package?: string;
     command?: string;
   };
+}
+
+
+/** Which language a diagnostic belongs to. Older diagnostics fall back to their file path, then LaTeX. */
+export function diagnosticLanguage(diagnostic: CompileDiagnostic): FileKind {
+  if (diagnostic.language) return diagnostic.language;
+  if (diagnostic.filePath) {
+    const kind = fileKindForName(diagnostic.filePath);
+    if (kind !== "other" && kind !== "text") return kind;
+  }
+  return "latex";
 }
 
 export interface ParseLatexLogOptions {
@@ -317,6 +334,7 @@ export function parseLatexLog(
 
     diagnostics.push({
       id: `diag-${hashString(key)}`,
+      language: "latex",
       severity,
       kind,
       title,

@@ -28,8 +28,15 @@ import {
 import { toast } from "sonner";
 import type { ProjectComment, ProjectVersion } from "@/lib/storage/schema";
 import type { CompileDiagnostic } from "@/lib/compile-diagnostics";
-import { diagnosticNature } from "@/lib/compile-diagnostics";
-import { isLatexRelatedFile } from "@/lib/file-kind";
+import {
+  diagnosticLanguage,
+  diagnosticNature,
+} from "@/lib/compile-diagnostics";
+import {
+  fileKindForFile,
+  fileKindLabel,
+  isLatexRelatedFile,
+} from "@/lib/file-kind";
 import {
   applyAiFixPatches,
   requestAiFixes,
@@ -157,7 +164,7 @@ export function ProjectInspector() {
   const compiler = useDocumentStore((s) => s.compiler);
   const comments = useDocumentStore((s) => s.comments);
   const compileLogs = useDocumentStore((s) => s.compileLogs);
-  const compileDiagnostics = useDocumentStore((s) => s.compileDiagnostics);
+  const allCompileDiagnostics = useDocumentStore((s) => s.compileDiagnostics);
   const lastCompileLog = useDocumentStore((s) => s.lastCompileLog);
   const pdfData = useDocumentStore((s) => s.pdfData);
   const compileError = useDocumentStore((s) => s.compileError);
@@ -202,7 +209,15 @@ export function ProjectInspector() {
 
   const mainFile = files.find((file) => file.id === mainFileId);
   const activeFile = files.find((file) => file.id === activeFileId);
+  const activeKind = activeFile ? fileKindForFile(activeFile) : "other";
   const isLatexActive = activeFile ? isLatexRelatedFile(activeFile) : false;
+  const compileDiagnostics = useMemo(
+    () =>
+      allCompileDiagnostics.filter(
+        (diagnostic) => diagnosticLanguage(diagnostic) === activeKind,
+      ),
+    [activeKind, allCompileDiagnostics],
+  );
   const openComments = comments.filter((comment) => !comment.resolved).length;
   const wordCount = useMemo(
     () =>
@@ -1391,6 +1406,9 @@ export function ProjectInspector() {
                               </span>
                               <span className="text-muted-foreground">
                                 {diagnosticNature(diagnostic)}
+                              </span>
+                              <span className="rounded border border-hairline px-1 py-0.5 font-mono text-[0.65rem] text-muted-foreground">
+                                {fileKindLabel(diagnosticLanguage(diagnostic))}
                               </span>
                             </div>
                             <p className="font-medium text-[0.875rem] leading-snug">

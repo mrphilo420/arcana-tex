@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  diagnosticLanguage,
   resolveDiagnosticFiles,
   type CompileDiagnostic,
 } from "@/lib/compile-diagnostics";
@@ -67,5 +68,34 @@ describe("resolveDiagnosticFiles", () => {
     );
 
     expect(result.fileId).toBe("main");
+  });
+});
+
+describe("diagnosticLanguage", () => {
+  it("tags diagnostics by their source language", () => {
+    expect(diagnosticLanguage(diagnostic({ filePath: "main.tex" }))).toBe(
+      "latex",
+    );
+    expect(
+      diagnosticLanguage(diagnostic({ filePath: "figures/plot.py" })),
+    ).toBe("python");
+    expect(diagnosticLanguage(diagnostic({ filePath: "analysis.R" }))).toBe(
+      "r",
+    );
+    expect(
+      diagnosticLanguage(diagnostic({ filePath: "proofs/Proof.lean" })),
+    ).toBe("lean");
+    expect(diagnosticLanguage(diagnostic({ filePath: "notes.md" }))).toBe(
+      "markdown",
+    );
+  });
+
+  it("uses an explicit language and defaults to LaTeX", () => {
+    expect(
+      diagnosticLanguage(
+        diagnostic({ language: "python", filePath: "main.tex" }),
+      ),
+    ).toBe("python");
+    expect(diagnosticLanguage(diagnostic({}))).toBe("latex");
   });
 });
