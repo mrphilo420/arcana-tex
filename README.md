@@ -125,10 +125,12 @@ you configure.
 - **Themes and typography** - 48 ccthemes palettes plus Arcana, applied to both
   the interface and the code editor from the toolbar or developer panel. Four
   font pairings cover serif, sans, and monospace: Cupertino (system), Editorial,
-  Modern, and Technical. The interface follows a restrained, Apple-inspired
-  type scale;
-  **Text size** (Compact, Comfortable, Large) scales the UI and editor without
-  changing the layout model. Theme, font, and text-size choices persist.
+  Modern, and Technical. The LaTeX workspace runs at a tighter density and
+  offers five monospace-only code fonts: JetBrains Mono, IBM Plex Mono, Fira
+  Code, Source Code Pro, and SF Mono/System. The interface follows a restrained,
+  Apple-inspired type scale; **Text size** (Compact, Comfortable, Large)
+  scales the UI and editor without changing the layout model. Theme, font, and
+  text-size choices persist.
 - **Lean Infoview** - Opens automatically for `.lean` files with proof health,
   declarations, imports, local messages, and project details. Hide it or dock it
   left/right, then reopen it from the top bar. **Restart File** re-runs local
@@ -298,7 +300,9 @@ diagnostics.
   environments/commands (add the package), unbalanced environments (comment
   stray ends or close unclosed blocks), missing `.sty` calls, and simple
   duplicate definitions. Anything without a safe deterministic match is marked
-  **Manual**/**Review** and left untouched.
+  **Manual**/**Review** and left untouched. The rule contract, current
+  implementation gaps, and test-first acceptance matrix are documented in
+  [docs/deterministic-repair-rules.md](./docs/deterministic-repair-rules.md).
 
 ## Chat, paper review, Lean, and Markdown
 
