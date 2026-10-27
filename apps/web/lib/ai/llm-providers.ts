@@ -545,12 +545,15 @@ export async function getChatModelSelections(): Promise<{
     }
   }
 
-  const groq = envGroqModel(null);
+  const configuredProviderIds = new Set(
+    providers.map((provider) => provider.id),
+  );
+  const groq = configuredProviderIds.has("groq") ? null : envGroqModel(null);
   if (groq) {
     models.push(...groqModelSelections());
   }
 
-  if (!groq) {
+  if (!groq && !configuredProviderIds.has("openai")) {
     const openai = envOpenAiModel(null);
     if (openai && !models.some((model) => model.value === openai.value)) {
       models.push({
