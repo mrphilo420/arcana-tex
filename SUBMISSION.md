@@ -1,14 +1,14 @@
-# OpenPrism Local — Submission
+# arcanaTeX — Submission
 
-A local-first, Prism-style AI LaTeX workspace built with Next.js, assistant-ui,
-and a self-hosted LaTeX/sync service.
+A local-first AI LaTeX workspace built with Next.js, assistant-ui, and a
+self-hosted LaTeX/sync service.
 
 ## Links to fill in
 
 - Live app: `https://…`
 - LaTeX + sync API: `https://…`
 - Demo video: `https://…`
-- Repository: `https://…`
+- Repository: https://github.com/mrphilo420/arcana-tex
 - Team members: `…`
 
 ## What we built
@@ -52,7 +52,7 @@ and a self-hosted LaTeX/sync service.
   ribbon with keyboard shortcuts; a live compiled PDF preview; and compact
   round-trippable metadata. Coordinates, rotations, text sizes, and layer order
   flow into the generated TikZ block.
-- **Prism-style AI assistant** — full project context, project tools
+- **Project-aware AI assistant** — full project context, project tools
   (`list_project_files`, `read_project_file`, `search_project`,
   `write_project_file`, `set_main_document`), active-document editing tools,
   per-project persisted chat history, and an OpenAI-compatible model backend.
@@ -65,9 +65,9 @@ and a self-hosted LaTeX/sync service.
   Zotero local/web search; adds BibTeX entries and inserts `\cite`, setting up
   the bibliography file automatically.
 
-## Prism parity
+## Feature coverage
 
-| Prism capability | Our implementation |
+| Capability | Our implementation |
 | --- | --- |
 | Project directory | Local All / Yours / Shared views, folders, list/grid, search, sort |
 | Multi-file LaTeX projects | Folder import + file tree + Files/Chats tabs |
@@ -103,7 +103,7 @@ cp apps/web/.env.example apps/web/.env.local
 # Configure the model and optional integrations in apps/web/.env.local
 pnpm dev:web
 # In another terminal:
-pnpm --filter @open-prism/latex-api dev
+pnpm --dir apps/latex-api dev
 ```
 
 The web app runs at `http://localhost:3000`; the LaTeX/sync API at

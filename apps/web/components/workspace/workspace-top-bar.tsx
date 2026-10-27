@@ -17,7 +17,7 @@ import {
   SunIcon,
   UsersIcon,
 } from "lucide-react";
-import { PrismMark } from "@/components/brand/prism-mark";
+import { ArcanaMark } from "@/components/brand/arcana-mark";
 import { getBeamerInfo } from "@/lib/beamer";
 import { Button } from "@/components/ui/button";
 import { useDocumentStore } from "@/stores/document-store";
@@ -99,9 +99,9 @@ export function WorkspaceTopBar() {
         <Link
           href="/"
           className="hidden size-8 shrink-0 items-center justify-center rounded-full border border-hairline bg-card text-primary sm:flex"
-          title="All projects"
+          title="arcanaTeX — all projects"
         >
-          <PrismMark className="size-4" />
+          <ArcanaMark className="size-4" />
         </Link>
 
         <div className="min-w-0">

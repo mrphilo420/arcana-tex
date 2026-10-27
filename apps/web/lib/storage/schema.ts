@@ -74,7 +74,7 @@ export interface LegacyDocumentState {
   version?: number;
 }
 
-export interface OpenPrismDB extends DBSchema {
+export interface ArcanaTeXDB extends DBSchema {
   projects: {
     key: string;
     value: StoredProject;

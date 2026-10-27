@@ -38,7 +38,7 @@ import {
   XIcon,
 } from "lucide-react";
 import packageJson from "@/package.json";
-import { PrismMark } from "@/components/brand/prism-mark";
+import { ArcanaMark } from "@/components/brand/arcana-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -246,7 +246,7 @@ export function HomePage() {
   }, []);
 
   useEffect(() => {
-    document.title = "Projects · OpenPrism";
+    document.title = "Projects · arcanaTeX";
   }, []);
 
   useEffect(() => {
@@ -854,7 +854,7 @@ export function HomePage() {
       return (
         <div className="flex min-h-[420px] flex-col items-center justify-center rounded-xl border border-hairline bg-card/30 px-6 py-14 text-center">
           <div className="mb-5 flex size-14 items-center justify-center rounded-full border border-hairline bg-background text-primary">
-            <PrismMark className="size-7" />
+            <ArcanaMark className="size-7" />
           </div>
           <h2 className="font-serif text-3xl tracking-[-0.02em]">
             No projects yet
@@ -980,16 +980,16 @@ export function HomePage() {
           <Link
             href="/"
             className="flex min-w-0 items-center gap-2.5"
-            title="OpenPrism"
+            title="arcanaTeX"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-hairline bg-card text-primary">
-              <PrismMark className="size-4" />
+              <ArcanaMark className="size-4" />
             </span>
             {!sidebarCollapsed && (
               <span className="min-w-0">
                 <span className="flex items-center gap-1.5">
                   <span className="font-semibold text-[14px] tracking-[-0.015em]">
-                    OpenPrism
+                    arcanaTeX
                   </span>
                   <span className="rounded border border-hairline px-1 py-0.5 font-mono text-[7px] text-muted-foreground">
                     BETA

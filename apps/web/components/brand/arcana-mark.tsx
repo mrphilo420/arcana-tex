@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export function PrismMark({ className }: { className?: string }) {
+export function ArcanaMark({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"

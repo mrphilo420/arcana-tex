@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Hono } from "hono";
@@ -35,8 +36,13 @@ interface SyncRoom {
 }
 
 const MAX_SNAPSHOT_BYTES = 25 * 1024 * 1024;
+const DEFAULT_SYNC_DIR = join(process.cwd(), ".arcanatex-sync");
+const LEGACY_SYNC_DIR = join(process.cwd(), ".open-prism-sync");
 const SYNC_DIR =
-  process.env.SYNC_DATA_DIR || join(process.cwd(), ".open-prism-sync");
+  process.env.SYNC_DATA_DIR ||
+  (existsSync(LEGACY_SYNC_DIR) && !existsSync(DEFAULT_SYNC_DIR)
+    ? LEGACY_SYNC_DIR
+    : DEFAULT_SYNC_DIR);
 
 const rooms = new Map<string, SyncRoom>();
 

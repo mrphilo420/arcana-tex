@@ -23,14 +23,14 @@ export const DEFAULT_TEX_CONTENT = `\\documentclass[11pt]{article}
 
 \\begin{document}
 
-\\section*{What is Open-Prism?}
+\\section*{What is arcanaTeX?}
 
-\\textbf{Open-Prism} is an AI-powered \\LaTeX{} editor for writing scientific documents. It features built-in AI assistance to help you draft and edit text, reason through ideas, and handle formatting.
+\\textbf{arcanaTeX} is an AI-powered \\LaTeX{} editor for writing scientific documents. It features built-in AI assistance to help you draft and edit text, reason through ideas, and handle formatting.
 
 \\section*{Features}
 
 \\begin{multicols}{2}
-Open-Prism integrates AI directly in the editor with access to your project, so you can ask it to:
+arcanaTeX integrates AI directly in the editor with access to your project, so you can ask it to:
 
 \`\`Add the Laplace transform of $t\\cos(at)$ in the introduction.''
 \\[

@@ -25,10 +25,24 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
+const description =
+  "A local-first AI LaTeX workspace for papers, Beamer presentations, TikZ diagrams, and submission packages.";
+
 export const metadata: Metadata = {
-  title: "OpenPrism — Local-first LaTeX workspace",
-  description:
-    "A local-first AI LaTeX writing workspace inspired by OpenAI Prism.",
+  title: "arcanaTeX — Local-first LaTeX workspace",
+  applicationName: "arcanaTeX",
+  description,
+  openGraph: {
+    title: "arcanaTeX — Local-first LaTeX workspace",
+    description,
+    siteName: "arcanaTeX",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "arcanaTeX — Local-first LaTeX workspace",
+    description,
+  },
 };
 
 export default function RootLayout({

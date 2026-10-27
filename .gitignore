@@ -19,6 +19,7 @@ coverage
 .turbo
 
 # Live sync snapshots
+.arcanatex-sync/
 .open-prism-sync/
 
 # Vercel

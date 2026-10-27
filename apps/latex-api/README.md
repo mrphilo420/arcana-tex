@@ -1,6 +1,7 @@
-# LaTeX API
+# arcanaTeX LaTeX + sync API
 
-A simple LaTeX compilation API service built with Hono + Node.js.
+LaTeX compilation and real-time project sync for arcanaTeX, built with Hono and
+Node.js.
 
 ## API
 
@@ -56,7 +57,8 @@ The same server hosts a token-protected WebSocket sync service:
 - `PUT /sync/projects/:projectId` — store a snapshot
 - `DELETE /sync/projects/:projectId?token=...` — remove a room
 
-Snapshots are stored as JSON under `.open-prism-sync/` by default. Set
-`SYNC_DATA_DIR` to change the location. The service is intentionally simple:
+Snapshots are stored as JSON in `SYNC_DATA_DIR` (default `.arcanatex-sync/`).
+If a legacy `.open-prism-sync/` directory exists and the new directory does not,
+the legacy directory is used automatically. The service is intentionally simple:
 it broadcasts full project snapshots (last-write-wins) and presence. Put it
 behind TLS and network access control for a public deployment.

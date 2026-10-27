@@ -1,11 +1,11 @@
 import { openDB, type IDBPDatabase } from "idb";
-import { DB_NAME, DB_VERSION, type OpenPrismDB } from "./schema";
+import { DB_NAME, DB_VERSION, type ArcanaTeXDB } from "./schema";
 
-let dbPromise: Promise<IDBPDatabase<OpenPrismDB>> | null = null;
+let dbPromise: Promise<IDBPDatabase<ArcanaTeXDB>> | null = null;
 
-export function getDB(): Promise<IDBPDatabase<OpenPrismDB>> {
+export function getDB(): Promise<IDBPDatabase<ArcanaTeXDB>> {
   if (!dbPromise) {
-    dbPromise = openDB<OpenPrismDB>(DB_NAME, DB_VERSION, {
+    dbPromise = openDB<ArcanaTeXDB>(DB_NAME, DB_VERSION, {
       upgrade(db) {
         if (!db.objectStoreNames.contains("projects")) {
           db.createObjectStore("projects", { keyPath: "id" });

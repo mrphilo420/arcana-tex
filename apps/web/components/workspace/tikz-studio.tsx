@@ -23,7 +23,7 @@ import {
   Undo2Icon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { PrismMark } from "@/components/brand/prism-mark";
+import { ArcanaMark } from "@/components/brand/arcana-mark";
 import { type LatexInsertion, TikzLatexRibbon } from "./tikz-latex-ribbon";
 import { TikzDiagramWizard } from "./tikz-diagram-wizard";
 import type { TikzDiagramTemplate } from "@/lib/tikz-diagrams";
@@ -1795,7 +1795,7 @@ export function TikzStudio() {
       >
         <DialogHeader className="flex h-14 shrink-0 flex-row items-center gap-3 border-hairline border-b px-4 pr-12">
           <span className="flex size-8 items-center justify-center rounded-full border border-hairline bg-card text-primary">
-            <PrismMark className="size-4" />
+            <ArcanaMark className="size-4" />
           </span>
           <div>
             <DialogTitle className="font-medium font-serif text-[22px] leading-none">

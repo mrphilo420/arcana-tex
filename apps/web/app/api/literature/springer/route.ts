@@ -244,7 +244,7 @@ export async function GET(request: Request) {
   try {
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "OpenPrism/0.0.1 (local LaTeX workspace)",
+        "User-Agent": "arcanaTeX/0.0.1 (local LaTeX workspace)",
       },
       next: { revalidate: 300 },
     });

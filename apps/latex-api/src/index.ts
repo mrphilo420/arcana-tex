@@ -48,7 +48,7 @@ function ensureMiktexFallbackBin(): string | null {
 
   const userSuffix =
     typeof process.getuid === "function" ? process.getuid() : "user";
-  const binDir = join(tmpdir(), `open-prism-tex-bin-${userSuffix}`);
+  const binDir = join(tmpdir(), `arcanatex-tex-bin-${userSuffix}`);
   mkdirSync(binDir, { recursive: true, mode: 0o700 });
 
   let hasLinks = false;

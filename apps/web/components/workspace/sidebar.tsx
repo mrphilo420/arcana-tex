@@ -674,10 +674,10 @@ export function Sidebar() {
         </div>
         <Button variant="ghost" size="icon" className="size-6" asChild>
           <a
-            href="https://github.com/assistant-ui/open-prism"
+            href="https://github.com/mrphilo420/arcana-tex"
             target="_blank"
             rel="noopener noreferrer"
-            title={`OpenPrism v${packageJson.version}`}
+            title={`arcanaTeX v${packageJson.version}`}
           >
             <GithubIcon className="size-3.5" />
           </a>

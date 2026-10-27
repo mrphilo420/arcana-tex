@@ -2,6 +2,7 @@
   "name": "@open-prism/latex-api",
   "version": "0.0.1",
   "private": true,
+  "description": "arcanaTeX LaTeX compilation and sync API",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",

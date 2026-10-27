@@ -1,5 +1,6 @@
 node_modules
 dist
+.arcanatex-sync
 .open-prism-sync
 *.log
 .DS_Store

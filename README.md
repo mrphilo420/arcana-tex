@@ -1,42 +1,113 @@
-# Open-Prism
+# arcanaTeX
 
-Open-source AI-powered LaTeX writing workspace with live preview.
+**A local-first AI LaTeX workspace for the whole research handoff.**
 
-![Open-Prism Screenshot](./assets/OpenPrism.png)
+arcanaTeX pairs a multi-file LaTeX editor and live PDF preview with AI
+assistance, presentation tools, publication-ready diagrams, and submission
+packaging. Projects stay in your browser by default; compilation and optional
+model calls go through services you configure.
+
+<p align="center">
+  <img src="./assets/screenshots/workspace.png" alt="arcanaTeX workspace with LaTeX source, live PDF preview, and research tools" width="100%" />
+</p>
+
+<p align="center">
+  <sub>Write LaTeX, compile continuously, review the PDF, and keep diagnostics and research tools beside the source.</sub>
+</p>
+
+## Screenshots
+
+| Project library | Beamer wizard |
+| :---: | :---: |
+| [![arcanaTeX project library](./assets/screenshots/project-library.png)](./assets/screenshots/project-library.png) | [![arcanaTeX Beamer wizard](./assets/screenshots/beamer-wizard.png)](./assets/screenshots/beamer-wizard.png) |
+| **TikZ studio** | **Submission readiness** |
+| [![arcanaTeX TikZ studio with an SEM diagram](./assets/screenshots/tikz-studio.png)](./assets/screenshots/tikz-studio.png) | [![arcanaTeX submission readiness panel](./assets/screenshots/submission-readiness.png)](./assets/screenshots/submission-readiness.png) |
+
+## What you can do
+
+- **Write** in a complete multi-file LaTeX project with syntax highlighting,
+  autosave, a file tree, an outline, and a live PDF beside the editor.
+- **Check** every build through structured diagnostics. Jump to the source
+  line, inspect a suggested diff, and apply conservative deterministic fixes.
+- **Present** with a contextual Beamer companion: frame navigator, themes,
+  overlays, speaker notes, handouts, and a guided deck wizard.
+- **Draw** publication-ready TikZ figures with a snap-grid studio, live
+  compiled preview, multi-selection, grouping, and 28 research/statistics
+  templates.
+- **Submit** with target-aware preflight checks and a clean source bundle built
+  entirely in the browser.
+- **Collaborate** through a self-hosted WebSocket sync server, with comments,
+  versions, and a share link that reconstructs the project on another device.
 
 ## Features
 
-- **AI-Assisted Writing** - Powered by assistant-ui for intelligent LaTeX assistance
-- **Project library** - A Prism-style local home page with All Projects, Your Projects, Shared with you, user folders, list/grid views, sortable columns, rename/delete, move-to-folder, folder import, and search across titles, file paths, and document text
-- **Multi-file Projects** - Drag a folder onto the directory or sidebar, or use **Import Folder**; subfolders, images, and `.bib`/`.sty`/`.cls` files are preserved
-- **Compiler Selection** - Compile with pdfLaTeX, XeLaTeX, or LuaLaTeX and choose the project's main document
-- **Comments** - Anchor comments to a line or selection and resolve them; saved per project
-- **Live Collaboration** - Share a project link for real-time multi-user editing with presence, backed by the self-hosted sync server; projects opened from a share link appear under **Shared with you**
-- **Project inspector** - A right-side workspace panel with Project Info, Versions (local snapshots/restore), Comments, and compile Logs
-- **Files and Chats sidebar** - Switch between the file tree/outline and a per-project conversation view; the assistant thread is stored with the project
-- **Real-time diagnostics** - Auto-compiles after edits (toggleable), parses the TeX log into structured warnings/errors, shows their nature and location, and jumps to the source line when an issue is clicked
-- **Deterministic auto-fix** - A local repair engine handles common failures (missing figures/packages, undefined theorem environments, unbalanced environments, package-provided commands, duplicate definitions) with a suggested diff and a pre-fix version snapshot; no model call is required
-- **Workspace LaTeX keyboard** - A toggleable ribbon in the editor with Text, Math, Greek, Symbols, and TikZ groups; inserts at the CodeMirror caret and supports keyboard shortcuts
-- **Beamer companion + wizard** - Appears only when a Beamer document is detected; slide navigator, frame snippets, theme/aspect-ratio controls, overlays, notes, handout mode, and a three-step deck wizard with live metadata/frame preview
-- **Submission readiness** - Target-aware preflight checks for arXiv, journals, and double-blind conferences, plus a downloadable clean source `.zip` with build artifacts excluded and optional compiled PDF
-- **TikZ studio** - Draw rectangles, ellipses, arrows, and text on a snap grid, edit LaTeX labels with a tabbed ribbon keyboard, and insert/update a self-contained TikZ figure in the document
-- **Research diagram wizard** - 28 standardized, research-agnostic templates including flowcharts, pipelines, architectures, lattices, support windows, orthant diagrams, PCA biplots, CFA/SEM path models, scatterplots, network graphs, histograms, boxplots, bar charts, forest plots, ROC/survival curves, confusion matrices, and correlation heatmaps
-- **Full shape editing** - CorelDRAW/AMOS-style selection handles (8 resize handles plus rotation), line endpoint handles, drag-to-move, Shift aspect-ratio/angle locking, text resizing, multi-select (Shift-click and marquee), grouping, alignment/distribution, layer order, copy/cut/paste/duplicate, arrow-key nudging, undo/redo, and grid snapping
-- **Office-style ribbon** - Rich delayed tooltips, tab/group customization with persistent order and visibility, and a tear-off floating ribbon with a compact AMOS-style tool palette (tools, grouping, align, distribute, layer, clipboard, undo/redo)
-- **TikZ library support** - Select common `\usetikzlibrary` packages in the studio; preamble insertion is automatic. Arrowheads include basic, LaTeX, Stealth, Triangle, Circle, and Bar variants via `arrows.meta`
-- **Live TikZ preview** - The studio compiles the generated `standalone` TikZ document in the background and keeps a rendered PDF preview in sync with the canvas; coordinates, rotation, text size, and layer order flow directly into the generated code
-- **Literature Search** - Search arXiv, Springer Nature, or Zotero, add BibTeX entries, and insert `\cite` without leaving the editor
-- **Live PDF Preview** - Real-time compilation and preview of your documents
-- **CodeMirror Editor** - Syntax highlighting and LaTeX language support
-- **Autosave** - Every project is saved to browser IndexedDB as you type
-- **Dark/Light Theme** - Automatic theme switching support
+- **Local-first project library** - All Projects, Your Projects, and Shared
+  with you; folders, list and grid views, sortable columns, search across
+  titles, paths, and document text, plus import, rename, move, and delete.
+- **Multi-file LaTeX workspace** - Folder import, nested file tree, images,
+  bibliography and class/style files, main-document selection, and
+  pdfLaTeX/XeLaTeX/LuaLaTeX compilation.
+- **Live PDF preview** - Automatic compilation after edits settle, zoom and
+  page navigation, and a toggle to pause auto-compilation.
+- **AI-assisted writing** - A project-aware assistant built on assistant-ui.
+  The model receives the project file list plus active and main documents, and
+  can create/read/search files, set the main document, and edit the active
+  document. Keys remain server-side.
+- **Real-time diagnostics** - The TeX log is parsed into structured errors and
+  warnings with severity, nature, file/line, and a source excerpt. Click an
+  issue to jump to it.
+- **Deterministic auto-fix** - Local repair rules cover missing figures and
+  packages, undefined theorem environments, unbalanced environments,
+  package-provided commands, and duplicate definitions. Every fix shows a diff
+  and saves a version snapshot before applying.
+- **Beamer companion + wizard** - Appears only when a Beamer document is
+  detected. Includes a slide navigator, frame snippets, theme and aspect-ratio
+  controls, overlays, notes, handout mode, and a three-step deck wizard.
+- **TikZ studio** - Draw rectangles, ellipses, lines, arrows, and text on a
+  16 × 10 cm snap grid. Edit LaTeX labels with a tabbed ribbon keyboard, and
+  insert or update a self-contained TikZ figure in the document.
+- **Research diagram wizard** - 28 agnostic templates spanning research
+  workflows, systems, mathematics, and statistics: PCA biplots, CFA/SEM path
+  models, scatterplots, network graphs, histograms, boxplots, forest plots,
+  ROC/survival curves, confusion matrices, correlation heatmaps, and more.
+- **Full shape editing** - Eight resize handles plus rotation, line endpoint
+  handles, text resizing, Shift aspect/angle locking, multi-select by
+  Shift-click or marquee, grouping, alignment/distribution, layer order,
+  copy/cut/paste/duplicate, arrow-key nudging, undo/redo, and grid snapping.
+- **Office-style ribbon** - Rich delayed tooltips, persistent tab/group
+  customization, and a tear-off floating ribbon with an AMOS-style tool palette
+  for selection, grouping, align/distribute, layer order, clipboard, and undo.
+- **TikZ library support** - Choose common `\usetikzlibrary` packages; preamble
+  insertion is automatic. Arrowheads support basic, LaTeX, Stealth, Triangle,
+  Circle, and Bar variants via `arrows.meta`.
+- **Submission readiness** - arXiv, journal, and conference/double-blind
+  targets with checks for structure, build errors, references, missing files,
+  portability issues, draft markers, anonymity, and bundle size. Download a
+  clean source `.zip` with build artifacts excluded and an optional PDF.
+- **Literature search** - arXiv, Springer Nature, and Zotero; add BibTeX
+  entries and insert `\cite` without leaving the editor.
+- **Comments and versions** - Anchor comments to a line or selection; save up
+  to 30 local snapshots per project and restore them from the inspector.
+- **Workspace LaTeX keyboard** - Toggleable Text, Math, Greek, Symbols, and
+  TikZ groups that insert at the CodeMirror caret with keyboard shortcuts.
+- **Autosave and local storage** - Every project is saved to browser
+  IndexedDB as you type.
 
-## Quick Start
+## Quick start
+
+### Requirements
+
+- Node.js 20+
+- pnpm 10+
+- TeX Live or MiKTeX for local compilation
+- An OpenAI-compatible model endpoint (optional for AI features)
+
+### Run locally
 
 ```bash
 # Clone the repository
-git clone https://github.com/assistant-ui/open-prism.git
-cd open-prism
+git clone https://github.com/mrphilo420/arcana-tex.git
+cd arcana-tex
 
 # Install dependencies
 pnpm install
@@ -52,16 +123,26 @@ cp apps/web/.env.example apps/web/.env.local
 # - KV_REST_API_URL: KV REST API URL (for rate limiting)
 # - KV_REST_API_TOKEN: KV REST API token
 
-# Start development server
+# Start the web app
 pnpm dev:web
 ```
 
+In a second terminal, start the LaTeX and sync API:
+
+```bash
+pnpm --dir apps/latex-api dev
+```
+
+The web app runs at `http://localhost:3000`; the LaTeX/sync API runs at
+`http://localhost:3001`. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full
+development setup.
+
 ## Connecting a model
 
-The chat runs through `apps/web/app/api/chat/route.ts` with the Vercel AI
-SDK. The API key stays on the server and is never sent to the browser.
+The chat runs through `apps/web/app/api/chat/route.ts` with the Vercel AI SDK.
+The API key stays on the server and is never sent to the browser.
 
-**OpenAI (closest to Prism):**
+**OpenAI:**
 
 ```bash
 OPENAI_API_KEY="sk-..."
@@ -79,7 +160,7 @@ OPENAI_MODEL="openai/gpt-5.2"
 **Local models (Ollama, LM Studio, vLLM):**
 
 ```bash
-OPENAI_API_KEY="local"                    # placeholder
+OPENAI_API_KEY="local"                       # placeholder
 OPENAI_BASE_URL="http://localhost:11434/v1"  # Ollama
 OPENAI_MODEL="qwen3:32b"
 ```
@@ -117,9 +198,9 @@ The home page keeps project organization local:
   excludes projects opened from a collaborator's sync link; those appear under
   **Shared with you**.
 - **Folders** are local collections of projects (they do not move files inside
-  a manuscript). Create them from the sidebar or the **New** menu, drag-free
-  move projects with the row menu, and delete a folder without deleting the
-  projects inside it.
+  a manuscript). Create them from the sidebar or the **New** menu, move projects
+  with the row menu, and delete a folder without deleting the projects inside
+  it.
 - **List view** supports sorting by name or creation date; **grid view** keeps
   the cover-card layout. Search covers project names, paths, and up to 120k
   characters of document text.
@@ -158,7 +239,7 @@ diagnostics.
 
 The workspace detects `\documentclass{beamer}`, `\begin{frame}`, or
 `\usetheme` and reveals a contextual **Beamer** control. The companion panel
-does not appear for ordinary articles. The home page’s **New** menu can also
+does not appear for ordinary articles. The home page's **New** menu can also
 start a **Beamer presentation** project with a complete starter deck.
 
 - **Slides** lists frames parsed from the source; clicking one jumps to it.
@@ -190,7 +271,8 @@ The **Submit** control opens a local preflight panel:
   excludes build artifacts, and can include the compiled PDF. Nothing is
   uploaded.
 
-The checks are deliberately heuristic and never claim acceptance.
+The checks are deliberately heuristic and never claim acceptance. See
+[SUBMISSION.md](./SUBMISSION.md) for a submission-oriented feature summary.
 
 ## TikZ figure studio
 
@@ -235,27 +317,29 @@ existing studio figure and reopen it.
 
 The LaTeX API also hosts a small WebSocket sync server:
 
-- **Start session** from the people icon in the project sidebar
-- Copy the share link and open it on another device
-- Project snapshots are persisted on the API host under
-  `.open-prism-sync/` (override with `SYNC_DATA_DIR`); they are unencrypted
-  JSON, so protect the host/volume accordingly
-- Edits sync in real time with presence; conflicts are last-write-wins
+- **Start session** from the people icon in the project sidebar.
+- Copy the share link and open it on another device.
+- Project snapshots are persisted on the API host in `SYNC_DATA_DIR` (default
+  `.arcanatex-sync/`); they are unencrypted JSON, so protect the host/volume
+  accordingly.
+- Edits sync in real time with presence; conflicts are last-write-wins.
 - A joining device with no local copy reconstructs the project from the
-  snapshot
+  snapshot.
 
 By default the browser connects to `ws://<current-host>:3001/sync`. Set
 `NEXT_PUBLIC_SYNC_URL` for a different sync host. For a public deployment,
 put the API behind TLS (`wss://`) and restrict access; anyone with a project
 share link (which includes a random token) can join.
 
-## Project Structure
+## Project structure
 
-```
-open-prism/
+```text
+arcana-tex/
 ├── apps/
-│   ├── web/          # Next.js frontend application
-│   └── latex-api/    # LaTeX compilation API (Hono + TeX Live)
+│   ├── web/          # Next.js application
+│   └── latex-api/    # LaTeX compilation API + WebSocket sync
+├── assets/
+│   └── screenshots/  # README images
 ├── packages/         # Shared packages (if any)
 ├── biome.json        # Biome linter configuration
 └── turbo.json        # Turborepo configuration
@@ -264,24 +348,27 @@ open-prism/
 ### apps/web
 
 Next.js 16 application with:
-- assistant-ui for AI chat interface
+
+- assistant-ui for the AI chat interface
 - CodeMirror for LaTeX editing
 - react-pdf for PDF preview
 - Upstash Redis for rate limiting
 
 ### apps/latex-api
 
-Hono-based API for LaTeX compilation:
-- Accepts LaTeX source code
-- Compiles using TeX Live (pdflatex)
-- Returns compiled PDF
+Hono-based service for LaTeX compilation and sync:
+
+- Accepts LaTeX source and resources
+- Compiles with TeX Live (pdfLaTeX by default)
+- Returns the compiled PDF
+- Hosts token-protected WebSocket project snapshots
 
 ## Deployment
 
-### Web App (Vercel)
+### Web app (Vercel)
 
-1. Import the repository to Vercel
-2. Set root directory to `apps/web`
+1. Import the repository into Vercel.
+2. Set the root directory to `apps/web`.
 3. Configure environment variables:
    - `OPENAI_API_KEY`
    - `OPENAI_MODEL` (optional)
@@ -297,13 +384,14 @@ Hono-based API for LaTeX compilation:
 
 ```bash
 cd apps/latex-api
-docker build -t open-prism-latex-api .
-docker run -p 3001:3001 -v open-prism-sync:/data open-prism-latex-api
+docker build -t arcanatex-latex-api .
+docker run -p 3001:3001 -v arcanatex-sync:/data arcanatex-latex-api
 ```
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup and contribution guidelines.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup, code style, and
+the pull-request process.
 
 ## License
 

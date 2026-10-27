@@ -1,10 +1,10 @@
 {
   "name": "@open-prism/root",
-  "description": "Open-Source AI LaTeX writing workspace",
+  "description": "arcanaTeX — local-first AI LaTeX workspace",
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/assistant-ui/open-prism"
+    "url": "https://github.com/mrphilo420/arcana-tex"
   },
   "private": true,
   "workspaces": [

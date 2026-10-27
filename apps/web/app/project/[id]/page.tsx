@@ -21,7 +21,7 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
   const projectName = useDocumentStore((state) => state.projectName);
 
   useEffect(() => {
-    document.title = `${projectName} · OpenPrism`;
+    document.title = `${projectName} · arcanaTeX`;
   }, [projectName]);
 
   return <WorkspaceLayout />;

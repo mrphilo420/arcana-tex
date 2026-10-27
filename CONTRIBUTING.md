@@ -1,19 +1,19 @@
-# Contributing to Open-Prism
+# Contributing to arcanaTeX
 
-## Development Environment
+## Development environment
 
 ### Requirements
 
 - Node.js 20+
 - pnpm 10+
-- TeX Live (for local latex-api development)
+- TeX Live or MiKTeX (for local latex-api development)
 
 ### Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/assistant-ui/open-prism.git
-cd open-prism
+git clone https://github.com/mrphilo420/arcana-tex.git
+cd arcana-tex
 
 # Install dependencies
 pnpm install
@@ -22,19 +22,24 @@ pnpm install
 cp apps/web/.env.example apps/web/.env.local
 # Edit apps/web/.env.local with your configuration
 
-# Start development
+# Start the web app
 pnpm dev:web
+
+# In another terminal, start the LaTeX + sync API
+pnpm --dir apps/latex-api dev
 ```
 
-### Running LaTeX API locally
+The web app runs at `http://localhost:3000`; the LaTeX/sync API runs at
+`http://localhost:3001`.
+
+### Running the LaTeX API locally
 
 ```bash
-# Requires TeX Live installed
-cd apps/latex-api
-pnpm dev
+# Requires TeX Live or MiKTeX installed
+pnpm --dir apps/latex-api dev
 ```
 
-## Code Style
+## Code style
 
 This project uses [Biome](https://biomejs.dev/) for linting and formatting.
 
@@ -46,18 +51,19 @@ pnpm lint
 pnpm lint:fix
 ```
 
-## Pull Request Process
+## Pull request process
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feat/my-feature`)
 3. Make your changes
-4. Run `pnpm lint` to ensure code quality
+4. Run `pnpm lint` and the relevant builds/tests
 5. Commit with a descriptive message
 6. Push to your fork and open a PR
 
-### Commit Convention
+### Commit convention
 
 Use conventional commits:
+
 - `feat:` new feature
 - `fix:` bug fix
 - `docs:` documentation
