@@ -1798,7 +1798,7 @@ export function TikzStudio() {
             <ArcanaMark className="size-4" />
           </span>
           <div>
-            <DialogTitle className="font-medium font-serif text-[1.375rem] leading-none">
+            <DialogTitle className="font-medium font-serif text-[1.5rem] leading-none">
               TikZ Studio
             </DialogTitle>
             <DialogDescription className="mt-1 text-[0.75rem] uppercase tracking-[0.16em]">
@@ -2023,7 +2023,7 @@ export function TikzStudio() {
                 </button>
 
                 <div className="flex min-w-0 items-center gap-1">
-                  <span className="truncate font-mono text-[0.6875rem] text-muted-foreground">
+                  <span className="truncate font-mono text-[0.75rem] text-muted-foreground">
                     {previewStatus}
                     {previewUpdatedAt && !previewLoading
                       ? ` · ${new Date(previewUpdatedAt).toLocaleTimeString(
@@ -2056,7 +2056,7 @@ export function TikzStudio() {
                   {figure.shapes.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
                       <EyeIcon className="size-5 text-muted-foreground/45" />
-                      <p className="text-[0.8125rem] text-muted-foreground">
+                      <p className="text-[0.875rem] text-muted-foreground">
                         Draw a shape to see the compiled TikZ update here.
                       </p>
                     </div>
@@ -2066,7 +2066,7 @@ export function TikzStudio() {
                         <AlertCircleIcon className="size-3.5" />
                         Preview failed
                       </div>
-                      <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words font-mono text-[0.6875rem] text-muted-foreground leading-[1.5]">
+                      <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words font-mono text-[0.75rem] text-muted-foreground leading-[1.5]">
                         {previewError}
                       </pre>
                     </div>
@@ -2089,7 +2089,7 @@ export function TikzStudio() {
 
                   {previewLoading && previewPdf && (
                     <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#f0ebe2]/45 backdrop-blur-[1px] dark:bg-[#1f1e1b]/45">
-                      <span className="flex items-center gap-1.5 rounded-full border border-hairline bg-popover px-2.5 py-1 font-mono text-[0.6875rem] text-muted-foreground shadow-sm">
+                      <span className="flex items-center gap-1.5 rounded-full border border-hairline bg-popover px-2.5 py-1 font-mono text-[0.75rem] text-muted-foreground shadow-sm">
                         <Loader2Icon className="size-3 animate-spin" />
                         Updating
                       </span>
@@ -2161,7 +2161,7 @@ export function TikzStudio() {
                     return (
                       <label
                         key={library}
-                        className="flex cursor-pointer items-center gap-1.5 font-mono text-[0.6875rem] text-muted-foreground"
+                        className="flex cursor-pointer items-center gap-1.5 font-mono text-[0.75rem] text-muted-foreground"
                       >
                         <input
                           type="checkbox"
@@ -2182,7 +2182,7 @@ export function TikzStudio() {
                     );
                   })}
                 </div>
-                <p className="mt-1.5 text-[0.6875rem] text-muted-foreground leading-relaxed">
+                <p className="mt-1.5 text-[0.75rem] text-muted-foreground leading-relaxed">
                   Added with \usetikzlibrary to the preamble on insert/update.
                 </p>
               </section>
@@ -2230,7 +2230,7 @@ export function TikzStudio() {
                   </div>
 
                   <div>
-                    <div className="mb-1.5 font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
+                    <div className="mb-1.5 font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em]">
                       Align
                     </div>
                     <div className="grid grid-cols-3 gap-1">
@@ -2246,7 +2246,7 @@ export function TikzStudio() {
                           key={mode}
                           variant="outline"
                           size="sm"
-                          className="h-7 text-[0.6875rem]"
+                          className="h-7 text-[0.75rem]"
                           onClick={() =>
                             alignSelected(
                               mode as
@@ -2266,14 +2266,14 @@ export function TikzStudio() {
                   </div>
 
                   <div>
-                    <div className="mb-1.5 font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
+                    <div className="mb-1.5 font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em]">
                       Distribute
                     </div>
                     <div className="grid grid-cols-2 gap-1">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 text-[0.6875rem]"
+                        className="h-7 text-[0.75rem]"
                         onClick={() => distributeSelected("horizontal")}
                       >
                         Horizontal
@@ -2281,7 +2281,7 @@ export function TikzStudio() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 text-[0.6875rem]"
+                        className="h-7 text-[0.75rem]"
                         onClick={() => distributeSelected("vertical")}
                       >
                         Vertical
@@ -2289,7 +2289,7 @@ export function TikzStudio() {
                     </div>
                   </div>
 
-                  <p className="rounded-md border border-dashed p-2 text-[0.6875rem] text-muted-foreground leading-relaxed">
+                  <p className="rounded-md border border-dashed p-2 text-[0.75rem] text-muted-foreground leading-relaxed">
                     Shift-click to add shapes, drag empty canvas to marquee
                     select, ⌘/Ctrl+G to group, ⌘/Ctrl+Shift+G to ungroup.
                   </p>
@@ -2650,7 +2650,7 @@ export function TikzStudio() {
                   <span className="font-medium text-[0.75rem] text-on-dark-soft uppercase tracking-[0.16em]">
                     TikZ code
                   </span>
-                  <span className="ml-2 text-[0.6875rem] text-on-dark-soft/60">
+                  <span className="ml-2 text-[0.75rem] text-on-dark-soft/60">
                     live
                   </span>
                 </div>
@@ -2668,7 +2668,7 @@ export function TikzStudio() {
                   )}
                 </Button>
               </div>
-              <pre className="max-h-28 overflow-auto whitespace-pre px-3 pb-3 font-mono text-[#d8d2c7] text-[0.65625rem] leading-[1.6]">
+              <pre className="max-h-28 overflow-auto whitespace-pre px-3 pb-3 font-mono text-[#d8d2c7] text-[0.75rem] leading-[1.6]">
                 {codePreview}
               </pre>
             </div>
@@ -2676,7 +2676,7 @@ export function TikzStudio() {
         </div>
 
         <DialogFooter className="flex h-16 shrink-0 items-center justify-between border-hairline border-t px-4">
-          <div className="min-w-0 text-[0.8125rem] text-muted-foreground">
+          <div className="min-w-0 text-[0.875rem] text-muted-foreground">
             {editing ? (
               <span className="flex items-center gap-1.5">
                 <CheckIcon className="size-3.5 text-[#5db8a6]" />

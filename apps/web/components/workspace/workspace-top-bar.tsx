@@ -120,7 +120,7 @@ export function WorkspaceTopBar() {
         </Link>
 
         <div className="min-w-0">
-          <div className="truncate font-serif text-[1.1875rem] leading-tight tracking-[-0.02em]">
+          <div className="truncate font-serif text-[1.25rem] leading-tight tracking-[-0.02em]">
             {projectName}
           </div>
           <div className="hidden items-center gap-1.5 text-[0.75rem] text-muted-foreground sm:flex">
@@ -173,7 +173,7 @@ export function WorkspaceTopBar() {
           <span className="relative">
             <PanelRightIcon className="size-4" />
             {errorCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 flex min-w-3.5 items-center justify-center rounded-full bg-destructive px-0.5 text-[0.625rem] text-white leading-3.5">
+              <span className="absolute -top-1.5 -right-2 flex min-w-3.5 items-center justify-center rounded-full bg-destructive px-0.5 text-[0.75rem] text-white leading-3.5">
                 {errorCount > 9 ? "9+" : errorCount}
               </span>
             )}
@@ -195,7 +195,7 @@ export function WorkspaceTopBar() {
           <span className="relative">
             <MessageSquareIcon className="size-4" />
             {openCommentCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 flex min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[0.625rem] text-primary-foreground leading-3.5">
+              <span className="absolute -top-1.5 -right-2 flex min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[0.75rem] text-primary-foreground leading-3.5">
                 {openCommentCount > 9 ? "9+" : openCommentCount}
               </span>
             )}
@@ -249,7 +249,7 @@ export function WorkspaceTopBar() {
           >
             <PresentationIcon className="size-4" />
             <span className="hidden lg:inline">Beamer</span>
-            <span className="font-mono text-[0.6875rem] text-muted-foreground">
+            <span className="font-mono text-[0.75rem] text-muted-foreground">
               {beamerInfo.frames.length}
             </span>
           </Button>

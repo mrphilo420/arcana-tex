@@ -146,7 +146,7 @@ export function SelectionChat({
               <div className="font-medium text-[0.875rem]">
                 Ask AI about selection
               </div>
-              <div className="mt-0.5 flex items-center gap-1 truncate text-[0.8125rem] text-muted-foreground">
+              <div className="mt-0.5 flex items-center gap-1 truncate text-[0.875rem] text-muted-foreground">
                 <MapPinIcon className="size-3 shrink-0" />
                 <span className="truncate">
                   {filePath} ·{" "}
@@ -168,7 +168,7 @@ export function SelectionChat({
         </div>
 
         <div className="space-y-2.5 p-4">
-          <div className="max-h-24 overflow-auto whitespace-pre-wrap rounded-[10px] border border-border bg-muted/45 px-2.5 py-2 font-mono text-[0.8125rem] text-foreground leading-relaxed">
+          <div className="max-h-24 overflow-auto whitespace-pre-wrap rounded-[10px] border border-border bg-muted/45 px-2.5 py-2 font-mono text-[0.875rem] text-foreground leading-relaxed">
             {truncateSelection(target.text)}
           </div>
           <textarea
@@ -182,7 +182,7 @@ export function SelectionChat({
               }
             }}
             placeholder="Ask about this selection..."
-            className="min-h-[74px] w-full resize-none rounded-[12px] border border-input bg-background px-3 py-2.5 text-[0.9375rem] outline-none transition-shadow placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
+            className="min-h-[74px] w-full resize-none rounded-[12px] border border-input bg-background px-3 py-2.5 text-[1rem] outline-none transition-shadow placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
             aria-label="Question about selection"
           />
           <div className="flex items-center justify-between gap-2">

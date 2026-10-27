@@ -95,7 +95,7 @@ function TerminalThemeMenu({ className }: { className?: string }) {
         align="end"
         className="max-h-80 w-64 overflow-y-auto"
       >
-        <DropdownMenuLabel className="text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
+        <DropdownMenuLabel className="text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em]">
           Theme · editor + interface
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -199,7 +199,7 @@ export function EditorToolbar({
           ) : (
             <FileTextIcon className="size-4 text-muted-foreground" />
           )}
-          <span className="font-medium font-mono text-[#faf9f5] text-[0.8125rem]">
+          <span className="font-medium font-mono text-[#faf9f5] text-[0.875rem]">
             {fileName}
           </span>
         </div>
@@ -251,10 +251,10 @@ export function EditorToolbar({
     return (
       <div className="flex h-9 items-center gap-2 border-white/10 border-b bg-[#252320] px-2 text-[#a09d96]">
         <FileTextIcon className="size-4 text-[#e8a55a]" />
-        <span className="font-medium font-mono text-[#faf9f5] text-[0.8125rem]">
+        <span className="font-medium font-mono text-[#faf9f5] text-[0.875rem]">
           {fileName}
         </span>
-        <span className="rounded border border-[#e8a55a]/30 bg-[#e8a55a]/10 px-1.5 py-0.5 font-mono text-[#e8a55a] text-[0.6875rem] uppercase tracking-[0.12em]">
+        <span className="rounded border border-[#e8a55a]/30 bg-[#e8a55a]/10 px-1.5 py-0.5 font-mono text-[#e8a55a] text-[0.75rem] uppercase tracking-[0.12em]">
           Markdown
         </span>
         <div className="ml-auto flex items-center gap-1">
@@ -284,10 +284,10 @@ export function EditorToolbar({
     return (
       <div className="flex h-9 items-center gap-2 border-white/10 border-b bg-[#252320] px-2 text-[#a09d96]">
         <FileCodeIcon className="size-4 text-[#5db8a6]" />
-        <span className="font-medium font-mono text-[#faf9f5] text-[0.8125rem]">
+        <span className="font-medium font-mono text-[#faf9f5] text-[0.875rem]">
           {fileName}
         </span>
-        <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1.5 py-0.5 font-mono text-[#5db8a6] text-[0.6875rem] uppercase tracking-[0.12em]">
+        <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1.5 py-0.5 font-mono text-[#5db8a6] text-[0.75rem] uppercase tracking-[0.12em]">
           Lean 4
         </span>
         <div className="ml-auto flex items-center gap-1">
@@ -301,7 +301,7 @@ export function EditorToolbar({
   return (
     <div className="flex h-9 items-center gap-1 border-white/10 border-b bg-[#252320] px-2 text-[#a09d96] [&_button:hover]:bg-white/10 [&_button:hover]:text-[#faf9f5]">
       <FileTextIcon className="size-4 text-muted-foreground" />
-      <span className="mr-2 font-medium font-mono text-[#faf9f5] text-[0.8125rem]">
+      <span className="mr-2 font-medium font-mono text-[#faf9f5] text-[0.875rem]">
         {fileName}
       </span>
       <div className="mx-2 h-4 w-px bg-white/10" />

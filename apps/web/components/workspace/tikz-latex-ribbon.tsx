@@ -161,7 +161,7 @@ const styleGroup: RibbonGroup = {
       label: "large",
       title: "Large",
       before: "\\large ",
-      className: "text-[0.8125rem]",
+      className: "text-[0.875rem]",
     },
     {
       label: "¶",
@@ -198,7 +198,7 @@ const mathGroup: RibbonGroup = {
       title: "Fraction",
       before: "\\frac{",
       after: "}{}",
-      className: "font-serif text-[0.8125rem]",
+      className: "font-serif text-[0.875rem]",
     },
     {
       label: "√",
@@ -283,28 +283,28 @@ const environmentGroup: RibbonGroup = {
       title: "Aligned equations",
       before: "\\begin{aligned}\n  ",
       after: "\n\\end{aligned}",
-      className: "font-mono text-[0.6875rem]",
+      className: "font-mono text-[0.75rem]",
     },
     {
       label: "cases",
       title: "Cases",
       before: "\\begin{cases}\n  ",
       after: "\n\\end{cases}",
-      className: "font-mono text-[0.6875rem]",
+      className: "font-mono text-[0.75rem]",
     },
     {
       label: "pmatrix",
       title: "Parenthesized matrix",
       before: "\\begin{pmatrix}\n  ",
       after: "\n\\end{pmatrix}",
-      className: "font-mono text-[0.6875rem]",
+      className: "font-mono text-[0.75rem]",
     },
     {
       label: "bmatrix",
       title: "Bracketed matrix",
       before: "\\begin{bmatrix}\n  ",
       after: "\n\\end{bmatrix}",
-      className: "font-mono text-[0.6875rem]",
+      className: "font-mono text-[0.75rem]",
     },
   ],
 };
@@ -355,7 +355,7 @@ const greekLowerGroup: RibbonGroup = {
     label,
     title: command,
     before: command,
-    className: "font-serif text-[0.9375rem]",
+    className: "font-serif text-[1rem]",
   })),
 };
 
@@ -365,7 +365,7 @@ const greekUpperGroup: RibbonGroup = {
     label,
     title: command,
     before: command,
-    className: "font-serif text-[0.9375rem]",
+    className: "font-serif text-[1rem]",
   })),
 };
 
@@ -400,7 +400,7 @@ const operatorGroup: RibbonGroup = {
     label,
     title: before,
     before,
-    className: "font-serif text-[0.9375rem]",
+    className: "font-serif text-[1rem]",
   })),
 };
 
@@ -423,7 +423,7 @@ const arrowGroup: RibbonGroup = {
     label,
     title: before,
     before,
-    className: "font-serif text-[0.9375rem]",
+    className: "font-serif text-[1rem]",
   })),
 };
 
@@ -472,21 +472,21 @@ const tikzGroup: RibbonGroup = {
       title: "Roman math",
       before: "\\mathrm{",
       after: "}",
-      className: "font-serif text-[0.8125rem]",
+      className: "font-serif text-[0.875rem]",
     },
     {
       label: "bf",
       title: "Bold math",
       before: "\\mathbf{",
       after: "}",
-      className: "font-serif font-bold text-[0.8125rem]",
+      className: "font-serif font-bold text-[0.875rem]",
     },
     {
       label: "cal",
       title: "Calligraphic",
       before: "\\mathcal{",
       after: "}",
-      className: "font-serif italic text-[0.8125rem]",
+      className: "font-serif italic text-[0.875rem]",
     },
     {
       label: "op",
@@ -505,7 +505,7 @@ const tikzGroup: RibbonGroup = {
       label: "script",
       title: "Script style",
       before: "\\scriptstyle ",
-      className: "font-serif text-[0.6875rem]",
+      className: "font-serif text-[0.75rem]",
     },
   ],
 };
@@ -518,14 +518,14 @@ const decorationGroup: RibbonGroup = {
       title: "Underbrace",
       before: "\\underbrace{",
       after: "}_{}",
-      className: "font-serif text-[0.9375rem]",
+      className: "font-serif text-[1rem]",
     },
     {
       label: "⏞",
       title: "Overbrace",
       before: "\\overbrace{",
       after: "}^{}",
-      className: "font-serif text-[0.9375rem]",
+      className: "font-serif text-[1rem]",
     },
     {
       label: "sub",
@@ -686,16 +686,14 @@ function RibbonTooltip({
         sideOffset={6}
         className="z-[100] max-w-64 px-2.5 py-2"
       >
-        <div className="font-medium text-[0.8125rem] leading-tight">
-          {title}
-        </div>
+        <div className="font-medium text-[0.875rem] leading-tight">{title}</div>
         {description && (
           <div className="mt-1 text-[0.75rem] leading-relaxed opacity-75">
             {description}
           </div>
         )}
         {detail && (
-          <div className="mt-1 font-mono text-[0.6875rem] opacity-60">
+          <div className="mt-1 font-mono text-[0.75rem] opacity-60">
             {detail}
           </div>
         )}
@@ -955,7 +953,7 @@ export function TikzLatexRibbon({
           className={cn(
             "flex items-center justify-center rounded-[4px] border border-transparent text-foreground transition-colors hover:border-hairline hover:bg-background active:bg-primary/10 aria-disabled:opacity-40",
             item.large
-              ? "h-11 min-w-[68px] flex-col gap-0.5 px-1.5 text-[0.8125rem]"
+              ? "h-11 min-w-[68px] flex-col gap-0.5 px-1.5 text-[0.875rem]"
               : "h-7 min-w-[28px] px-1.5 text-[0.875rem]",
             item.className,
           )}
@@ -966,7 +964,7 @@ export function TikzLatexRibbon({
             <span>{item.label}</span>
           )}
           {item.large && (
-            <span className="max-w-[86px] truncate text-[0.6875rem] leading-none">
+            <span className="max-w-[86px] truncate text-[0.75rem] leading-none">
               {item.label}
             </span>
           )}
@@ -995,7 +993,7 @@ export function TikzLatexRibbon({
           >
             <GripHorizontalIcon className="size-3.5" />
           </button>
-          <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.16em]">
+          <span className="font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.16em]">
             LaTeX ribbon
           </span>
           <div className="ml-auto flex items-center gap-1">
@@ -1200,7 +1198,7 @@ export function TikzLatexRibbon({
             <Redo2Icon className="size-3.5" />
           </FloatingToolButton>
 
-          <span className="ml-auto rounded-full border border-hairline px-2 py-0.5 font-mono text-[0.6875rem] text-muted-foreground">
+          <span className="ml-auto rounded-full border border-hairline px-2 py-0.5 font-mono text-[0.75rem] text-muted-foreground">
             {selectedCount} selected
           </span>
         </div>
@@ -1225,7 +1223,7 @@ export function TikzLatexRibbon({
             <button
               type="button"
               className={cn(
-                "h-full shrink-0 border-b-2 px-3 font-medium text-[0.8125rem] tracking-wide transition-colors",
+                "h-full shrink-0 border-b-2 px-3 font-medium text-[0.875rem] tracking-wide transition-colors",
                 tab.id === activeTab?.id
                   ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground",
@@ -1243,7 +1241,7 @@ export function TikzLatexRibbon({
           </span>
         )}
 
-        <span className="ml-auto hidden pr-1 text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em] md:block">
+        <span className="ml-auto hidden pr-1 text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em] md:block">
           {scope === "workspace"
             ? "Workspace LaTeX keyboard · ⌘/Ctrl+Shift+K"
             : "LaTeX label keyboard"}
@@ -1310,7 +1308,7 @@ export function TikzLatexRibbon({
                 <div className="flex items-center gap-0.5">
                   {group.items.map(renderItemButton)}
                 </div>
-                <div className="mt-0.5 whitespace-nowrap text-center font-medium text-[0.625rem] text-muted-foreground uppercase tracking-[0.14em]">
+                <div className="mt-0.5 whitespace-nowrap text-center font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em]">
                   {group.name}
                 </div>
               </div>
@@ -1351,7 +1349,7 @@ export function TikzLatexRibbon({
           <div className="flex items-center justify-between gap-2">
             <div>
               <div className="font-medium text-xs">Customize ribbon</div>
-              <div className="mt-0.5 text-[0.6875rem] text-muted-foreground">
+              <div className="mt-0.5 text-[0.75rem] text-muted-foreground">
                 Changes apply immediately and are saved in this browser.
               </div>
             </div>
@@ -1396,7 +1394,7 @@ export function TikzLatexRibbon({
                     </button>
                     <button
                       type="button"
-                      className="min-w-0 flex-1 truncate text-left text-[0.8125rem]"
+                      className="min-w-0 flex-1 truncate text-left text-[0.875rem]"
                       onClick={() => setCustomizeTabId(tab.id)}
                     >
                       {tab.label}
@@ -1428,7 +1426,7 @@ export function TikzLatexRibbon({
 
           {customizeTab && (
             <div className="mt-3 border-hairline border-t pt-2">
-              <div className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.15em]">
+              <div className="font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.15em]">
                 Groups · {customizeTab.label}
               </div>
               <div className="mt-1.5 space-y-1">
@@ -1453,7 +1451,7 @@ export function TikzLatexRibbon({
                       <span className="min-w-0 flex-1 truncate">
                         {group.name}
                       </span>
-                      <span className="font-mono text-[0.625rem] text-muted-foreground">
+                      <span className="font-mono text-[0.75rem] text-muted-foreground">
                         {group.items.length}
                       </span>
                     </label>

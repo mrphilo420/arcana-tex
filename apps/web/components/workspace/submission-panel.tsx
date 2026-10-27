@@ -207,7 +207,7 @@ export function SubmissionPanel() {
                 </SelectContent>
               </Select>
             </div>
-            <label className="flex cursor-pointer items-center gap-2 text-[0.8125rem]">
+            <label className="flex cursor-pointer items-center gap-2 text-[0.875rem]">
               <input
                 type="checkbox"
                 checked={anonymous}
@@ -216,7 +216,7 @@ export function SubmissionPanel() {
               />
               Check for identity markers (double-blind review)
             </label>
-            <label className="flex cursor-pointer items-center gap-2 text-[0.8125rem]">
+            <label className="flex cursor-pointer items-center gap-2 text-[0.875rem]">
               <input
                 type="checkbox"
                 checked={includePdf}
@@ -255,7 +255,7 @@ export function SubmissionPanel() {
                   <div className="font-serif text-[1.25rem] leading-none">
                     {report.counts[status]}
                   </div>
-                  <div className="mt-1 text-[0.625rem] text-muted-foreground uppercase tracking-[0.1em]">
+                  <div className="mt-1 text-[0.75rem] text-muted-foreground uppercase tracking-[0.1em]">
                     {status}
                   </div>
                 </div>
@@ -295,10 +295,10 @@ export function SubmissionPanel() {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="font-medium text-[0.8125rem] leading-snug">
+                      <span className="font-medium text-[0.875rem] leading-snug">
                         {check.title}
                       </span>
-                      <span className="shrink-0 font-mono text-[0.625rem] text-muted-foreground uppercase">
+                      <span className="shrink-0 font-mono text-[0.75rem] text-muted-foreground uppercase">
                         {check.category}
                       </span>
                     </div>
@@ -306,7 +306,7 @@ export function SubmissionPanel() {
                       {check.detail}
                     </p>
                     {check.filePath && (
-                      <p className="mt-1 font-mono text-[0.6875rem] text-primary/80">
+                      <p className="mt-1 font-mono text-[0.75rem] text-primary/80">
                         {check.filePath}
                         {check.line ? `:${check.line}` : ""} · click to jump
                       </p>
@@ -322,7 +322,7 @@ export function SubmissionPanel() {
               <span className="font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em]">
                 Source bundle
               </span>
-              <span className="font-mono text-[0.6875rem] text-muted-foreground">
+              <span className="font-mono text-[0.75rem] text-muted-foreground">
                 {report.bundle.length} files ·{" "}
                 {report.bundleBytes > 1024 * 1024
                   ? `${(report.bundleBytes / 1024 / 1024).toFixed(1)} MB`
@@ -359,7 +359,7 @@ export function SubmissionPanel() {
             </div>
           )}
 
-          <p className="text-[0.6875rem] text-muted-foreground leading-relaxed">
+          <p className="text-[0.75rem] text-muted-foreground leading-relaxed">
             These checks are local heuristics, not a guarantee of acceptance.
             Always verify the current portal requirements and build the bundle
             in a clean TeX environment.

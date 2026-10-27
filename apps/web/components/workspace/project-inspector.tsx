@@ -96,10 +96,10 @@ function Stat({
 }) {
   return (
     <div className="rounded-lg border border-hairline bg-card/55 px-3 py-2.5">
-      <div className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.16em]">
+      <div className="font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.16em]">
         {label}
       </div>
-      <div className="mt-1 font-serif text-[1.375rem] leading-none tracking-[-0.02em]">
+      <div className="mt-1 font-serif text-[1.5rem] leading-none tracking-[-0.02em]">
         {value}
       </div>
       {hint && (
@@ -516,7 +516,7 @@ export function ProjectInspector() {
                 key={item.id}
                 type="button"
                 className={cn(
-                  "relative flex h-10 shrink-0 items-center gap-1.5 px-2.5 text-[0.8125rem] transition-colors",
+                  "relative flex h-10 shrink-0 items-center gap-1.5 px-2.5 text-[0.875rem] transition-colors",
                   tab === item.id
                     ? "font-medium text-foreground"
                     : "text-muted-foreground hover:text-foreground",
@@ -526,7 +526,7 @@ export function ProjectInspector() {
                 <Icon className="size-3.5" />
                 {item.label}
                 {item.id === "comments" && openComments > 0 && (
-                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 font-medium text-[0.6875rem] text-primary">
+                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 font-medium text-[0.75rem] text-primary">
                     {openComments}
                   </span>
                 )}
@@ -567,7 +567,7 @@ export function ProjectInspector() {
                       <h2 className="truncate font-serif text-[1.875rem] leading-none tracking-[-0.025em]">
                         {projectName}
                       </h2>
-                      <p className="mt-2 text-[0.8125rem] text-muted-foreground">
+                      <p className="mt-2 text-[0.875rem] text-muted-foreground">
                         Created{" "}
                         {createdAt
                           ? formatDistanceToNow(new Date(createdAt), {
@@ -872,7 +872,7 @@ export function ProjectInspector() {
                       </div>
 
                       {comment.selectedText && (
-                        <blockquote className="mt-1.5 line-clamp-2 border-l-2 bg-muted/40 px-2 py-1 text-[0.8125rem] text-muted-foreground italic">
+                        <blockquote className="mt-1.5 line-clamp-2 border-l-2 bg-muted/40 px-2 py-1 text-[0.875rem] text-muted-foreground italic">
                           “{comment.selectedText}”
                         </blockquote>
                       )}
@@ -893,12 +893,12 @@ export function ProjectInspector() {
                   <div className="flex flex-wrap items-center gap-1.5 font-medium text-sm">
                     Warnings and Errors
                     {errorCount > 0 && (
-                      <span className="rounded-full bg-destructive/10 px-1.5 py-0.5 font-medium text-[0.6875rem] text-destructive">
+                      <span className="rounded-full bg-destructive/10 px-1.5 py-0.5 font-medium text-[0.75rem] text-destructive">
                         {errorCount} error{errorCount === 1 ? "" : "s"}
                       </span>
                     )}
                     {warningCount > 0 && (
-                      <span className="rounded-full bg-[#b9822f]/10 px-1.5 py-0.5 font-medium text-[#9a6d24] text-[0.6875rem]">
+                      <span className="rounded-full bg-[#b9822f]/10 px-1.5 py-0.5 font-medium text-[#9a6d24] text-[0.75rem]">
                         {warningCount} warning
                         {warningCount === 1 ? "" : "s"}
                       </span>
@@ -1005,7 +1005,7 @@ export function ProjectInspector() {
                           )}
 
                           <div className="min-w-0 flex-1">
-                            <div className="mb-1 flex flex-wrap items-center gap-1.5 font-medium text-[0.625rem] uppercase tracking-[0.14em]">
+                            <div className="mb-1 flex flex-wrap items-center gap-1.5 font-medium text-[0.75rem] uppercase tracking-[0.14em]">
                               <span
                                 className={
                                   isError
@@ -1028,7 +1028,7 @@ export function ProjectInspector() {
                             {(diagnostic.filePath || diagnostic.line) && (
                               <button
                                 type="button"
-                                className="mt-1 flex max-w-full items-center gap-1 text-left font-mono text-[0.6875rem] text-muted-foreground transition-colors hover:text-foreground"
+                                className="mt-1 flex max-w-full items-center gap-1 text-left font-mono text-[0.75rem] text-muted-foreground transition-colors hover:text-foreground"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   handleSelectDiagnostic(diagnostic.id);
@@ -1067,20 +1067,20 @@ export function ProjectInspector() {
                               Auto-fix
                             </Button>
                           ) : (
-                            <span className="shrink-0 rounded-full border border-hairline px-1.5 py-0.5 text-[0.625rem] text-muted-foreground uppercase tracking-[0.12em]">
+                            <span className="shrink-0 rounded-full border border-hairline px-1.5 py-0.5 text-[0.75rem] text-muted-foreground uppercase tracking-[0.12em]">
                               {isError ? "Manual" : "Review"}
                             </span>
                           )}
                         </div>
 
                         {diagnostic.lineText && (
-                          <pre className="mt-2 overflow-x-auto rounded bg-surface-dark px-2 py-1.5 font-mono text-[0.6875rem] text-on-dark-soft">
+                          <pre className="mt-2 overflow-x-auto rounded bg-surface-dark px-2 py-1.5 font-mono text-[0.75rem] text-on-dark-soft">
                             {diagnostic.lineText}
                           </pre>
                         )}
 
                         {fix && !isSelected && (
-                          <p className="mt-1.5 text-[0.6875rem] text-muted-foreground">
+                          <p className="mt-1.5 text-[0.75rem] text-muted-foreground">
                             {fix}
                           </p>
                         )}
@@ -1088,7 +1088,7 @@ export function ProjectInspector() {
                         {diagnostic.details.length > 0 && (
                           <button
                             type="button"
-                            className="mt-1.5 flex items-center gap-1 text-[0.6875rem] text-muted-foreground transition-colors hover:text-foreground"
+                            className="mt-1.5 flex items-center gap-1 text-[0.75rem] text-muted-foreground transition-colors hover:text-foreground"
                             onClick={(event) => {
                               event.stopPropagation();
                               toggleDiagnostic(diagnostic.id);
@@ -1104,7 +1104,7 @@ export function ProjectInspector() {
                         )}
 
                         {expanded && (
-                          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-surface-dark p-2 font-mono text-[0.6875rem] text-on-dark-soft leading-relaxed">
+                          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-surface-dark p-2 font-mono text-[0.75rem] text-on-dark-soft leading-relaxed">
                             {diagnostic.details.join("\n") || diagnostic.raw}
                           </pre>
                         )}
@@ -1120,7 +1120,7 @@ export function ProjectInspector() {
                             </div>
 
                             {selectedFix.updates.length === 0 ? (
-                              <p className="mt-2 text-[0.8125rem] text-muted-foreground leading-relaxed">
+                              <p className="mt-2 text-[0.875rem] text-muted-foreground leading-relaxed">
                                 No deterministic repair rule matches this issue.
                                 Edit the highlighted line in the editor.
                               </p>
@@ -1131,18 +1131,18 @@ export function ProjectInspector() {
                                     key={`${diagnostic.id}-${update.fileId}`}
                                     className="overflow-hidden rounded-md border border-hairline"
                                   >
-                                    <div className="border-hairline border-b bg-muted/35 px-2 py-1 font-mono text-[0.6875rem] text-muted-foreground">
+                                    <div className="border-hairline border-b bg-muted/35 px-2 py-1 font-mono text-[0.75rem] text-muted-foreground">
                                       {update.filePath}:{update.startLine}
                                     </div>
                                     {update.removed.length > 0 && (
-                                      <pre className="overflow-x-auto bg-destructive/10 px-2 py-1 font-mono text-[0.6875rem] text-destructive leading-relaxed">
+                                      <pre className="overflow-x-auto bg-destructive/10 px-2 py-1 font-mono text-[0.75rem] text-destructive leading-relaxed">
                                         {update.removed
                                           .map((line) => `- ${line}`)
                                           .join("\n")}
                                       </pre>
                                     )}
                                     {update.added.length > 0 && (
-                                      <pre className="overflow-x-auto bg-[#5db8a6]/10 px-2 py-1 font-mono text-[#1f7a68] text-[0.6875rem] leading-relaxed dark:text-[#7fd1c1]">
+                                      <pre className="overflow-x-auto bg-[#5db8a6]/10 px-2 py-1 font-mono text-[#1f7a68] text-[0.75rem] leading-relaxed dark:text-[#7fd1c1]">
                                         {update.added
                                           .map((line) => `+ ${line}`)
                                           .join("\n")}
@@ -1172,7 +1172,7 @@ export function ProjectInspector() {
                                 )}
                                 Apply suggested fix
                               </Button>
-                              <span className="text-[0.6875rem] text-muted-foreground">
+                              <span className="text-[0.75rem] text-muted-foreground">
                                 Saves a version first
                               </span>
                             </div>
@@ -1202,7 +1202,7 @@ export function ProjectInspector() {
                     )}
                   </button>
                   {showRawLog && (
-                    <pre className="max-h-64 overflow-auto border-hairline border-t bg-surface-dark p-2 font-mono text-[0.6875rem] text-on-dark-soft leading-relaxed">
+                    <pre className="max-h-64 overflow-auto border-hairline border-t bg-surface-dark p-2 font-mono text-[0.75rem] text-on-dark-soft leading-relaxed">
                       {lastCompileLog ??
                         "No raw log captured for this compile."}
                     </pre>
@@ -1213,10 +1213,10 @@ export function ProjectInspector() {
               {compileLogs.length > 0 && (
                 <div className="border-hairline border-t pt-3">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="font-medium text-[0.6875rem] text-muted-foreground uppercase tracking-[0.14em]">
+                    <span className="font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em]">
                       Compile history
                     </span>
-                    <span className="font-mono text-[0.6875rem] text-muted-foreground">
+                    <span className="font-mono text-[0.75rem] text-muted-foreground">
                       {compileLogs.length}
                     </span>
                   </div>
@@ -1232,14 +1232,14 @@ export function ProjectInspector() {
                           ) : (
                             <AlertCircleIcon className="size-3.5 shrink-0 text-destructive" />
                           )}
-                          <span className="min-w-0 flex-1 truncate text-[0.8125rem]">
+                          <span className="min-w-0 flex-1 truncate text-[0.875rem]">
                             {log.message}
                           </span>
-                          <span className="shrink-0 font-mono text-[0.6875rem] text-muted-foreground">
+                          <span className="shrink-0 font-mono text-[0.75rem] text-muted-foreground">
                             {log.durationMs}ms
                           </span>
                         </div>
-                        <div className="mt-1 flex items-center gap-2 font-mono text-[0.6875rem] text-muted-foreground">
+                        <div className="mt-1 flex items-center gap-2 font-mono text-[0.75rem] text-muted-foreground">
                           <span>{format(new Date(log.at), "HH:mm:ss")}</span>
                           <span>·</span>
                           <span>{log.compiler}</span>

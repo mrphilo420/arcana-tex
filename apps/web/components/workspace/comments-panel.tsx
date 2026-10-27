@@ -122,7 +122,7 @@ export function CommentsPanel() {
             <MessageSquareIcon className="size-4" />
             Comments
             {unresolvedCount > 0 && (
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-[0.8125rem] text-primary">
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-[0.875rem] text-primary">
                 {unresolvedCount} open
               </span>
             )}
@@ -162,7 +162,7 @@ export function CommentsPanel() {
                 }}
               />
               <div className="mt-2 flex items-center justify-between">
-                <span className="text-[0.8125rem] text-muted-foreground">
+                <span className="text-[0.875rem] text-muted-foreground">
                   ⌘↵ to add
                 </span>
                 <Button size="sm" onClick={handleAdd} disabled={!draft.trim()}>
@@ -207,7 +207,7 @@ export function CommentsPanel() {
                       onClick={() => handleJump(comment)}
                       title="Jump to comment"
                     >
-                      <div className="flex items-center gap-1.5 text-[0.8125rem] text-muted-foreground">
+                      <div className="flex items-center gap-1.5 text-[0.875rem] text-muted-foreground">
                         <span className="font-medium text-foreground">
                           {comment.author}
                         </span>
@@ -218,7 +218,7 @@ export function CommentsPanel() {
                           })}
                         </span>
                       </div>
-                      <div className="mt-0.5 truncate font-mono text-[0.8125rem] text-muted-foreground">
+                      <div className="mt-0.5 truncate font-mono text-[0.875rem] text-muted-foreground">
                         {file?.path ?? comment.filePath}:{comment.line}
                       </div>
                     </button>

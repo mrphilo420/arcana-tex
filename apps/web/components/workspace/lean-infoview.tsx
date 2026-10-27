@@ -193,12 +193,12 @@ export function LeanInfoview() {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="font-medium text-[0.8125rem]">Lean Infoview</span>
-            <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1 py-0.5 font-mono text-[#2a8f83] text-[0.4375rem] uppercase tracking-[0.1em]">
+            <span className="font-medium text-[0.875rem]">Lean Infoview</span>
+            <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1 py-0.5 font-mono text-[#2a8f83] text-[0.625rem] uppercase tracking-[0.1em]">
               local
             </span>
           </div>
-          <div className="truncate font-mono text-[0.6875rem] text-muted-foreground">
+          <div className="truncate font-mono text-[0.75rem] text-muted-foreground">
             {activeFile.path}
           </div>
         </div>
@@ -235,7 +235,7 @@ export function LeanInfoview() {
               type="button"
               onClick={() => setTab(item.id)}
               className={cn(
-                "flex items-center justify-center gap-1 bg-card/70 py-2 text-[0.6875rem] transition-colors",
+                "flex items-center justify-center gap-1 bg-card/70 py-2 text-[0.75rem] transition-colors",
                 tab === item.id
                   ? "text-foreground"
                   : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
@@ -266,7 +266,7 @@ export function LeanInfoview() {
                   className="rounded-md border border-hairline bg-background/45 px-2.5 py-2"
                 >
                   <div className="font-serif text-lg leading-none">{value}</div>
-                  <div className="mt-1 text-[0.625rem] text-muted-foreground uppercase tracking-[0.1em]">
+                  <div className="mt-1 text-[0.75rem] text-muted-foreground uppercase tracking-[0.1em]">
                     {label}
                   </div>
                 </div>
@@ -303,14 +303,14 @@ export function LeanInfoview() {
 
             {summary.imports.length > 0 && (
               <div>
-                <div className="mb-1.5 text-[0.625rem] text-muted-foreground uppercase tracking-[0.12em]">
+                <div className="mb-1.5 text-[0.75rem] text-muted-foreground uppercase tracking-[0.12em]">
                   Imports
                 </div>
                 <div className="space-y-1">
                   {summary.imports.map((item) => (
                     <div
                       key={item}
-                      className="rounded border border-hairline bg-background/30 px-2 py-1 font-mono text-[0.6875rem] text-muted-foreground"
+                      className="rounded border border-hairline bg-background/30 px-2 py-1 font-mono text-[0.75rem] text-muted-foreground"
                     >
                       {item}
                     </div>
@@ -324,10 +324,10 @@ export function LeanInfoview() {
         {tab === "outline" && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[0.625rem] text-muted-foreground uppercase tracking-[0.12em]">
+              <span className="text-[0.75rem] text-muted-foreground uppercase tracking-[0.12em]">
                 Declarations
               </span>
-              <span className="font-mono text-[0.625rem] text-muted-foreground">
+              <span className="font-mono text-[0.75rem] text-muted-foreground">
                 {summary.declarations.length}
               </span>
             </div>
@@ -336,7 +336,7 @@ export function LeanInfoview() {
                 {summary.namespaces.map((namespace) => (
                   <span
                     key={namespace}
-                    className="rounded border border-hairline bg-card/60 px-1.5 py-0.5 font-mono text-[0.625rem] text-muted-foreground"
+                    className="rounded border border-hairline bg-card/60 px-1.5 py-0.5 font-mono text-[0.75rem] text-muted-foreground"
                   >
                     {namespace}
                   </span>
@@ -356,13 +356,13 @@ export function LeanInfoview() {
                     onClick={() => jumpToLine(declaration.line)}
                     className="flex w-full items-center gap-2 border-hairline border-b bg-background/35 px-2.5 py-2 text-left last:border-b-0 hover:bg-background/80"
                   >
-                    <span className="w-12 shrink-0 font-mono text-[0.625rem] text-muted-foreground uppercase">
+                    <span className="w-12 shrink-0 font-mono text-[0.75rem] text-muted-foreground uppercase">
                       {declaration.kind}
                     </span>
                     <span className="min-w-0 flex-1 truncate font-mono text-[0.75rem]">
                       {declaration.name}
                     </span>
-                    <span className="shrink-0 font-mono text-[0.625rem] text-muted-foreground">
+                    <span className="shrink-0 font-mono text-[0.75rem] text-muted-foreground">
                       {declaration.line}
                     </span>
                   </button>
@@ -375,10 +375,10 @@ export function LeanInfoview() {
         {tab === "messages" && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[0.625rem] text-muted-foreground uppercase tracking-[0.12em]">
+              <span className="text-[0.75rem] text-muted-foreground uppercase tracking-[0.12em]">
                 Proof health
               </span>
-              <span className="font-mono text-[0.625rem] text-muted-foreground">
+              <span className="font-mono text-[0.75rem] text-muted-foreground">
                 {issues.length}
               </span>
             </div>
@@ -413,7 +413,7 @@ export function LeanInfoview() {
                       <span className="block font-mono text-[0.75rem]">
                         {issue.label}
                       </span>
-                      <span className="mt-0.5 block text-[0.6875rem] text-muted-foreground">
+                      <span className="mt-0.5 block text-[0.75rem] text-muted-foreground">
                         {issue.detail} · line {issue.line}
                       </span>
                     </span>
@@ -421,7 +421,7 @@ export function LeanInfoview() {
                 );
               })
             )}
-            <div className="flex items-start gap-2 rounded-lg border border-hairline bg-card/30 p-2.5 text-[0.6875rem] text-muted-foreground leading-relaxed">
+            <div className="flex items-start gap-2 rounded-lg border border-hairline bg-card/30 p-2.5 text-[0.75rem] text-muted-foreground leading-relaxed">
               <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
               Local source analysis only. A clean panel is not a proof of
               compilation or kernel verification.
@@ -438,11 +438,11 @@ export function LeanInfoview() {
               </div>
               {projectPath ? (
                 <>
-                  <div className="mt-2 break-all font-mono text-[0.6875rem] text-muted-foreground">
+                  <div className="mt-2 break-all font-mono text-[0.75rem] text-muted-foreground">
                     {projectPath}
                   </div>
                   {toolchainLabel && (
-                    <div className="mt-1 font-mono text-[0.6875rem] text-muted-foreground/75">
+                    <div className="mt-1 font-mono text-[0.75rem] text-muted-foreground/75">
                       {toolchainLabel}
                     </div>
                   )}
@@ -463,7 +463,7 @@ export function LeanInfoview() {
                 <ChevronRightIcon className="size-3" />
               </button>
             </div>
-            <div className="rounded-lg border border-hairline bg-card/30 p-3 text-[0.6875rem] text-muted-foreground leading-relaxed">
+            <div className="rounded-lg border border-hairline bg-card/30 p-3 text-[0.75rem] text-muted-foreground leading-relaxed">
               The Infoview is docked {leanInfoviewDock}. Use the dock button in
               the header to move it, or hide it and reopen from the workspace
               toolbar.
@@ -472,7 +472,7 @@ export function LeanInfoview() {
         )}
       </div>
 
-      <div className="flex shrink-0 items-center justify-between gap-2 border-hairline border-t bg-background/35 px-3 py-1.5 text-[0.625rem] text-muted-foreground">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-hairline border-t bg-background/35 px-3 py-1.5 text-[0.75rem] text-muted-foreground">
         <span className="min-w-0 truncate">
           {summary.sorryLines.length + summary.admitLines.length === 0
             ? "Analysis ready"
@@ -496,7 +496,7 @@ export function LeanInfoview() {
           onClick={() => void restartFile()}
           disabled={isRestarting}
           title="Re-analyze this file and reset the Infoview"
-          className="flex h-6 shrink-0 items-center gap-1 rounded-md border border-hairline bg-card/70 px-2 text-[0.6875rem] text-foreground transition-colors hover:border-primary/35 hover:bg-background disabled:opacity-60"
+          className="flex h-6 shrink-0 items-center gap-1 rounded-md border border-hairline bg-card/70 px-2 text-[0.75rem] text-foreground transition-colors hover:border-primary/35 hover:bg-background disabled:opacity-60"
           aria-label="Restart File"
         >
           {isRestarting ? (

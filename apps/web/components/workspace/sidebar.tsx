@@ -430,7 +430,7 @@ export function Sidebar() {
                 <span className="block truncate font-medium text-[0.875rem]">
                   {projectName}
                 </span>
-                <span className="block font-medium text-[0.625rem] text-muted-foreground uppercase tracking-[0.16em]">
+                <span className="block font-medium text-[0.75rem] text-muted-foreground uppercase tracking-[0.16em]">
                   Local project
                 </span>
               </span>
@@ -468,7 +468,7 @@ export function Sidebar() {
         <button
           type="button"
           className={cn(
-            "relative flex h-full items-center gap-1.5 px-2 text-[0.8125rem] transition-colors",
+            "relative flex h-full items-center gap-1.5 px-2 text-[0.875rem] transition-colors",
             activeTab === "files"
               ? "font-medium text-foreground"
               : "text-muted-foreground hover:text-foreground",
@@ -477,7 +477,7 @@ export function Sidebar() {
         >
           <FolderIcon className="size-3.5" />
           Files
-          <span className="text-[0.6875rem] text-muted-foreground">
+          <span className="text-[0.75rem] text-muted-foreground">
             {files.length}
           </span>
           {activeTab === "files" && (
@@ -487,7 +487,7 @@ export function Sidebar() {
         <button
           type="button"
           className={cn(
-            "relative flex h-full items-center gap-1.5 px-2 text-[0.8125rem] transition-colors",
+            "relative flex h-full items-center gap-1.5 px-2 text-[0.875rem] transition-colors",
             activeTab === "chats"
               ? "font-medium text-foreground"
               : "text-muted-foreground hover:text-foreground",
@@ -654,14 +654,14 @@ export function Sidebar() {
             <div className="space-y-2">
               <div className="flex items-center justify-between rounded-md border border-hairline bg-card/45 px-2.5 py-2">
                 <div>
-                  <div className="font-medium text-[0.8125rem]">
+                  <div className="font-medium text-[0.875rem]">
                     Project conversation
                   </div>
-                  <div className="mt-0.5 text-[0.6875rem] text-muted-foreground uppercase tracking-[0.12em]">
+                  <div className="mt-0.5 text-[0.75rem] text-muted-foreground uppercase tracking-[0.12em]">
                     Saved with this project
                   </div>
                 </div>
-                <span className="font-mono text-[0.6875rem] text-muted-foreground">
+                <span className="font-mono text-[0.75rem] text-muted-foreground">
                   {chatMessages.length}
                 </span>
               </div>
@@ -677,7 +677,7 @@ export function Sidebar() {
                     <div className="mb-1 flex items-center gap-1.5">
                       <span
                         className={cn(
-                          "font-medium text-[0.6875rem] uppercase tracking-[0.14em]",
+                          "font-medium text-[0.75rem] uppercase tracking-[0.14em]",
                           message.role === "user"
                             ? "text-primary"
                             : "text-[#2a8f83]",
@@ -686,7 +686,7 @@ export function Sidebar() {
                         {message.role === "user" ? "You" : "Assistant"}
                       </span>
                     </div>
-                    <p className="line-clamp-3 text-[0.8125rem] text-muted-foreground leading-relaxed">
+                    <p className="line-clamp-3 text-[0.875rem] text-muted-foreground leading-relaxed">
                       {messageText(message)}
                     </p>
                   </div>
@@ -701,7 +701,7 @@ export function Sidebar() {
                 <MessageCircleIcon className="size-3.5" />
                 Open assistant
               </Button>
-              <p className="px-1 pb-2 text-[0.6875rem] text-muted-foreground leading-relaxed">
+              <p className="px-1 pb-2 text-[0.75rem] text-muted-foreground leading-relaxed">
                 The assistant can read your project files and edit the document.
               </p>
             </div>
@@ -714,10 +714,8 @@ export function Sidebar() {
           {userInitials}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="truncate font-medium text-[0.8125rem]">
-            {userName}
-          </div>
-          <div className="text-[0.625rem] text-muted-foreground uppercase tracking-[0.14em]">
+          <div className="truncate font-medium text-[0.875rem]">{userName}</div>
+          <div className="text-[0.75rem] text-muted-foreground uppercase tracking-[0.14em]">
             Personal workspace
           </div>
         </div>

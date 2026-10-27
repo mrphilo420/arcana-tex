@@ -325,10 +325,10 @@ export function FileTreeVisualizer({
                       <FileGlyph file={node.file} />
                     ) : null}
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium text-[0.8125rem]">
+                      <div className="truncate font-medium text-[0.875rem]">
                         {node.name || "Project"}
                       </div>
-                      <div className="truncate font-mono text-[0.625rem] text-muted-foreground">
+                      <div className="truncate font-mono text-[0.75rem] text-muted-foreground">
                         {node.kind === "root"
                           ? `${files.length} files`
                           : node.kind === "folder"

@@ -86,7 +86,7 @@ function FeatureToggle({
   return (
     <div className="flex items-start justify-between gap-3 rounded-lg border border-hairline bg-card/25 p-3">
       <div className="min-w-0">
-        <div className="font-medium text-[0.8125rem]">{feature.label}</div>
+        <div className="font-medium text-[0.875rem]">{feature.label}</div>
         <p className="mt-0.5 text-[0.75rem] text-muted-foreground leading-relaxed">
           {feature.description}
         </p>
@@ -320,7 +320,7 @@ export function DevPanel() {
           <SheetTitle className="flex items-center gap-2 text-base">
             <FlaskConicalIcon className="size-4 text-primary" />
             Developer control panel
-            <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1.5 py-0.5 font-mono text-[#2a8f83] text-[0.625rem] uppercase tracking-[0.12em]">
+            <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1.5 py-0.5 font-mono text-[#2a8f83] text-[0.75rem] uppercase tracking-[0.12em]">
               local only
             </span>
           </SheetTitle>
@@ -386,7 +386,7 @@ export function DevPanel() {
               <div className="rounded-lg border border-hairline bg-card/25 p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-1.5 font-medium text-[0.8125rem]">
+                    <div className="flex items-center gap-1.5 font-medium text-[0.875rem]">
                       <PaletteIcon className="size-3.5 text-primary" />
                       Interface + editor theme
                     </div>
@@ -433,7 +433,7 @@ export function DevPanel() {
               <div className="rounded-lg border border-hairline bg-card/25 p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-medium text-[0.8125rem]">
+                    <div className="font-medium text-[0.875rem]">
                       Font pairing
                     </div>
                     <p className="mt-0.5 text-[0.75rem] text-muted-foreground">
@@ -474,10 +474,10 @@ export function DevPanel() {
                           : "border-hairline",
                       )}
                     >
-                      <div className="font-medium text-[0.6875rem]">
+                      <div className="font-medium text-[0.75rem]">
                         {pairing.label}
                       </div>
-                      <div className="mt-0.5 truncate text-[0.625rem] text-muted-foreground">
+                      <div className="mt-0.5 truncate text-[0.75rem] text-muted-foreground">
                         {pairing.serif} / {pairing.sans} / {pairing.mono}
                       </div>
                     </div>
@@ -488,7 +488,7 @@ export function DevPanel() {
               <div className="rounded-lg border border-hairline bg-card/25 p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-1.5 font-medium text-[0.8125rem]">
+                    <div className="flex items-center gap-1.5 font-medium text-[0.875rem]">
                       <TypeIcon className="size-3.5 text-primary" />
                       Text size
                     </div>
@@ -533,10 +533,10 @@ export function DevPanel() {
                           : "border-hairline hover:bg-accent",
                       )}
                     >
-                      <div className="font-medium text-[0.6875rem]">
+                      <div className="font-medium text-[0.75rem]">
                         {scale.label}
                       </div>
-                      <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
+                      <div className="mt-0.5 text-[0.75rem] text-muted-foreground">
                         {scale.description}
                       </div>
                     </button>
@@ -547,7 +547,7 @@ export function DevPanel() {
               <div className="rounded-lg border border-hairline bg-card/25 p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-1.5 font-medium text-[0.8125rem]">
+                    <div className="flex items-center gap-1.5 font-medium text-[0.875rem]">
                       <BotIcon className="size-3.5 text-primary" />
                       AI model
                     </div>
@@ -592,16 +592,16 @@ export function DevPanel() {
                           : "border-hairline hover:bg-accent",
                       )}
                     >
-                      <div className="font-medium text-[0.6875rem]">
+                      <div className="font-medium text-[0.75rem]">
                         {model.label}
                       </div>
-                      <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
+                      <div className="mt-0.5 text-[0.75rem] text-muted-foreground">
                         {model.compute} · {model.contextWindow} ctx
                       </div>
                     </button>
                   ))}
                 </div>
-                <div className="mt-2 rounded border border-hairline/70 bg-background/40 px-2 py-1.5 text-[0.6875rem] text-muted-foreground">
+                <div className="mt-2 rounded border border-hairline/70 bg-background/40 px-2 py-1.5 text-[0.75rem] text-muted-foreground">
                   {selectedModel.description}
                 </div>
               </div>
@@ -645,7 +645,7 @@ export function DevPanel() {
                     key={label}
                     className="min-w-0 rounded-md border border-hairline bg-card/25 px-2.5 py-2"
                   >
-                    <div className="text-[0.625rem] text-muted-foreground uppercase tracking-[0.1em]">
+                    <div className="text-[0.75rem] text-muted-foreground uppercase tracking-[0.1em]">
                       {label}
                     </div>
                     <div className="mt-0.5 truncate font-mono text-[0.75rem]">
@@ -775,11 +775,11 @@ export function DevPanel() {
                   Open Lean panel
                 </Button>
               </div>
-              <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-dark p-3 font-mono text-[0.6875rem] text-on-dark-soft leading-relaxed">
+              <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-dark p-3 font-mono text-[0.75rem] text-on-dark-soft leading-relaxed">
                 {bridgeResult ??
                   "Run Check bridge to query /api/lean/status, /api/lean/projects, and /api/lean/toolchains."}
               </pre>
-              <p className="text-[0.6875rem] text-muted-foreground leading-relaxed">
+              <p className="text-[0.75rem] text-muted-foreground leading-relaxed">
                 The Lean bridge is optional. Configure it with{" "}
                 <code>LEAN_PROJECT_DIR</code> or select a project in the Lean
                 panel. The panel discovers Lake projects and installed Elan
@@ -846,10 +846,10 @@ export function DevPanel() {
                       key={entry.key}
                       className="flex items-center justify-between gap-3 border-hairline border-b px-3 py-2 last:border-b-0"
                     >
-                      <span className="min-w-0 truncate font-mono text-[0.6875rem]">
+                      <span className="min-w-0 truncate font-mono text-[0.75rem]">
                         {entry.key}
                       </span>
-                      <span className="shrink-0 font-mono text-[0.625rem] text-muted-foreground">
+                      <span className="shrink-0 font-mono text-[0.75rem] text-muted-foreground">
                         {entry.size} chars
                       </span>
                     </div>
@@ -865,7 +865,7 @@ export function DevPanel() {
           )}
         </div>
 
-        <div className="flex shrink-0 items-center justify-between border-hairline border-t px-4 py-2 text-[0.6875rem] text-muted-foreground">
+        <div className="flex shrink-0 items-center justify-between border-hairline border-t px-4 py-2 text-[0.75rem] text-muted-foreground">
           <span>Development-only control surface</span>
           <span className="font-mono">⌘/Ctrl + Shift + D</span>
         </div>

@@ -52,10 +52,10 @@ export function ProjectCard({
             <span className="size-1.5 rounded-full bg-[#5a564f]" />
             <span className="size-1.5 rounded-full bg-[#5a564f]" />
             <span className="size-1.5 rounded-full bg-[#5a564f]" />
-            <span className="ml-2 truncate font-mono text-[0.6875rem] text-on-dark-soft">
+            <span className="ml-2 truncate font-mono text-[0.75rem] text-on-dark-soft">
               {project.mainFilePath ?? "main.tex"}
             </span>
-            <span className="ml-auto shrink-0 rounded-full border border-white/10 px-2 py-0.5 font-medium text-[0.6875rem] text-on-dark-soft">
+            <span className="ml-auto shrink-0 rounded-full border border-white/10 px-2 py-0.5 font-medium text-[0.75rem] text-on-dark-soft">
               {project.fileCount} file{project.fileCount === 1 ? "" : "s"}
             </span>
           </div>
@@ -69,7 +69,7 @@ export function ProjectCard({
                   style={{ width: line.width }}
                 />
               ))}
-              <div className="pt-1 font-mono text-[#8e8b82] text-[0.6875rem]">
+              <div className="pt-1 font-mono text-[#8e8b82] text-[0.75rem]">
                 \section&#123;Introduction&#125;
               </div>
             </div>
@@ -88,7 +88,7 @@ export function ProjectCard({
         </div>
 
         <div className="p-5">
-          <h3 className="pr-7 font-serif text-[1.375rem] leading-[1.1] tracking-[-0.015em]">
+          <h3 className="pr-7 font-serif text-[1.5rem] leading-[1.1] tracking-[-0.015em]">
             {project.name}
           </h3>
           <p

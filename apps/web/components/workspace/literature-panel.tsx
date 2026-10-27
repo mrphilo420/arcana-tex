@@ -495,7 +495,7 @@ export function LiteraturePanel() {
                     />
                   )}
 
-                  <p className="text-[0.8125rem] text-muted-foreground">
+                  <p className="text-[0.875rem] text-muted-foreground">
                     {zotero.mode === "local"
                       ? "Zotero must be running with its local API enabled. Credentials are stored in this browser."
                       : serverZoteroKey

@@ -53,7 +53,7 @@ export function ChatQuickActions({ className }: { className?: string }) {
             Lean audit
           </button>
         )}
-        <span className="hidden px-1 font-mono text-[0.6875rem] text-muted-foreground/70 sm:inline">
+        <span className="hidden px-1 font-mono text-[0.75rem] text-muted-foreground/70 sm:inline">
           /paper-review
         </span>
       </div>

@@ -148,6 +148,18 @@
   --sidebar-ring: #cc785c;
 }
 
+/*
+ * Interface type scale (at the 17px comfortable root):
+ * 0.625rem 10.6px  micro badge
+ * 0.75rem  12.75px caption / micro UI
+ * 0.875rem 14.875px controls / compact body
+ * 1rem     17px    body and reading text
+ * 1.25rem  21.25px section / top-bar title
+ * 1.5rem   25.5px  card and dialog title
+ * 1.875rem 31.875px page display
+ * Ratios: 1.20, 1.17, 1.14, 1.25, 1.20, 1.25.
+ * Compact and Large scale the same ramp through the root font size.
+ */
 html {
   font-size: 17px;
 }
@@ -255,8 +267,8 @@ body {
 
 .aui-md {
   color: var(--foreground);
-  font-size: 0.9375rem;
-  line-height: 1.65;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 .aui-md > :first-child {

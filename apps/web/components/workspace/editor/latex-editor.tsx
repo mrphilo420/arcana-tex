@@ -623,7 +623,7 @@ export function LatexEditor() {
         >
           {stickyLines.length > 0 && (
             <div
-              className="absolute inset-x-0 top-0 z-10 border-b font-mono text-[0.9375rem] leading-[1.4] shadow-md"
+              className="absolute inset-x-0 top-0 z-10 border-b font-mono text-[1rem] leading-[1.4] shadow-md"
               style={{
                 backgroundColor: editorColors.background,
                 borderBottomColor: editorColors.border,
