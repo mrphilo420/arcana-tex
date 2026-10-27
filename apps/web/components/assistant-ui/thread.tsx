@@ -8,7 +8,10 @@ import {
   MessagePrimitive,
   ThreadPrimitive,
 } from "@assistant-ui/react";
-import { MarkdownTextPrimitive } from "@assistant-ui/react-markdown";
+import {
+  MarkdownTextPrimitive,
+  type SyntaxHighlighterProps,
+} from "@assistant-ui/react-markdown";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -21,7 +24,11 @@ import {
 } from "lucide-react";
 import type { FC } from "react";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 
+import { ChatQuickActions } from "@/components/assistant-ui/chat-quick-actions";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -70,10 +77,10 @@ const ThreadScrollToBottom: FC = () => {
 const ThreadWelcome: FC = () => {
   return (
     <div className="mx-auto my-auto flex w-full grow flex-col items-center justify-center px-4">
-      <h1 className="mb-2 font-semibold text-xl">LaTeX Assistant</h1>
+      <h1 className="mb-2 font-semibold text-xl">Research assistant</h1>
       <p className="text-center text-muted-foreground text-sm">
-        Ask me anything about LaTeX! I can help you with equations, document
-        structure, formatting, and more.
+        Ask about LaTeX, run a structured paper review, or audit a Lean 4
+        formalization.
       </p>
     </div>
   );
@@ -82,9 +89,10 @@ const ThreadWelcome: FC = () => {
 const Composer: FC = () => {
   return (
     <ComposerPrimitive.Root className="relative flex w-full flex-col">
+      <ChatQuickActions className="mb-2" />
       <div className="flex w-full flex-col rounded-2xl border border-input bg-background px-1 pt-2 outline-none transition-shadow has-[textarea:focus-visible]:border-ring has-[textarea:focus-visible]:ring-2 has-[textarea:focus-visible]:ring-ring/20">
         <ComposerPrimitive.Input
-          placeholder="Ask about LaTeX..."
+          placeholder="Ask about LaTeX, /paper-review, or Lean..."
           className="mb-1 max-h-32 min-h-14 w-full resize-none bg-transparent px-4 pt-2 pb-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0"
           rows={1}
           autoFocus
@@ -153,10 +161,25 @@ const AssistantMessage: FC = () => {
   );
 };
 
+const CodeBlock: FC<SyntaxHighlighterProps> = ({ language, code }) => {
+  return (
+    <div className="my-2 overflow-hidden rounded-lg border border-border/70 bg-muted/40">
+      <div className="border-border/60 border-b px-3 py-1.5 font-mono text-[9px] text-muted-foreground uppercase tracking-[0.12em]">
+        {language || "text"}
+      </div>
+      <pre className="overflow-x-auto p-3 text-xs leading-relaxed">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+};
+
 const MarkdownText: FC = () => {
   return (
     <MarkdownTextPrimitive
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeKatex]}
+      components={{ SyntaxHighlighter: CodeBlock }}
       className="aui-md prose prose-sm dark:prose-invert max-w-none"
     />
   );

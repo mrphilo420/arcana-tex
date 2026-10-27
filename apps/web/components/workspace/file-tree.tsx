@@ -57,7 +57,8 @@ function FileTypeIcon({ file }: { file: ProjectFile }) {
     extension === "cls" ||
     extension === "sty" ||
     extension === "def" ||
-    extension === "bst"
+    extension === "bst" ||
+    extension === "lean"
   ) {
     return <FileCodeIcon className="size-4 shrink-0" />;
   }

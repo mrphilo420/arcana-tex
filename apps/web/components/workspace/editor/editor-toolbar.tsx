@@ -9,11 +9,14 @@ import {
   Heading1Icon,
   Heading2Icon,
   CodeIcon,
+  EyeIcon,
+  FileCodeIcon,
   FunctionSquareIcon,
   FileTextIcon,
   ImageIcon,
   KeyboardIcon,
   MinusIcon,
+  PencilIcon,
   PlusIcon,
 } from "lucide-react";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
@@ -41,14 +44,20 @@ const ZOOM_OPTIONS = [
 interface EditorToolbarProps {
   editorView: RefObject<EditorView | null>;
   fileType?: "tex" | "image" | "binary";
+  fileKind?: "latex" | "lean" | "markdown";
   imageScale?: number;
+  markdownPreview?: boolean;
+  onToggleMarkdownPreview?: () => void;
   onImageScaleChange?: (scale: number) => void;
 }
 
 export function EditorToolbar({
   editorView,
   fileType = "tex",
+  fileKind = "latex",
   imageScale = 1,
+  markdownPreview = false,
+  onToggleMarkdownPreview,
   onImageScaleChange,
 }: EditorToolbarProps) {
   const fileName = useDocumentStore((s) => {
@@ -139,6 +148,47 @@ export function EditorToolbar({
         {fileType === "binary" && (
           <span className="text-muted-foreground text-xs">binary</span>
         )}
+      </div>
+    );
+  }
+
+  if (fileKind === "markdown") {
+    return (
+      <div className="flex h-9 items-center gap-2 border-white/10 border-b bg-[#252320] px-2 text-[#a09d96]">
+        <FileTextIcon className="size-4 text-[#e8a55a]" />
+        <span className="font-medium font-mono text-[#faf9f5] text-[11px]">
+          {fileName}
+        </span>
+        <span className="rounded border border-[#e8a55a]/30 bg-[#e8a55a]/10 px-1.5 py-0.5 font-mono text-[#e8a55a] text-[9px] uppercase tracking-[0.12em]">
+          Markdown
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-auto h-6 gap-1 text-[#a09d96] text-[10px] hover:bg-white/10 hover:text-[#faf9f5]"
+          onClick={onToggleMarkdownPreview}
+        >
+          {markdownPreview ? (
+            <PencilIcon className="size-3.5" />
+          ) : (
+            <EyeIcon className="size-3.5" />
+          )}
+          {markdownPreview ? "Edit" : "Preview"}
+        </Button>
+      </div>
+    );
+  }
+
+  if (fileKind === "lean") {
+    return (
+      <div className="flex h-9 items-center gap-2 border-white/10 border-b bg-[#252320] px-2 text-[#a09d96]">
+        <FileCodeIcon className="size-4 text-[#5db8a6]" />
+        <span className="font-medium font-mono text-[#faf9f5] text-[11px]">
+          {fileName}
+        </span>
+        <span className="rounded border border-[#5db8a6]/30 bg-[#5db8a6]/10 px-1.5 py-0.5 font-mono text-[#5db8a6] text-[9px] uppercase tracking-[0.12em]">
+          Lean 4
+        </span>
       </div>
     );
   }

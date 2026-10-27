@@ -1,6 +1,6 @@
 {
   "name": "@open-prism/root",
-  "description": "arcanaTeX — local-first AI LaTeX workspace",
+  "description": "arcanaTeX — local-first AI LaTeX and Lean workspace",
   "version": "0.0.1",
   "repository": {
     "type": "git",

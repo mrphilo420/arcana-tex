@@ -78,6 +78,22 @@ function messageText(message: UIMessage): string {
     .trim();
 }
 
+function parseMarkdownTableOfContents(content: string): TocItem[] {
+  const toc: TocItem[] = [];
+
+  content.split("\n").forEach((line, index) => {
+    const match = line.match(/^(#{1,6})\s+(.+?)\s*#*$/);
+    if (!match) return;
+    toc.push({
+      level: match[1].length,
+      title: match[2].replace(/[*_`~]/g, "").trim(),
+      line: index + 1,
+    });
+  });
+
+  return toc;
+}
+
 function parseTableOfContents(content: string): TocItem[] {
   const lines = content.split("\n");
   const toc: TocItem[] = [];
@@ -122,6 +138,9 @@ export function Sidebar() {
   const content = useDocumentStore(
     (s) => s.files.find((file) => file.id === s.activeFileId)?.content ?? "",
   );
+  const activeFilePath = useDocumentStore(
+    (s) => s.files.find((file) => file.id === s.activeFileId)?.path ?? "",
+  );
   const requestJumpToPosition = useDocumentStore(
     (s) => s.requestJumpToPosition,
   );
@@ -151,7 +170,13 @@ export function Sidebar() {
   const folderInputRef = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
 
-  const toc = useMemo(() => parseTableOfContents(content), [content]);
+  const toc = useMemo(
+    () =>
+      /\.(?:md|markdown)$/i.test(activeFilePath)
+        ? parseMarkdownTableOfContents(content)
+        : parseTableOfContents(content),
+    [content, activeFilePath],
+  );
   const userInitials =
     userName
       .split(/\s+/)
@@ -249,11 +274,18 @@ export function Sidebar() {
 
   const handleAddTexFile = () => {
     const name = newFileName.trim() || "untitled.tex";
-    const finalName = name.endsWith(".tex") ? name : `${name}.tex`;
+    const finalName = /\.(?:tex|ltx|lean|md|markdown)$/i.test(name)
+      ? name
+      : `${name}.tex`;
     addFile({
       name: finalName,
       type: "tex",
-      content: `\\documentclass{article}\n\n\\begin{document}\n\n% Your content here\n\n\\end{document}\n`,
+      content: finalName.toLowerCase().endsWith(".lean")
+        ? "-- Lean 4 proof sketch\nimport Mathlib\n\nnamespace Paper\n\ntheorem main_result : True := by\n  trivial\n\nend Paper\n"
+        : finalName.toLowerCase().endsWith(".md") ||
+            finalName.toLowerCase().endsWith(".markdown")
+          ? "# New document\n\nWrite your notes or review report here.\n"
+          : "\\documentclass{article}\n\n\\begin{document}\n\n% Your content here\n\n\\end{document}\n",
     });
     setNewFileName("");
     setAddDialogOpen(false);
@@ -486,7 +518,7 @@ export function Sidebar() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setAddDialogOpen(true)}>
                   <FileTextIcon className="mr-2 size-4" />
-                  New LaTeX File
+                  New file
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
                   <UploadIcon className="mr-2 size-4" />
@@ -698,11 +730,11 @@ export function Sidebar() {
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>New LaTeX File</DialogTitle>
+            <DialogTitle>New file</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <Input
-              placeholder="filename.tex"
+              placeholder="filename.tex, proof.lean, or notes.md"
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
               onKeyDown={(e) => {

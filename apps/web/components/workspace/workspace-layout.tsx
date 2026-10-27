@@ -4,6 +4,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { Sidebar } from "./sidebar";
 import { LatexEditor } from "./editor/latex-editor";
 import { LatexTools } from "./editor/latex-tools";
+import { ResearchTools } from "./editor/research-tools";
 import { PdfPreview } from "./preview/pdf-preview";
 import { BeamerPanel } from "./beamer-panel";
 import { CommentsPanel } from "./comments-panel";
@@ -32,6 +33,7 @@ export function WorkspaceLayout() {
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
       <WorkspaceTopBar />
       <LatexTools />
+      <ResearchTools />
       <BeamerPanel />
       <CommentsPanel />
       <LiteraturePanel />

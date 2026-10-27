@@ -2,13 +2,18 @@
 
 import { useEffect } from "react";
 import { useAui } from "@assistant-ui/store";
+import {
+  formatLeanSummaries,
+  isLeanFile,
+  summarizeLeanFiles,
+} from "@/lib/lean";
 import { useDocumentStore } from "@/stores/document-store";
 
 const MAX_CONTEXT_CHARS = 30000;
 
 function truncate(text: string): string {
   if (text.length <= MAX_CONTEXT_CHARS) return text;
-  return `${text.slice(0, MAX_CONTEXT_CHARS)}\n% … truncated …`;
+  return `${text.slice(0, MAX_CONTEXT_CHARS)}\n… truncated …`;
 }
 
 export function useDocumentContext() {
@@ -22,6 +27,17 @@ export function useDocumentContext() {
   const activeFile = files.find((file) => file.id === activeFileId);
   const mainFile = files.find((file) => file.id === mainFileId);
   const content = activeFile?.content ?? "";
+  const activeIsLean = activeFile ? isLeanFile(activeFile) : false;
+  const activeIsMarkdown = activeFile
+    ? /\.(?:md|markdown)$/i.test(activeFile.path)
+    : false;
+  const activeLanguage = activeIsLean
+    ? "lean"
+    : activeIsMarkdown
+      ? "markdown"
+      : "latex";
+  const leanSummaries = summarizeLeanFiles(files);
+  const leanContext = formatLeanSummaries(leanSummaries);
 
   const hasSelection = selectionRange !== null;
   const selectedText = hasSelection
@@ -30,7 +46,7 @@ export function useDocumentContext() {
 
   useEffect(() => {
     const selectionInfo = hasSelection
-      ? `The user has selected the following text:\n\`\`\`\n${selectedText}\n\`\`\`\nYou can use the replace_selection tool to replace this text.`
+      ? `The user has selected the following text:\n\`\`\`${activeLanguage}\n${selectedText}\n\`\`\`\nYou can use the replace_selection tool to replace this text.`
       : "The user has NOT selected any text. Do NOT use the replace_selection tool.";
 
     const fileList = files
@@ -38,6 +54,8 @@ export function useDocumentContext() {
         const markers = [
           file.id === mainFileId ? "main document" : null,
           file.id === activeFileId ? "open in editor" : null,
+          isLeanFile(file) ? "Lean 4 source" : null,
+          /\.(?:md|markdown)$/i.test(file.path) ? "Markdown" : null,
         ].filter(Boolean);
         return `- ${file.path}${markers.length ? ` (${markers.join(", ")})` : ""}`;
       })
@@ -48,6 +66,10 @@ export function useDocumentContext() {
         ? `\nThe main document "${mainFile.path}" contains:\n\`\`\`latex\n${truncate(mainFile.content)}\n\`\`\`\n`
         : "";
 
+    const leanContextSection = leanSummaries.length
+      ? `\nLean 4 sources in this project:\n${leanContext}\n\nLean code is not LaTeX. Preserve declaration names and syntax. Use inspect_lean_sources for structured details and read_project_file for full source. Treat sorry/admit as incomplete proofs; axioms, native_decide, unsafe, and partial declarations are trust or soundness risks. Never claim a Lean proof is complete or kernel-checked without build evidence.\n`
+      : "";
+
     return aui.modelContext().register({
       getModelContext: () => ({
         system: `The user is working on the LaTeX project "${projectName}".
@@ -56,10 +78,10 @@ Project files (relative paths):
 ${fileList}
 
 The user is currently editing "${activeFile?.path ?? "document.tex"}":
-\`\`\`latex
+\`\`\`${activeLanguage}
 ${truncate(content)}
 \`\`\`
-${mainFileContext}
+${mainFileContext}${leanContextSection}
 ${selectionInfo}
 
 The project may contain multiple files that reference each other with \\input, \\include, \\bibliography, or \\includegraphics. Use the file list to understand the project structure and reference the current document when helping the user.`,

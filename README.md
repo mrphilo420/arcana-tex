@@ -1,11 +1,12 @@
 # arcanaTeX
 
-**A local-first AI LaTeX workspace for the whole research handoff.**
+**A local-first AI LaTeX and Lean workspace for the whole research handoff.**
 
 arcanaTeX pairs a multi-file LaTeX editor and live PDF preview with AI
-assistance, presentation tools, publication-ready diagrams, and submission
-packaging. Projects stay in your browser by default; compilation and optional
-model calls go through services you configure.
+assistance, structured paper review, Lean 4 analysis, presentation tools,
+publication-ready diagrams, and submission packaging. Projects stay in your
+browser by default; compilation and optional model calls go through services
+you configure.
 
 <p align="center">
   <img src="./assets/screenshots/workspace.png" alt="arcanaTeX workspace with LaTeX source, live PDF preview, and research tools" width="100%" />
@@ -29,6 +30,14 @@ model calls go through services you configure.
   autosave, a file tree, an outline, and a live PDF beside the editor.
 - **Check** every build through structured diagnostics. Jump to the source
   line, inspect a suggested diff, and apply conservative deterministic fixes.
+- **Review** a manuscript with the `/paper-review` skill: a structured,
+  read-only editorial panel with methodology, domain, and devil's-advocate
+  challenges plus a revision roadmap.
+- **Formalize** with Lean 4 awareness: `.lean` files are syntax-highlighted,
+  included in chat context, and summarized for declarations, axioms, and
+  incomplete proofs.
+- **Preview** Markdown notes and review reports with GFM, math, tables, and
+  code rendering side by side with the source.
 - **Present** with a contextual Beamer companion: frame navigator, themes,
   overlays, speaker notes, handouts, and a guided deck wizard.
 - **Draw** publication-ready TikZ figures with a snap-grid studio, live
@@ -45,14 +54,25 @@ model calls go through services you configure.
   with you; folders, list and grid views, sortable columns, search across
   titles, paths, and document text, plus import, rename, move, and delete.
 - **Multi-file LaTeX workspace** - Folder import, nested file tree, images,
-  bibliography and class/style files, main-document selection, and
-  pdfLaTeX/XeLaTeX/LuaLaTeX compilation.
+  bibliography and class/style files, Lean 4 sources, Markdown notes,
+  main-document selection, and pdfLaTeX/XeLaTeX/LuaLaTeX compilation.
 - **Live PDF preview** - Automatic compilation after edits settle, zoom and
   page navigation, and a toggle to pause auto-compilation.
 - **AI-assisted writing** - A project-aware assistant built on assistant-ui.
   The model receives the project file list plus active and main documents, and
   can create/read/search files, set the main document, and edit the active
   document. Keys remain server-side.
+- **Paper review skill** - Type `/paper-review` or use the **Review paper**
+  action in chat. The skill runs a read-only editorial panel, audits Lean
+  formalization when present, and returns a decision and prioritized revision
+  roadmap. Supports full, quick, methodology, re-review, and guided modes.
+- **Lean 4 understanding** - `.lean` files are first-class text files with
+  Lean syntax highlighting. The assistant sees Lean declarations, imports,
+  `sorry`/`admit` locations, axioms, `native_decide`, and unsafe/partial code,
+  and is instructed never to claim verification without build evidence.
+- **Markdown preview** - `.md` files open in a Markdown editor with a
+  **Preview** toggle. GFM tables, task lists, math, links, and code blocks
+  render in a paper-like preview; the outline follows Markdown headings.
 - **Real-time diagnostics** - The TeX log is parsed into structured errors and
   warnings with severity, nature, file/line, and a source excerpt. Click an
   issue to jump to it.
@@ -90,6 +110,9 @@ model calls go through services you configure.
   to 30 local snapshots per project and restore them from the inspector.
 - **Workspace LaTeX keyboard** - Toggleable Text, Math, Greek, Symbols, and
   TikZ groups that insert at the CodeMirror caret with keyboard shortcuts.
+- **Markdown chat rendering** - Chat renders GFM, math, tables, and fenced code
+  blocks; review reports remain readable in the assistant and can be copied
+  into a Markdown note.
 - **Autosave and local storage** - Every project is saved to browser
   IndexedDB as you type.
 
@@ -234,6 +257,47 @@ diagnostics.
   stray ends or close unclosed blocks), missing `.sty` calls, and simple
   duplicate definitions. Anything without a safe deterministic match is marked
   **Manual**/**Review** and left untouched.
+
+## Chat, paper review, Lean, and Markdown
+
+The chat composer exposes **Review paper** and **Lean audit** actions above the
+input. You can also type a command directly.
+
+### Paper reviews
+
+- `/paper-review` runs the built-in `paper-review` skill in full mode.
+- `/paper-review quick`, `/paper-review methodology`,
+  `/paper-review re-review`, and `/paper-review guided` select other modes.
+- Add a focus after the command, for example `/paper-review lean` or
+  `/paper-review statistics`.
+- The skill uses `load_review_context` to load the manuscript, bibliography,
+  and Lean summaries, then simulates an editor-in-chief, methodology, domain,
+  cross-disciplinary, and devil's-advocate review before synthesizing an
+  editorial decision and revision roadmap.
+- Review mode is read-only: edit tools are removed for the turn. The report
+  stays in chat and can be copied into a Markdown note for preview.
+
+### Lean 4
+
+- `.lean` files can be created in the file tree, imported with a folder, edited,
+  and included in the project source bundle.
+- The editor uses Lean syntax highlighting and suppresses LaTeX-only shortcuts.
+- The chat receives Lean declarations, imports, and proof-health summaries; the
+  `inspect_lean_sources` tool provides structured details.
+- `sorry` and `admit` are treated as incomplete proofs. `axiom`, `opaque`,
+  `native_decide`, `unsafe`, and `partial` are surfaced as trust or soundness
+  risks.
+- arcanaTeX does not bundle a Lean compiler. It understands and audits Lean
+  source, but it does not run `lake build` or claim kernel verification.
+
+### Markdown
+
+- Open `.md` or `.markdown` files in the workspace editor.
+- Use the **Preview** button in the editor toolbar to render GFM tables,
+  task lists, math, links, code fences, and images; **Edit** returns to source.
+- Markdown headings populate the workspace outline.
+- Markdown preview is also useful for review reports and research notes saved
+  in the project.
 
 ## Beamer presentations
 

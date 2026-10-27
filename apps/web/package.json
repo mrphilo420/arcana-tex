@@ -2,7 +2,7 @@
   "name": "@open-prism/web",
   "version": "0.0.1",
   "private": true,
-  "description": "arcanaTeX — local-first AI LaTeX workspace",
+  "description": "arcanaTeX — local-first AI LaTeX and Lean workspace",
   "homepage": "https://github.com/mrphilo420/arcana-tex",
   "repository": {
     "type": "git",
@@ -51,6 +51,7 @@
     "react-day-picker": "^9.13.0",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.1",
+    "react-markdown": "^10.1.0",
     "react-pdf": "^10.3.0",
     "react-resizable-panels": "^3.0.6",
     "recharts": "2.15.4",

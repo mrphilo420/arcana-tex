@@ -26,7 +26,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 const description =
-  "A local-first AI LaTeX workspace for papers, Beamer presentations, TikZ diagrams, and submission packages.";
+  "A local-first AI LaTeX and Lean workspace for papers, reviews, Beamer presentations, Markdown notes, TikZ diagrams, and submission packages.";
 
 export const metadata: Metadata = {
   title: "arcanaTeX — Local-first LaTeX workspace",

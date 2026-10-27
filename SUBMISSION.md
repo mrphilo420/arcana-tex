@@ -1,7 +1,7 @@
 # arcanaTeX — Submission
 
-A local-first AI LaTeX workspace built with Next.js, assistant-ui, and a
-self-hosted LaTeX/sync service.
+A local-first AI LaTeX and Lean workspace with paper review, Markdown preview,
+and a self-hosted LaTeX/sync service, built with Next.js and assistant-ui.
 
 ## Links to fill in
 
@@ -54,8 +54,24 @@ self-hosted LaTeX/sync service.
   flow into the generated TikZ block.
 - **Project-aware AI assistant** — full project context, project tools
   (`list_project_files`, `read_project_file`, `search_project`,
-  `write_project_file`, `set_main_document`), active-document editing tools,
+  `inspect_lean_sources`, `load_review_context`, `write_project_file`,
+  `set_main_document`), active-document editing tools,
   per-project persisted chat history, and an OpenAI-compatible model backend.
+- **Paper-review skill** — `/paper-review` runs a structured, read-only
+  editorial panel (EIC, methodology, domain, cross-disciplinary, devil's
+  advocate) with full/quick/methodology/re-review/guided modes, a decision,
+  and a prioritized revision roadmap. Review turns disable manuscript-edit
+  tools.
+- **Lean 4 understanding** — `.lean` files are editable text files with Lean
+  syntax highlighting and chat context. The assistant receives declaration,
+  import, `sorry`/`admit`, axiom, `native_decide`, and unsafe/partial
+  summaries through `inspect_lean_sources`; no Lean compiler is bundled.
+- **Markdown preview** — `.md`/`.markdown` files use Markdown editing with a
+  Preview toggle for GFM tables, task lists, math, links, code, and images;
+  Markdown headings populate the outline. Chat surfaces render GFM and math.
+- **Review context bundle** — `load_review_context` assembles manuscript
+  sections, bibliography, Lean summaries, and compile diagnostics for
+  project-wide reviews.
 - **Comments** — anchored to a file, line, and selection; resolve/delete;
   synced to collaborators.
 - **Live collaboration + cloud snapshots** — token-protected WebSocket rooms,
@@ -76,6 +92,9 @@ self-hosted LaTeX/sync service.
 | Version history | 30 local snapshots per project with restore/delete |
 | AI with project context | Context + project tools + per-project chat history |
 | In-place editing | Insert/replace/find + write file |
+| Paper review | `/paper-review` skill + read-only editorial panel + roadmap |
+| Lean 4 | Syntax highlighting + declarations/sorry/axiom audit |
+| Markdown | Markdown editing + GFM/math preview + outline |
 | Real-time errors | Auto compile + parsed log + line navigation |
 | Auto-fix | Deterministic repair engine + diff preview + version safety |
 | Beamer | Contextual panel + slide navigator + deck wizard + themes/overlays |
@@ -177,6 +196,12 @@ See `README.md` for OpenAI, OpenRouter, Ollama, and sync deployment details.
 - Submission checks are local heuristics. The app does not upload to arXiv or a
   publisher and does not validate fonts, margins, or portal-specific policy.
 - TikZ library support is a curated set; arbitrary TikZ code is not parsed.
+- Lean 4 support is source understanding and auditing, not compilation. The app
+  does not run `lake build` or provide kernel verification.
+- Paper reviews are model-generated editorial analysis; they are heuristic and
+  do not replace human peer review. Review turns are read-only.
+- Markdown preview supports GFM plus math; arbitrary embedded HTML/scripts are
+  not rendered.
 - Sync share links require the API host to be reachable from the other device.
 
 ## Submission checklist

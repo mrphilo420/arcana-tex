@@ -21,6 +21,7 @@ export interface FileTreeNode {
 const TEXT_EXTENSIONS = new Set([
   "tex",
   "ltx",
+  "lean",
   "bib",
   "bst",
   "cls",

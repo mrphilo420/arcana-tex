@@ -34,6 +34,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 
+import { ChatQuickActions } from "@/components/assistant-ui/chat-quick-actions";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { cn } from "@/lib/utils";
 import { useDocumentStore } from "@/stores/document-store";
@@ -208,9 +209,10 @@ const ThreadScrollToBottom: FC = () => {
 const Composer: FC = () => {
   return (
     <ComposerPrimitive.Root className="shrink-0 p-3">
+      <ChatQuickActions className="mb-2 px-1" />
       <div className="flex w-full flex-col rounded-xl border border-input bg-muted/30 transition-colors focus-within:border-ring focus-within:bg-background">
         <ComposerPrimitive.Input
-          placeholder="Ask about LaTeX..."
+          placeholder="Ask about LaTeX, /paper-review, or Lean..."
           className="max-h-40 min-h-10 w-full resize-none bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted-foreground"
           autoFocus
           aria-label="Message input"

@@ -25,8 +25,12 @@ import {
   findNext,
   findPrevious,
 } from "@codemirror/search";
+import { markdown } from "@codemirror/lang-markdown";
 import { latex } from "codemirror-lang-latex";
 import { FileIcon } from "lucide-react";
+import { isLeanFile } from "@/lib/lean";
+import { leanLanguage } from "@/lib/lean-language";
+import { cn } from "@/lib/utils";
 import { useDocumentStore } from "@/stores/document-store";
 import { compileProject } from "@/lib/compile-project";
 import { claudeEditorTheme, claudeHighlightStyle } from "@/lib/editor-theme";
@@ -34,6 +38,7 @@ import { EditorToolbar } from "./editor-toolbar";
 import { type LatexInsertion, TikzLatexRibbon } from "../tikz-latex-ribbon";
 import { AIDrawer } from "./ai-drawer";
 import { ImagePreview } from "./image-preview";
+import { MarkdownPreview } from "./markdown-preview";
 import { SearchPanel } from "./search-panel";
 
 interface StickyItem {
@@ -173,6 +178,9 @@ export function LatexEditor() {
 
   const activeFile = files.find((f) => f.id === activeFileId);
   const isTexFile = activeFile?.type === "tex";
+  const isLean = activeFile ? isLeanFile(activeFile) : false;
+  const isMarkdown =
+    activeFile?.type === "tex" && /\.(?:md|markdown)$/i.test(activeFile.path);
   const activeFileContent = activeFile?.content;
 
   const [imageScale, setImageScale] = useState(0.5);
@@ -182,13 +190,15 @@ export function LatexEditor() {
     {},
   );
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [markdownPreview, setMarkdownPreview] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [matchCount, setMatchCount] = useState(0);
   const [currentMatch, setCurrentMatch] = useState(0);
 
   const parsedLines = useMemo(
-    () => parseLatexStructure(activeFileContent ?? ""),
-    [activeFileContent],
+    () =>
+      isLean || isMarkdown ? [] : parseLatexStructure(activeFileContent ?? ""),
+    [activeFileContent, isLean, isMarkdown],
   );
 
   const stickyLines = useMemo(() => {
@@ -198,6 +208,10 @@ export function LatexEditor() {
       html: lineHtmlCache[item.line] || "",
     }));
   }, [parsedLines, currentLine, lineHtmlCache]);
+
+  useEffect(() => {
+    setMarkdownPreview(false);
+  }, [activeFileId]);
 
   const compileRef = useRef<() => void>(() => {});
   const isSearchOpenRef = useRef(false);
@@ -363,6 +377,7 @@ export function LatexEditor() {
               findNext(view);
               return true;
             }
+            if (isLean || isMarkdown) return false;
             compileRef.current();
             return true;
           },
@@ -389,6 +404,7 @@ export function LatexEditor() {
         {
           key: "Mod-f",
           run: () => {
+            if (isMarkdown) setMarkdownPreview(false);
             setIsSearchOpen(true);
             return true;
           },
@@ -415,7 +431,7 @@ export function LatexEditor() {
         highlightActiveLineGutter(),
         history(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
-        latex(),
+        isLean ? leanLanguage : isMarkdown ? markdown() : latex(),
         claudeEditorTheme,
         syntaxHighlighting(claudeHighlightStyle),
         search(),
@@ -461,6 +477,8 @@ export function LatexEditor() {
   }, [
     activeFileId,
     isTexFile,
+    isLean,
+    isMarkdown,
     setContent,
     setCursorPosition,
     setSelectionRange,
@@ -486,6 +504,7 @@ export function LatexEditor() {
   useEffect(() => {
     const view = viewRef.current;
     if (!view || jumpToPosition === null) return;
+    if (isMarkdown) setMarkdownPreview(false);
 
     view.dispatch({
       selection: { anchor: jumpToPosition },
@@ -493,7 +512,7 @@ export function LatexEditor() {
     });
     view.focus();
     clearJumpRequest();
-  }, [jumpToPosition, clearJumpRequest]);
+  }, [jumpToPosition, clearJumpRequest, isMarkdown]);
 
   if (!isTexFile && activeFile) {
     const isImage = activeFile.type === "image";
@@ -527,8 +546,13 @@ export function LatexEditor() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <EditorToolbar editorView={viewRef} />
-      {isLatexKeyboardOpen && (
+      <EditorToolbar
+        editorView={viewRef}
+        fileKind={isLean ? "lean" : isMarkdown ? "markdown" : "latex"}
+        markdownPreview={markdownPreview}
+        onToggleMarkdownPreview={() => setMarkdownPreview((value) => !value)}
+      />
+      {isLatexKeyboardOpen && !isLean && !isMarkdown && (
         <TikzLatexRibbon scope="workspace" onInsert={insertFromKeyboard} />
       )}
       {isSearchOpen && (
@@ -547,46 +571,56 @@ export function LatexEditor() {
         />
       )}
       <div className="relative min-h-0 flex-1 overflow-hidden">
-        {stickyLines.length > 0 && (
-          <div className="absolute inset-x-0 top-0 z-10 border-white/10 border-b bg-[#181715] font-mono text-[14px] leading-[1.4] shadow-md">
-            {stickyLines.map((section) => (
-              <div
-                key={section.line}
-                className="flex cursor-pointer items-center hover:bg-white/5"
-                onClick={() => {
-                  const view = viewRef.current;
-                  if (!view) return;
-                  const line = view.state.doc.line(section.line);
-                  view.dispatch({
-                    selection: { anchor: line.from },
-                    effects: EditorView.scrollIntoView(line.from, {
-                      y: "start",
-                    }),
-                  });
-                  view.focus();
-                }}
-              >
-                <span
-                  className="shrink-0 bg-[#181715] py-px text-right text-[#6c6a64]"
-                  style={{ width: gutterWidth ? gutterWidth - 8 : 32 }}
+        <div
+          className={cn(
+            "absolute inset-0",
+            isMarkdown && markdownPreview && "hidden",
+          )}
+        >
+          {stickyLines.length > 0 && (
+            <div className="absolute inset-x-0 top-0 z-10 border-white/10 border-b bg-[#181715] font-mono text-[14px] leading-[1.4] shadow-md">
+              {stickyLines.map((section) => (
+                <div
+                  key={section.line}
+                  className="flex cursor-pointer items-center hover:bg-white/5"
+                  onClick={() => {
+                    const view = viewRef.current;
+                    if (!view) return;
+                    const line = view.state.doc.line(section.line);
+                    view.dispatch({
+                      selection: { anchor: line.from },
+                      effects: EditorView.scrollIntoView(line.from, {
+                        y: "start",
+                      }),
+                    });
+                    view.focus();
+                  }}
                 >
-                  {section.line}
-                </span>
-                {section.html ? (
                   <span
-                    className="py-px pl-5.5"
-                    dangerouslySetInnerHTML={{ __html: section.html }}
-                  />
-                ) : (
-                  <span className="py-px pl-5.5 text-[#a09d96]">
-                    {section.content}
+                    className="shrink-0 bg-[#181715] py-px text-right text-[#6c6a64]"
+                    style={{ width: gutterWidth ? gutterWidth - 8 : 32 }}
+                  >
+                    {section.line}
                   </span>
-                )}
-              </div>
-            ))}
-          </div>
+                  {section.html ? (
+                    <span
+                      className="py-px pl-5.5"
+                      dangerouslySetInnerHTML={{ __html: section.html }}
+                    />
+                  ) : (
+                    <span className="py-px pl-5.5 text-[#a09d96]">
+                      {section.content}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          <div ref={containerRef} className="absolute inset-0" />
+        </div>
+        {isMarkdown && markdownPreview && (
+          <MarkdownPreview content={activeFileContent ?? ""} />
         )}
-        <div ref={containerRef} className="absolute inset-0" />
         <AIDrawer />
       </div>
     </div>
