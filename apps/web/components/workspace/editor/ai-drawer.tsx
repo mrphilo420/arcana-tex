@@ -35,6 +35,7 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 
 import { ChatQuickActions } from "@/components/assistant-ui/chat-quick-actions";
+import { ClearChatButton } from "@/components/assistant-ui/clear-chat-button";
 import { ModelPicker } from "@/components/assistant-ui/model-picker";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { cn } from "@/lib/utils";
@@ -212,7 +213,10 @@ const Composer: FC = () => {
     <ComposerPrimitive.Root className="shrink-0 p-3">
       <div className="mb-2 flex items-center justify-between gap-2 px-1">
         <ChatQuickActions />
-        <ModelPicker className="h-6 w-[190px] shrink-0 bg-transparent" />
+        <div className="flex shrink-0 items-center gap-1">
+          <ModelPicker className="h-6 w-[190px] shrink-0 bg-transparent" />
+          <ClearChatButton className="size-6" />
+        </div>
       </div>
       <div className="flex w-full flex-col rounded-xl border border-input bg-muted/30 transition-colors focus-within:border-ring focus-within:bg-background">
         <ComposerPrimitive.Input

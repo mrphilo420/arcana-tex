@@ -1,6 +1,7 @@
 "use client";
 
 import { CodeToolsBadge } from "@/components/workspace/editor/code-tools";
+import { ClearChatButton } from "./clear-chat-button";
 import { ModelPicker } from "./model-picker";
 import { Thread } from "./thread";
 import { useDocumentContext } from "@/hooks/use-document-context";
@@ -15,7 +16,10 @@ export function AssistantPanel() {
         <span className="hidden sm:block">
           <CodeToolsBadge />
         </span>
-        <ModelPicker className="ml-auto" />
+        <div className="ml-auto flex items-center gap-1">
+          <ModelPicker />
+          <ClearChatButton />
+        </div>
       </div>
       <div className="flex-1 overflow-hidden">
         <Thread />
