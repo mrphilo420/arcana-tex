@@ -73,7 +73,9 @@ OpenCode API key from <https://opencode.ai/auth>.
   **Anthropic messages**.
 
 If a model is not in the preset, click **Discover models** or enter its ID from
-the OpenCode model list.
+the OpenCode model list. Discovery imports every ID the provider returns,
+including image, voice, and embedding models; choose a chat/text model for the
+assistant.
 
 ## Anthropic
 
@@ -112,6 +114,12 @@ installer:
 
 Paste the Meta API key into the provider form. Do not put it in `NEXT_PUBLIC_*`
 variables or commit it.
+
+Discovery imports every model the Meta endpoint returns, including image, voice,
+and transcription models. Choose a chat model such as `muse-spark-1.3`,
+`muse-spark-1.2`, or `muse-spark-1.1` for the assistant. If a model requires the
+Responses API instead of chat completions, add a second Meta provider with base
+URL `https://api.meta.ai/v1` and API type **OpenAI responses**.
 
 ## Storage and secrets
 
