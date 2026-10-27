@@ -1,6 +1,6 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
-import { readFile, writeFile } from "node:fs/promises";
+import { chmod, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   DEFAULT_GROQ_MODEL_ID,
@@ -134,20 +134,23 @@ export async function readLlmProviders(): Promise<StoredLlmProvider[]> {
         ),
       )
       .slice(0, MAX_PROVIDERS)
-      .map((provider) => ({
-        ...provider,
-        apiKey:
-          typeof provider.apiKey === "string"
-            ? provider.apiKey.slice(0, MAX_API_KEY_CHARS)
-            : "",
-        headers: normalizeHeaders(provider.headers),
-        models: normalizeModels(provider.models),
-        defaultModel:
-          typeof provider.defaultModel === "string" &&
-          provider.models.includes(provider.defaultModel)
-            ? provider.defaultModel
-            : (provider.models[0] ?? ""),
-      }));
+      .map((provider) => {
+        const models = normalizeModels(provider.models);
+        return {
+          ...provider,
+          apiKey:
+            typeof provider.apiKey === "string"
+              ? provider.apiKey.slice(0, MAX_API_KEY_CHARS)
+              : "",
+          headers: normalizeHeaders(provider.headers),
+          models,
+          defaultModel:
+            typeof provider.defaultModel === "string" &&
+            models.includes(provider.defaultModel)
+              ? provider.defaultModel
+              : (models[0] ?? ""),
+        };
+      });
   } catch {
     return [];
   }
@@ -161,6 +164,7 @@ async function writeLlmProviders(
     encoding: "utf-8",
     mode: 0o600,
   });
+  await chmod(CONFIG_PATH, 0o600).catch(() => {});
 }
 
 export async function publicLlmProviders(): Promise<PublicLlmProvider[]> {
@@ -409,12 +413,13 @@ function createProviderModel(
 function envGroqModel(requested: unknown): ResolvedChatModel | null {
   const apiKey = process.env.GROQ_API_KEY?.trim();
   if (!apiKey) return null;
-  const modelId =
-    typeof requested === "string" && isGroqModelId(requested)
-      ? requested
-      : isGroqModelId(process.env.GROQ_MODEL?.trim())
-        ? (process.env.GROQ_MODEL?.trim() as string)
-        : DEFAULT_GROQ_MODEL_ID;
+  const requestedId = typeof requested === "string" ? requested.trim() : "";
+  if (requestedId && !isGroqModelId(requestedId)) return null;
+  const modelId = requestedId
+    ? requestedId
+    : isGroqModelId(process.env.GROQ_MODEL?.trim())
+      ? (process.env.GROQ_MODEL?.trim() as string)
+      : DEFAULT_GROQ_MODEL_ID;
   return {
     value: modelId,
     providerId: "groq",
@@ -432,10 +437,9 @@ function envOpenAiModel(requested: unknown): ResolvedChatModel | null {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   const baseUrl = process.env.OPENAI_BASE_URL?.trim();
   if (!apiKey && !baseUrl) return null;
-  const modelId =
-    typeof requested === "string" && requested.trim()
-      ? requested.trim()
-      : process.env.OPENAI_MODEL?.trim() || "gpt-4o";
+  const requestedId = typeof requested === "string" ? requested.trim() : "";
+  if (requestedId.includes("::")) return null;
+  const modelId = requestedId || process.env.OPENAI_MODEL?.trim() || "gpt-4o";
   return {
     value: modelId,
     providerId: "openai",
@@ -483,6 +487,8 @@ function resolveConfiguredModel(
       }
     }
   }
+
+  if (typeof requested === "string" && requested.trim()) return null;
 
   const fallback = providers.find((provider) => provider.models.length > 0);
   if (!fallback) return null;
