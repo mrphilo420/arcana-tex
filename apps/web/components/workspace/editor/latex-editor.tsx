@@ -485,6 +485,7 @@ export function LatexEditor() {
         EditorView.theme({
           "&": {
             height: "100%",
+            fontFamily: "var(--ui-mono)",
             fontSize: "0.9375rem",
           },
           ".cm-scroller": {

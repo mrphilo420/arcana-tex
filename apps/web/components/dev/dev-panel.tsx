@@ -437,7 +437,7 @@ export function DevPanel() {
                       Font pairing
                     </div>
                     <p className="mt-0.5 text-[0.75rem] text-muted-foreground">
-                      Three pairings across serif, sans, and monospace.
+                      Four pairings across serif, sans, and monospace.
                     </p>
                   </div>
                   <Select
@@ -463,7 +463,7 @@ export function DevPanel() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
                   {FONT_PAIRINGS.map((pairing) => (
                     <div
                       key={pairing.id}

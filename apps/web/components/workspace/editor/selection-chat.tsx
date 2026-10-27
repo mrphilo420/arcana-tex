@@ -6,7 +6,6 @@ import { useThreadRuntime } from "@assistant-ui/react";
 import { ArrowUpIcon, MapPinIcon, SparklesIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useDocumentStore } from "@/stores/document-store";
-import { cn } from "@/lib/utils";
 
 export interface SelectionChatTarget {
   text: string;
@@ -85,14 +84,14 @@ export function SelectionChat({
 
   if (!target || typeof document === "undefined") return null;
 
-  const panelWidth = 360;
+  const panelWidth = 420;
   const left = clamp(
     target.left,
     8,
     Math.max(8, window.innerWidth - panelWidth - 8),
   );
   const buttonTop = clamp(target.top, 8, Math.max(8, window.innerHeight - 52));
-  const panelHeightEstimate = 342;
+  const panelHeightEstimate = 360;
   const panelTop =
     buttonTop + panelHeightEstimate > window.innerHeight
       ? Math.max(8, buttonTop - panelHeightEstimate - 42)
@@ -132,7 +131,7 @@ export function SelectionChat({
     open ? (
       <div
         ref={panelRef}
-        className="fixed z-[80] w-[360px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-[18px] border border-border bg-popover text-popover-foreground shadow-[0_18px_60px_rgba(0,0,0,0.18)]"
+        className="fixed z-[80] max-h-[calc(100vh-1rem)] w-[min(420px,calc(100vw-1rem))] overflow-y-auto rounded-[18px] border border-border bg-popover text-popover-foreground shadow-[0_18px_60px_rgba(0,0,0,0.18)]"
         style={{ left, top: panelTop }}
         role="dialog"
         aria-label="Ask AI about selection"
@@ -143,12 +142,12 @@ export function SelectionChat({
               <SparklesIcon className="size-3.5" />
             </span>
             <div className="min-w-0">
-              <div className="font-medium text-[0.875rem]">
+              <div className="font-medium text-[1rem] leading-tight">
                 Ask AI about selection
               </div>
-              <div className="mt-0.5 flex items-center gap-1 truncate text-[0.875rem] text-muted-foreground">
+              <div className="mt-1 flex min-w-0 items-center gap-1 text-[0.75rem] text-muted-foreground">
                 <MapPinIcon className="size-3 shrink-0" />
-                <span className="truncate">
+                <span className="truncate" title={filePath}>
                   {filePath} ·{" "}
                   {target.startLine === target.endLine
                     ? `line ${target.startLine}`
@@ -168,7 +167,7 @@ export function SelectionChat({
         </div>
 
         <div className="space-y-2.5 p-4">
-          <div className="max-h-24 overflow-auto whitespace-pre-wrap rounded-[10px] border border-border bg-muted/45 px-2.5 py-2 font-mono text-[0.875rem] text-foreground leading-relaxed">
+          <div className="max-h-28 overflow-y-auto overflow-x-hidden whitespace-pre-wrap rounded-[10px] border border-border bg-muted/45 px-2.5 py-2 font-mono text-[0.8125rem] text-foreground leading-[1.55] [overflow-wrap:anywhere]">
             {truncateSelection(target.text)}
           </div>
           <textarea
@@ -182,20 +181,18 @@ export function SelectionChat({
               }
             }}
             placeholder="Ask about this selection..."
-            className="min-h-[74px] w-full resize-none rounded-[12px] border border-input bg-background px-3 py-2.5 text-[1rem] outline-none transition-shadow placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
+            className="min-h-[84px] w-full resize-none rounded-[12px] border border-input bg-background px-3 py-2.5 text-[1rem] outline-none transition-shadow placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
             aria-label="Question about selection"
           />
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[0.75rem] text-muted-foreground">
+          <div className="flex items-center justify-between gap-3">
+            <span className="min-w-0 flex-1 text-[0.75rem] text-muted-foreground leading-snug">
               Sends location + selection to the main chat
             </span>
             <button
               type="button"
               onClick={() => void send()}
               disabled={sending}
-              className={cn(
-                "inline-flex h-8 items-center gap-1.5 rounded-full bg-primary px-3.5 font-medium text-[0.875rem] text-primary-foreground transition-transform active:scale-95 disabled:opacity-60",
-              )}
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-4 font-medium text-[0.875rem] text-primary-foreground transition-transform active:scale-95 disabled:opacity-60"
             >
               <ArrowUpIcon className="size-3.5" />
               {sending ? "Sending" : "Ask AI"}

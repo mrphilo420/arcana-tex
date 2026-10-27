@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import {
-  Cormorant_Garamond,
   DM_Sans,
   Fira_Code,
   IBM_Plex_Mono,
@@ -9,6 +8,7 @@ import {
   Inter,
   JetBrains_Mono,
   Manrope,
+  Newsreader,
   Source_Serif_4,
 } from "next/font/google";
 import "@/styles/globals.css";
@@ -21,8 +21,8 @@ const inter = Inter({
   display: "swap",
 });
 
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   style: ["normal", "italic"],
@@ -121,7 +121,7 @@ export default function RootLayout({
       <body
         className={cn(
           inter.variable,
-          cormorant.variable,
+          newsreader.variable,
           jetbrains.variable,
           sourceSerif.variable,
           dmSans.variable,

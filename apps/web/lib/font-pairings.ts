@@ -1,4 +1,4 @@
-export type FontPairingId = "editorial" | "modern" | "technical";
+export type FontPairingId = "cupertino" | "editorial" | "modern" | "technical";
 
 export interface FontPairing {
   id: FontPairingId;
@@ -11,10 +11,18 @@ export interface FontPairing {
 
 export const FONT_PAIRINGS: FontPairing[] = [
   {
+    id: "cupertino",
+    label: "Cupertino",
+    description: "System serif, system UI, system mono",
+    serif: "New York / ui-serif",
+    sans: "SF Pro / system-ui",
+    mono: "SF Mono / ui-monospace",
+  },
+  {
     id: "editorial",
     label: "Editorial",
-    description: "Cormorant Garamond, Inter, JetBrains Mono",
-    serif: "Cormorant Garamond",
+    description: "Newsreader, Inter, JetBrains Mono",
+    serif: "Newsreader",
     sans: "Inter",
     mono: "JetBrains Mono",
   },
@@ -36,4 +44,4 @@ export const FONT_PAIRINGS: FontPairing[] = [
   },
 ];
 
-export const DEFAULT_FONT_PAIRING_ID: FontPairingId = "editorial";
+export const DEFAULT_FONT_PAIRING_ID: FontPairingId = "cupertino";

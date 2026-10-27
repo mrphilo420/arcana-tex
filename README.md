@@ -123,9 +123,10 @@ you configure.
 - **Workspace LaTeX keyboard** - Toggleable Text, Math, Greek, Symbols, and
   TikZ groups that insert at the CodeMirror caret with keyboard shortcuts.
 - **Themes and typography** - 48 ccthemes palettes plus Arcana, applied to both
-  the interface and the code editor from the toolbar or developer panel. Three
-  font pairings cover serif, sans, and monospace: Editorial, Modern, and
-  Technical. The interface follows a restrained, Apple-inspired type scale;
+  the interface and the code editor from the toolbar or developer panel. Four
+  font pairings cover serif, sans, and monospace: Cupertino (system), Editorial,
+  Modern, and Technical. The interface follows a restrained, Apple-inspired
+  type scale;
   **Text size** (Compact, Comfortable, Large) scales the UI and editor without
   changing the layout model. Theme, font, and text-size choices persist.
 - **Lean Infoview** - Opens automatically for `.lean` files with proof health,
