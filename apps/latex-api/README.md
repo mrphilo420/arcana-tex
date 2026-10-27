@@ -58,6 +58,8 @@ The traditional engines use `-file-line-error`, bounded reruns driven by
 `.aux`/log changes, and automatic MakeIndex when an `.idx` file appears.
 Tectonic is invoked with `--untrusted --keep-logs`; it handles reruns and
 bibliography processing internally and writes its log to the compile log.
+Compilation runs from the main document's directory, so nested mains such as
+`source/main.tex` resolve `\input` and bibliography paths correctly.
 
 ## Lean Lake bridge
 

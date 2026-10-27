@@ -20,6 +20,7 @@ Sources:
 | Parseable errors | Traditional engines use `-file-line-error`; the diagnostic parser accepts both `! message` and `file.tex:line: message` formats. |
 | Generous TeX log width | TeX runs with `max_print_line=1000`, `error_line=254`, and `half_error_line=238` so long paths and error lines are not split. |
 | Explicit shell-escape policy | Traditional engines use `-no-shell-escape`; Tectonic uses `--untrusted`. Features such as minted need an explicit opt-in in a future change. |
+| Main-directory working directory | Compilation runs with the main document's directory as its working directory, so `\input`, `\includegraphics`, and bibliography paths resolve as they do in a normal local build. This also fixes projects whose main file is under `source/` rather than at the repository root. |
 | Workspace isolation | Every compile runs in a fresh temporary directory, with path traversal rejection and a 50 MB request cap. |
 | Timeouts and concurrency | Compiles have bounded timeouts; the API caps active compilations at three. |
 | Clean logs | Temporary auxiliary files are removed after the result is captured. |

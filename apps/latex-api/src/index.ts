@@ -5,7 +5,7 @@ import { cors } from "hono/cors";
 import { bodyLimit } from "hono/body-limit";
 import { existsSync, mkdirSync, symlinkSync } from "node:fs";
 import { mkdir, rm, writeFile, readFile, access } from "node:fs/promises";
-import { delimiter, join, resolve } from "node:path";
+import { basename, delimiter, dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
@@ -173,9 +173,13 @@ app.post("/builds/sync", async (c) => {
 
   const mainResource = resources.find((r) => r.main) || resources[0];
   const mainPath = mainResource.path || "main.tex";
-  const mainFileName = mainPath.replace(/\.tex$/, "");
+  const mainFileName = mainPath.replace(/\.(?:tex|ltx)$/i, "");
+  const mainDir = dirname(mainPath);
+  const mainBaseName = basename(mainPath);
+  const outputBaseName = basename(mainFileName);
 
   const workDir = join(tmpdir(), `latex-${randomUUID()}`);
+  const compileDir = mainDir === "." ? workDir : join(workDir, mainDir);
   await mkdir(workDir, { recursive: true });
 
   activeCompilations++;
@@ -225,7 +229,7 @@ app.post("/builds/sync", async (c) => {
       return new Promise((resolve) => {
         const [command, ...args] = cmd;
         const proc = spawn(command, args, {
-          cwd: workDir,
+          cwd: compileDir,
           env: {
             ...process.env,
             max_print_line: "1000",
@@ -279,7 +283,7 @@ app.post("/builds/sync", async (c) => {
       "-interaction=nonstopmode",
       "-file-line-error",
       "-no-shell-escape",
-      mainPath,
+      mainBaseName,
     ];
 
     const readText = async (path: string): Promise<string> => {
@@ -304,7 +308,7 @@ app.post("/builds/sync", async (c) => {
           "--chatter",
           "minimal",
           "--untrusted",
-          mainPath,
+          mainBaseName,
         ],
         TECTONIC_TIMEOUT_MS,
       );
@@ -331,10 +335,13 @@ app.post("/builds/sync", async (c) => {
           .catch(() => false);
         if (auxExists) {
           result = usesBiblatex
-            ? await runWithTimeout([resolveToolCommand("biber"), mainFileName])
+            ? await runWithTimeout([
+                resolveToolCommand("biber"),
+                outputBaseName,
+              ])
             : await runWithTimeout([
                 resolveCompilerCommand("bibtex"),
-                mainFileName,
+                outputBaseName,
               ]);
           toolLog += `\n--- ${usesBiblatex ? "biber" : "bibtex"} ---\n${result.stdout}${result.stderr}`;
           if (result.timedOut) {
@@ -354,7 +361,7 @@ app.post("/builds/sync", async (c) => {
         .catch(() => false);
       if (idxExists) {
         result = await runWithTimeout(
-          [resolveCompilerCommand("makeindex"), `${mainFileName}.idx`],
+          [resolveCompilerCommand("makeindex"), `${outputBaseName}.idx`],
           20000,
         );
         toolLog += `\n--- makeindex ---\n${result.stdout}${result.stderr}`;
@@ -391,6 +398,9 @@ app.post("/builds/sync", async (c) => {
     try {
       logContent += await readFile(logPath, "utf-8");
     } catch {}
+    if (!logContent.trim()) {
+      logContent = `${result.stdout}${result.stderr}`;
+    }
 
     try {
       const pdfBuffer = await readFile(pdfPath);
