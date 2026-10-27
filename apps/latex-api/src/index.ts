@@ -16,17 +16,26 @@ const app = new Hono();
 const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
 const MAX_CONCURRENT = 3;
-const COMPILE_TIMEOUT_MS = 30000;
+const COMPILE_TIMEOUT_MS = 45000;
+const TECTONIC_TIMEOUT_MS = 55000;
 
 let activeCompilations = 0;
 
-type CompilerName = "pdflatex" | "xelatex" | "lualatex" | "bibtex";
+type CompilerName =
+  | "pdflatex"
+  | "xelatex"
+  | "lualatex"
+  | "bibtex"
+  | "makeindex"
+  | "tectonic";
 
 const COMPILER_NAMES: CompilerName[] = [
   "pdflatex",
   "xelatex",
   "lualatex",
   "bibtex",
+  "makeindex",
+  "tectonic",
 ];
 
 const MIKTEX_BIN_DIR = "/Applications/MiKTeX Console.app/Contents/bin";
@@ -35,6 +44,8 @@ const MIKTEX_ENGINES: Record<CompilerName, string> = {
   xelatex: "miktex-xetex",
   lualatex: "miktex-luahbtex",
   bibtex: "miktex-bibtex",
+  makeindex: "miktex-makeindex",
+  tectonic: "tectonic",
 };
 
 function isOnPath(command: string): boolean {
@@ -86,7 +97,7 @@ function resolveCompilerCommand(name: CompilerName): string {
   return name;
 }
 
-function resolveToolCommand(name: "biber"): string {
+function resolveToolCommand(name: "biber" | "tectonic"): string {
   const home = process.env.HOME;
   // Prefer Homebrew's biber. Older ~/.local/bin copies can be present and
   // incompatible with the installed biblatex version.
@@ -202,15 +213,9 @@ app.post("/builds/sync", async (c) => {
       }
     }
 
-    const compilerName: CompilerName =
-      compiler === "xelatex"
-        ? "xelatex"
-        : compiler === "lualatex"
-          ? "lualatex"
-          : "pdflatex";
-
     const runWithTimeout = (
       cmd: string[],
+      timeoutMs = COMPILE_TIMEOUT_MS,
     ): Promise<{
       exitCode: number;
       timedOut: boolean;
@@ -221,6 +226,12 @@ app.post("/builds/sync", async (c) => {
         const [command, ...args] = cmd;
         const proc = spawn(command, args, {
           cwd: workDir,
+          env: {
+            ...process.env,
+            max_print_line: "1000",
+            error_line: "254",
+            half_error_line: "238",
+          },
           stdio: ["ignore", "pipe", "pipe"],
         });
         let timedOut = false;
@@ -229,7 +240,7 @@ app.post("/builds/sync", async (c) => {
         const timeout = setTimeout(() => {
           timedOut = true;
           proc.kill();
-        }, COMPILE_TIMEOUT_MS);
+        }, timeoutMs);
         proc.stdout.on("data", (chunk: Buffer) => {
           stdout += chunk.toString();
         });
@@ -247,14 +258,65 @@ app.post("/builds/sync", async (c) => {
       });
     };
 
+    const compilerName: CompilerName =
+      compiler === "tectonic"
+        ? "tectonic"
+        : compiler === "xelatex"
+          ? "xelatex"
+          : compiler === "lualatex"
+            ? "lualatex"
+            : "pdflatex";
+
+    let result: {
+      exitCode: number;
+      timedOut: boolean;
+      stdout: string;
+      stderr: string;
+    };
+
     const latexCmd = [
       resolveCompilerCommand(compilerName),
       "-interaction=nonstopmode",
+      "-file-line-error",
+      "-no-shell-escape",
       mainPath,
     ];
 
-    if (hasBib) {
-      let result = await runWithTimeout(latexCmd);
+    const readText = async (path: string): Promise<string> => {
+      try {
+        return await readFile(path, "utf-8");
+      } catch {
+        return "";
+      }
+    };
+
+    const readsRerunRequest = (log: string): boolean =>
+      /Rerun to get cross-references right|Label\(s\) may have changed|There were undefined references|Please \(re\)run|Rerun LaTeX|rerunfilecheck/i.test(
+        log,
+      );
+
+    if (compilerName === "tectonic") {
+      const tectonicCommand = resolveToolCommand("tectonic");
+      result = await runWithTimeout(
+        [
+          tectonicCommand,
+          "--keep-logs",
+          "--chatter",
+          "minimal",
+          "--untrusted",
+          mainPath,
+        ],
+        TECTONIC_TIMEOUT_MS,
+      );
+      toolLog += `\n--- tectonic ---\n${result.stdout}${result.stderr}`;
+      if (result.timedOut) {
+        return c.json(
+          { error: "Tectonic compilation timed out" } satisfies CompileError,
+          500,
+        );
+      }
+    } else {
+      result = await runWithTimeout(latexCmd);
       if (result.timedOut) {
         return c.json(
           { error: "Compilation timed out" } satisfies CompileError,
@@ -263,27 +325,48 @@ app.post("/builds/sync", async (c) => {
       }
 
       const auxPath = join(workDir, `${mainFileName}.aux`);
-      const auxExists = await access(auxPath)
+      if (hasBib) {
+        const auxExists = await access(auxPath)
+          .then(() => true)
+          .catch(() => false);
+        if (auxExists) {
+          result = usesBiblatex
+            ? await runWithTimeout([resolveToolCommand("biber"), mainFileName])
+            : await runWithTimeout([
+                resolveCompilerCommand("bibtex"),
+                mainFileName,
+              ]);
+          toolLog += `\n--- ${usesBiblatex ? "biber" : "bibtex"} ---\n${result.stdout}${result.stderr}`;
+          if (result.timedOut) {
+            return c.json(
+              {
+                error: usesBiblatex ? "Biber timed out" : "BibTeX timed out",
+              } satisfies CompileError,
+              500,
+            );
+          }
+        }
+      }
+
+      const idxPath = join(workDir, `${mainFileName}.idx`);
+      const idxExists = await access(idxPath)
         .then(() => true)
         .catch(() => false);
-      if (auxExists) {
-        result = usesBiblatex
-          ? await runWithTimeout([resolveToolCommand("biber"), mainFileName])
-          : await runWithTimeout([
-              resolveCompilerCommand("bibtex"),
-              mainFileName,
-            ]);
-        toolLog += `\n--- ${usesBiblatex ? "biber" : "bibtex"} ---\n${result.stdout}${result.stderr}`;
+      if (idxExists) {
+        result = await runWithTimeout(
+          [resolveCompilerCommand("makeindex"), `${mainFileName}.idx`],
+          20000,
+        );
+        toolLog += `\n--- makeindex ---\n${result.stdout}${result.stderr}`;
         if (result.timedOut) {
           return c.json(
-            {
-              error: usesBiblatex ? "Biber timed out" : "BibTeX timed out",
-            } satisfies CompileError,
+            { error: "MakeIndex timed out" } satisfies CompileError,
             500,
           );
         }
       }
 
+      let previousAux = await readText(auxPath);
       for (let i = 0; i < 2; i++) {
         result = await runWithTimeout(latexCmd);
         if (result.timedOut) {
@@ -292,16 +375,12 @@ app.post("/builds/sync", async (c) => {
             500,
           );
         }
-      }
-    } else {
-      for (let i = 0; i < 2; i++) {
-        const result = await runWithTimeout(latexCmd);
-        if (result.timedOut) {
-          return c.json(
-            { error: "Compilation timed out" } satisfies CompileError,
-            500,
-          );
-        }
+
+        const nextAux = await readText(auxPath);
+        const log = await readText(join(workDir, `${mainFileName}.log`));
+        const needsRerun = nextAux !== previousAux || readsRerunRequest(log);
+        previousAux = nextAux;
+        if (!needsRerun && i >= 1) break;
       }
     }
 

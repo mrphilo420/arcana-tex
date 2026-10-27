@@ -50,7 +50,11 @@ export async function POST(req: Request) {
     }
 
     const latexCompiler =
-      compiler === "xelatex" || compiler === "lualatex" ? compiler : "pdflatex";
+      compiler === "tectonic" ||
+      compiler === "xelatex" ||
+      compiler === "lualatex"
+        ? compiler
+        : "pdflatex";
 
     const apiResources = resources.map((r) => {
       const resource: Record<string, unknown> = {

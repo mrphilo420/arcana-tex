@@ -53,6 +53,12 @@ When a `.bib` file is present, the API runs **Biber** for documents using
 in the returned log. The API prefers Homebrew's compatible `biber` over older
 copies on `PATH`.
 
+The `compiler` field accepts `pdflatex`, `xelatex`, `lualatex`, or `tectonic`.
+The traditional engines use `-file-line-error`, bounded reruns driven by
+`.aux`/log changes, and automatic MakeIndex when an `.idx` file appears.
+Tectonic is invoked with `--untrusted --keep-logs`; it handles reruns and
+bibliography processing internally and writes its log to the compile log.
+
 ## Lean Lake bridge
 
 The same server exposes a local, read-only Lean project bridge. It discovers

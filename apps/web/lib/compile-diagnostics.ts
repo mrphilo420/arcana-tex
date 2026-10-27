@@ -105,6 +105,7 @@ function baseName(value: string): string {
 function isDiagnosticStart(line: string): boolean {
   return (
     line.startsWith("! ") ||
+    /^[^\s:]+\.(?:tex|ltx):\d+:/i.test(line) ||
     /^(?:LaTeX|Package|Class|LaTeX Font)\s+(?:Warning|Error):/i.test(line) ||
     /^LaTeX Warning:/i.test(line)
   );
@@ -336,6 +337,16 @@ export function parseLatexLog(
     if (line.startsWith("! ")) {
       const { block, next } = readDiagnosticBlock(lines, index);
       const head = line.slice(2).trim();
+      const { kind, data } = classifyError(head, block.join("\n"));
+      pushDiagnostic("error", kind, head, block, data);
+      index = Math.max(index, next - 1);
+      continue;
+    }
+
+    const fileLineError = line.match(/^([^\s:]+\.(?:tex|ltx)):(\d+):\s*(.*)$/i);
+    if (fileLineError) {
+      const { block, next } = readDiagnosticBlock(lines, index);
+      const head = fileLineError[3]?.trim() || line.trim();
       const { kind, data } = classifyError(head, block.join("\n"));
       pushDiagnostic("error", kind, head, block, data);
       index = Math.max(index, next - 1);

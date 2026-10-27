@@ -75,7 +75,8 @@ export default function ProjectPage() {
             mainFileId: snapshot.mainFileId,
             compiler:
               snapshot.compiler === "xelatex" ||
-              snapshot.compiler === "lualatex"
+              snapshot.compiler === "lualatex" ||
+              snapshot.compiler === "tectonic"
                 ? snapshot.compiler
                 : "pdflatex",
             comments: snapshot.comments,

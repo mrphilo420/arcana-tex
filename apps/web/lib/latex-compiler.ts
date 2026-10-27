@@ -1,11 +1,12 @@
 import type { ProjectFile } from "@/lib/project-files";
 
-export type LatexCompiler = "pdflatex" | "xelatex" | "lualatex";
+export type LatexCompiler = "pdflatex" | "xelatex" | "lualatex" | "tectonic";
 
 export const LATEX_COMPILERS: { value: LatexCompiler; label: string }[] = [
   { value: "pdflatex", label: "pdfLaTeX" },
   { value: "xelatex", label: "XeLaTeX" },
   { value: "lualatex", label: "LuaLaTeX" },
+  { value: "tectonic", label: "Tectonic" },
 ];
 
 export interface CompileResource {

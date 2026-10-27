@@ -55,7 +55,11 @@ you configure.
   titles, paths, and document text, plus import, rename, move, and delete.
 - **Multi-file LaTeX workspace** - Folder import, nested file tree, images,
   bibliography and class/style files, Lean 4 sources, Markdown notes,
-  main-document selection, and pdfLaTeX/XeLaTeX/LuaLaTeX compilation.
+  main-document selection, and pdfLaTeX/XeLaTeX/LuaLaTeX/Tectonic
+  compilation. Tectonic provides XeTeX compilation with automatic package
+  resolution and reruns; the other engines use bounded smart reruns and
+  BibTeX/Biber/MakeIndex detection. See
+  [docs/compiler-best-practices.md](./docs/compiler-best-practices.md).
 - **Project map** - A visual file-tree map with folder/file nodes, type colors,
   zoom, and click-to-open navigation from the Files header.
 - **Live PDF preview** - Automatic compilation after edits settle, zoom and
@@ -150,6 +154,7 @@ you configure.
 - Node.js 20+
 - pnpm 10+
 - TeX Live or MiKTeX for local compilation
+- Tectonic 0.16+ (optional; selectable compiler with automatic reruns)
 - An OpenAI-compatible model endpoint (optional for AI features)
 
 ### Run locally
@@ -517,7 +522,8 @@ Next.js 16 application with:
 Hono-based service for LaTeX compilation and sync:
 
 - Accepts LaTeX source and resources
-- Compiles with TeX Live (pdfLaTeX by default)
+- Compiles with TeX Live/MiKTeX (pdfLaTeX, XeLaTeX, LuaLaTeX, or Tectonic)
+- Runs bounded smart reruns, BibTeX/Biber, and MakeIndex when detected
 - Returns the compiled PDF
 - Hosts token-protected WebSocket project snapshots
 

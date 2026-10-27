@@ -29,7 +29,12 @@ export interface NewProjectInput {
 }
 
 function isCompiler(value: string | undefined): value is LatexCompiler {
-  return value === "pdflatex" || value === "xelatex" || value === "lualatex";
+  return (
+    value === "pdflatex" ||
+    value === "xelatex" ||
+    value === "lualatex" ||
+    value === "tectonic"
+  );
 }
 
 function buildSearchText(project: StoredProject): string {
