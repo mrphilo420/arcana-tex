@@ -39,7 +39,7 @@ const subagentInputSchema = z.object({
 
 function codeTool(language: "python" | "r", modelLabel: string) {
   return tool({
-    description: `${modelLabel} execution for computational figures: run a complete script in an isolated temporary directory and return stdout, stderr, and text artifacts. Use it to compute geometry, process data, or write a complete TikZ/PGF artifact (for example figure.tex). Prefer direct TikZ for simple figures. Never claim the script ran before this tool returns.`,
+    description: `${modelLabel} execution in an isolated temporary directory. Use it to run, test, or validate ${modelLabel} code, process data, compute geometry, or write a complete TikZ/PGF artifact (for example figure.tex). Prefer direct TikZ for simple LaTeX figures. Never claim a script ran before this tool returns.`,
     inputSchema: codeInputSchema,
     execute: async (input) => {
       try {

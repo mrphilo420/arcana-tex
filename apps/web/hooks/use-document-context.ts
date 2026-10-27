@@ -5,7 +5,6 @@ import { useAui } from "@assistant-ui/store";
 import {
   fileKindContextLabel,
   fileKindForFile,
-  fileKindLabel,
   languageForFileKind,
   type FileKind,
 } from "@/lib/file-kind";
@@ -21,7 +20,7 @@ const MAX_LEAN_CONTEXT_CHARS = 4500;
 const MAX_FILE_LIST_CHARS = 2500;
 
 const CODE_EXECUTION_GUIDE = `Python, R, and subagents are available for computational figures and TikZ work:
-- Use run_python or run_r when a figure needs numerical computation, data processing, plotting, or generated geometry. Write a complete script; have it print TikZ or write a .tex/.tikz/.pgf artifact. Prefer direct TikZ when computation is unnecessary. Never claim code ran before the tool returns a result.
+- Use run_python when the active file or task is Python, and run_r when it is R. Use these tools to run, test, or validate that language, process data, compute geometry, or generate TikZ. Never send Python or R source through the LaTeX compiler. Write a complete script; have it print TikZ or write a .tex/.tikz/.pgf artifact when a figure is requested. Prefer direct TikZ when computation is unnecessary. Never claim code ran before the tool returns a result.
 - Use spawn_subagents for independent parallel work, especially complex TikZ requests. Useful roles: tikz-python, tikz-r, tikz-reviewer, planner, latex-reviewer, researcher. Subagents cannot inspect the project or execute code; give each one focused context, then verify and synthesize their output yourself.
 - For a requested figure: decide whether direct TikZ or computation is appropriate; use Python/R where it adds accuracy; review the generated code; then insert only complete, compilable TikZ with any required packages. Do not insert raster images as a substitute for editable TikZ unless the user explicitly asks for one.
 - Code runs in a temporary directory, not the project root. Pass any data the script needs through its files input; do not assume it can read project paths.
