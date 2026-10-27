@@ -167,6 +167,22 @@ export const LLM_PROVIDER_PRESETS: LlmProviderPreset[] = [
     models: [],
   },
   {
+    providerId: "huggingface",
+    label: "Hugging Face",
+    baseUrl: "https://router.huggingface.co/v1",
+    api: "openai-chat",
+    description:
+      "Hugging Face Inference Providers through the OpenAI-compatible router.",
+    models: [
+      {
+        id: "meta-llama/Llama-3.3-70B-Instruct",
+        label: "Llama 3.3 70B Instruct",
+      },
+      { id: "Qwen/Qwen2.5-72B-Instruct", label: "Qwen2.5 72B Instruct" },
+      { id: "deepseek-ai/DeepSeek-V3-0324", label: "DeepSeek V3" },
+    ],
+  },
+  {
     providerId: "google",
     label: "Google Gemini",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta",

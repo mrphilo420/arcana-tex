@@ -52,6 +52,7 @@ a provider-qualified model sends `providerId::modelId` to the server.
 | OpenAI | `https://api.openai.com/v1` | OpenAI chat |
 | Groq | `https://api.groq.com/openai/v1` | OpenAI chat |
 | OpenRouter | `https://openrouter.ai/api/v1` | OpenAI chat |
+| Hugging Face | `https://router.huggingface.co/v1` | OpenAI chat |
 | Google Gemini | `https://generativelanguage.googleapis.com/v1beta` | Google Gemini |
 | DeepSeek | `https://api.deepseek.com/v1` | OpenAI chat |
 | xAI | `https://api.x.ai/v1` | OpenAI chat |
@@ -84,6 +85,19 @@ model ID manually if it is missing.
 
 The model picker shows the family next to each OpenCode model, so you can see
 how it will be routed.
+
+## Hugging Face
+
+The Hugging Face preset uses the OpenAI-compatible Inference Providers router:
+
+- Base URL: `https://router.huggingface.co/v1`
+- API type: OpenAI chat
+- Token permission: **Make calls to Inference Providers**
+- Example models: `meta-llama/Llama-3.3-70B-Instruct`,
+  `Qwen/Qwen2.5-72B-Instruct`, `deepseek-ai/DeepSeek-V3-0324`
+
+Click **Discover models** to query the router, or enter a model ID manually.
+The router selects a serving provider for each request.
 
 ## Google Gemini
 

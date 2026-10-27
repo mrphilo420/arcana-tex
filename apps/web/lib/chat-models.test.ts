@@ -69,6 +69,10 @@ describe("LLM_PROVIDER_PRESETS", () => {
       baseUrl: "https://generativelanguage.googleapis.com/v1beta",
       api: "google",
     });
+    expect(byId.get("huggingface")).toMatchObject({
+      baseUrl: "https://router.huggingface.co/v1",
+      api: "openai-chat",
+    });
   });
 
   it("uses a supported API type for every preset", () => {
